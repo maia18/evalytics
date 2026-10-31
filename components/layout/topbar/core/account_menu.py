@@ -545,6 +545,7 @@ def abrir_configuracoes_conta(
                 color=cores[TEXTO_SECUNDARIO],
             ),
             ft.Container(
+                width=420,
                 padding=14,
                 bgcolor=cores[SURFACE],
                 border=ft.Border.all(1, ft.Colors.with_opacity(0.16, ft.Colors.GREY_400)),
