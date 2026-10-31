@@ -88,6 +88,19 @@ class AuthState:
         # Remove fisicamente o acesso persistido do dispositivo do usuário
         await self._remover_sessao_persistida()
 
+    async def atualizar_dados_usuario(self, dados: dict):
+        """Atualiza os dados e tokens em memória após uma alteração do perfil."""
+        if self._usuario is None:
+            self._usuario = {}
+        self._usuario.update(dados)
+        self._id_token = dados.get("idToken", self._id_token)
+        self._refresh_token = dados.get("refreshToken", self._refresh_token)
+
+        if self._prefs is not None and self._refresh_token:
+            lembrar_me = await self._prefs.get(CHAVE_LEMBRAR_ME)
+            if lembrar_me:
+                await self._prefs.set(CHAVE_REFRESH_TOKEN, self._refresh_token)
+
     async def _remover_sessao_persistida(self):
         """Método interno de utilidade para limpar o SharedPreferences."""
         if self._prefs is None:
