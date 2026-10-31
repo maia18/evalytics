@@ -530,15 +530,16 @@ def criar_menu_conta(
                 on_click=lambda e: abrir_ajuda(page, cores, mudar_tela),
             ),
             ft.PopupMenuItem(
-                content="Sobre o Evalytics",
-                icon=ft.Icons.INFO_OUTLINE,
-                on_click=lambda e: abrir_sobre(page, cores),
-            ),
-            ft.PopupMenuItem(
                 content="Configurações",
                 icon=ft.Icons.SETTINGS_OUTLINED,
                 on_click=lambda e: mudar_tela(ROTA_CONFIGURACOES),
             ),
+            ft.PopupMenuItem(
+                content="Sobre o Evalytics",
+                icon=ft.Icons.INFO_OUTLINE,
+                on_click=lambda e: abrir_sobre(page, cores),
+            ),
+            ft.PopupMenuItem(content=ft.Divider(height=1), height=12),
             ft.PopupMenuItem(content="Sair", icon=ft.Icons.LOGOUT, on_click=fazer_logout),
         ],
         bgcolor=cores[SURFACE],
