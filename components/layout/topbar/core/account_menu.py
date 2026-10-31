@@ -495,7 +495,11 @@ def abrir_configuracoes_conta(
     def fechar_configuracoes(e):
         _fechar_dialogo(page, dialogo)
         modo_escuro_atual = getattr(page, "is_dark_mode", False)
-        if preferencias_pendentes["tema_escuro"] != modo_escuro_atual:
+        densidade_atual = getattr(page, "preferencia_densidade_visual", "standard")
+        if (
+            preferencias_pendentes["tema_escuro"] != modo_escuro_atual
+            or preferencias_pendentes["densidade"] != densidade_atual
+        ):
             page.run_task(aplicar_aparencia)
 
     preferencia_tema = ft.Switch(
