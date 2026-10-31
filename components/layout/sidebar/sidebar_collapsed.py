@@ -1,7 +1,6 @@
 import flet as ft
 from typing import Callable
 from components.core.constants.constants import TEXTO_PRINCIPAL
-from components.layout.sidebar.sidebar_logout import criar_botao_logout
 from components.layout.sidebar.sidebar_logo import criar_logo
 from components.layout.sidebar.sidebar_items import montar_botoes_menu
 from components.widgets.menu.menu import MENU_ITEMS_COLLAPSED
@@ -43,7 +42,7 @@ def criar_sidebar_colapsada(
         )
     )
 
-    # 3. Área rolável do menu e rodapé fixado na base da Sidebar
+    # 3. Área rolável do menu
     area_menu = ft.Column(
         controls=controles,
         spacing=0,
@@ -54,14 +53,6 @@ def criar_sidebar_colapsada(
     return ft.Column(
         controls=[
             area_menu,
-            ft.Divider(height=1),
-            criar_botao_logout(
-                page=page,
-                dark_mode=dark_mode,
-                cor_texto=cores[TEXTO_PRINCIPAL],
-                mudar_tela=mudar_tela,
-                compact=True,
-            ),
         ],
         spacing=0,
         expand=True,

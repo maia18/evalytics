@@ -1,7 +1,6 @@
 import flet as ft
 from typing import Callable
 from components.core.constants.constants import TEXTO_PRINCIPAL
-from components.layout.sidebar.sidebar_logout import criar_botao_logout
 from components.layout.sidebar.sidebar_logo import criar_logo
 from components.layout.sidebar.sidebar_reports import criar_menu_relatorios
 from components.layout.sidebar.sidebar_dashboard import criar_menu_dashboard
@@ -52,7 +51,7 @@ def criar_sidebar_content(
                 )
             )
 
-    # 3. Área rolável do menu e rodapé fixado na base da Sidebar
+    # 3. Área rolável do menu
     area_menu = ft.Column(
         controls=controles,
         spacing=0,
@@ -63,13 +62,6 @@ def criar_sidebar_content(
     return ft.Column(
         controls=[
             area_menu,
-            ft.Divider(height=1),
-            criar_botao_logout(
-                page=page,
-                dark_mode=dark_mode,
-                cor_texto=cores[TEXTO_PRINCIPAL],
-                mudar_tela=mudar_tela,
-            ),
         ],
         spacing=0,
         expand=True,
