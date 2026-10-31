@@ -8,7 +8,6 @@ from components.core.auth.auth_state import auth_state
 from components.core.constants.constants import TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, SURFACE, COR_PRIMARIA
 from components.core.router.rotas_cts import (
     ROTA_AVALIACOES,
-    ROTA_CONFIGURACOES,
     ROTA_DASHBOARD_VISAO_GERAL,
     ROTA_INICIAL,
     ROTA_RELATORIOS,
@@ -432,6 +431,72 @@ def abrir_sobre(page: ft.Page, cores: dict[str, str]):
     _exibir_dialogo(page, "Sobre o Evalytics", conteudo, cores)
 
 
+def abrir_configuracoes_conta(
+    page: ft.Page,
+    cores: dict[str, str],
+    nome: str,
+    email: str,
+    abrir_perfil: Callable,
+):
+    """Mostra atalhos de configurações pessoais da conta, sem abrir as configurações institucionais."""
+    dialogo = None
+
+    def ir_para_perfil(e):
+        _fechar_dialogo(page, dialogo)
+        page.run_task(abrir_perfil, None)
+
+    conteudo = ft.Column(
+        tight=True,
+        spacing=14,
+        controls=[
+            ft.Text(
+                "Gerencie seus dados pessoais e a senha usada para acessar o Evalytics.",
+                size=13,
+                color=cores[TEXTO_SECUNDARIO],
+            ),
+            ft.Container(
+                padding=14,
+                bgcolor=cores[SURFACE],
+                border=ft.Border.all(1, ft.Colors.with_opacity(0.16, ft.Colors.GREY_400)),
+                border_radius=10,
+                content=ft.Column(
+                    spacing=8,
+                    controls=[
+                        ft.Text("PERFIL", size=10, weight=ft.FontWeight.W_700, color=cores[TEXTO_SECUNDARIO]),
+                        ft.Text(nome or "Nome não informado", size=13, color=cores[TEXTO_PRINCIPAL]),
+                        ft.Text(email or "E-mail indisponível", size=12, color=cores[TEXTO_SECUNDARIO]),
+                    ],
+                ),
+            ),
+            ft.Text(
+                "A alteração do nome e da senha fica disponível na área do seu perfil.",
+                size=12,
+                color=cores[TEXTO_SECUNDARIO],
+            ),
+        ],
+    )
+    dialogo = ft.AlertDialog(
+        modal=True,
+        bgcolor=cores[SURFACE],
+        shape=ft.RoundedRectangleBorder(radius=14),
+        title=ft.Text("Configurações da conta", color=cores[TEXTO_PRINCIPAL], weight=ft.FontWeight.W_700),
+        content=ft.Container(width=420, content=conteudo),
+        actions=[
+            ft.TextButton("Fechar", on_click=lambda e: _fechar_dialogo(page, dialogo)),
+            ft.ElevatedButton(
+                "Abrir meu perfil",
+                bgcolor=COR_PRIMARIA,
+                color=ft.Colors.WHITE,
+                on_click=ir_para_perfil,
+            ),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+    page.overlay.append(dialogo)
+    dialogo.open = True
+    page.update()
+
+
 def _chave_data_atividade(valor) -> float:
     try:
         if isinstance(valor, datetime):
@@ -629,6 +694,15 @@ def criar_menu_conta(
     async def abrir_atividade_click(e):
         await abrir_atividade_recente(page, cores, mudar_tela)
 
+    async def abrir_configuracoes_conta_click(e):
+        abrir_configuracoes_conta(
+            page,
+            cores,
+            estado["nome"],
+            estado["email"],
+            abrir_perfil_click,
+        )
+
     menu = ft.PopupMenuButton(
         content=ft.CircleAvatar(
             radius=14,
@@ -657,9 +731,9 @@ def criar_menu_conta(
                 on_click=lambda e: abrir_ajuda(page, cores, mudar_tela),
             ),
             ft.PopupMenuItem(
-                content="Configurações",
+                content="Configurações da conta",
                 icon=ft.Icons.SETTINGS_OUTLINED,
-                on_click=lambda e: mudar_tela(ROTA_CONFIGURACOES),
+                on_click=abrir_configuracoes_conta_click,
             ),
             ft.PopupMenuItem(
                 content="Sobre o Evalytics",
