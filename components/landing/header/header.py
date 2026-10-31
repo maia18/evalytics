@@ -9,20 +9,16 @@ def criar_header(
     page: ft.Page,
     mudar_tela: Callable[[str], None],
     ir_para_recursos: Callable,
-    ir_para_indicadores: Optional[Callable] = None,
-    ir_para_relatorios: Optional[Callable] = None,
-    ir_para_sobre: Optional[Callable] = None,
+    ir_para_sobre: Callable,
     ir_para_inicio: Optional[Callable] = None,
 ) -> ft.Container:
-    """Cria o cabeçalho superior minimalista alinhado com o design dark/terminal."""
+    """Cria o cabeçalho superior minimalista alinhado com a paleta Evalytics."""
 
     logo = criar_logo(ir_para_inicio=ir_para_inicio)
 
     menu_desktop = criar_menu_desktop(
         mudar_tela=mudar_tela,
         ir_para_recursos=ir_para_recursos,
-        ir_para_indicadores=ir_para_indicadores,
-        ir_para_relatorios=ir_para_relatorios,
         ir_para_sobre=ir_para_sobre,
     )
 
@@ -30,8 +26,6 @@ def criar_header(
         page=page,
         mudar_tela=mudar_tela,
         ir_para_recursos=ir_para_recursos,
-        ir_para_indicadores=ir_para_indicadores,
-        ir_para_relatorios=ir_para_relatorios,
         ir_para_sobre=ir_para_sobre,
     )
 
@@ -55,7 +49,7 @@ def criar_header(
         ],
     )
 
-    # Responsividade: exibe desktop ou mobile conforme largura
+    # Responsividade
     conteudo_responsivo = ft.ResponsiveRow(
         columns=12,
         alignment=ft.MainAxisAlignment.CENTER,

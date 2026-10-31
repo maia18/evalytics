@@ -3,8 +3,8 @@ from typing import Callable, Optional
 from components.landing.palette import (
     TEXT,
     MUTED,
-    ACCENT,
-    ACCENT_INK,
+    ROXO,
+    ROXO_CLARO,
     SURFACE,
     BORDER,
 )
@@ -13,15 +13,11 @@ def criar_menu_mobile(
     page: ft.Page, 
     mudar_tela: Callable[[str], None], 
     ir_para_recursos: Callable, 
-    ir_para_indicadores: Optional[Callable] = None,
-    ir_para_relatorios: Optional[Callable] = None,
-    ir_para_sobre: Optional[Callable] = None,
+    ir_para_sobre: Callable,
 ) -> ft.Column:
-    """Cria o menu de navegação mobile moderno."""
+    """Cria o menu de navegação mobile com Recursos, Indicadores, Sobre e Entrar."""
 
     menu_mobile_aberto = False
-    handler_indicadores = ir_para_indicadores or ir_para_recursos
-    handler_relatorios = ir_para_relatorios or ir_para_sobre or ir_para_recursos
 
     btn_menu = ft.IconButton(
         icon=ft.Icons.MENU_ROUNDED,
@@ -69,24 +65,24 @@ def criar_menu_mobile(
                 ft.TextButton(
                     "Indicadores",
                     style=ft.ButtonStyle(
-                        color=MUTED,
+                        color=ROXO_CLARO,
                         alignment=ft.Alignment.CENTER_LEFT,
                     ),
-                    on_click=_item_click(handler_indicadores),
+                    on_click=_item_click(lambda e: mudar_tela("/indicadores")),
                 ),
                 ft.TextButton(
-                    "Relatórios",
+                    "Sobre",
                     style=ft.ButtonStyle(
                         color=MUTED,
                         alignment=ft.Alignment.CENTER_LEFT,
                     ),
-                    on_click=_item_click(handler_relatorios),
+                    on_click=_item_click(ir_para_sobre),
                 ),
                 ft.Divider(height=1, color=BORDER),
                 ft.ElevatedButton(
                     "Entrar",
-                    bgcolor=ACCENT,
-                    color=ACCENT_INK,
+                    bgcolor=ROXO,
+                    color="#ffffff",
                     height=38,
                     style=ft.ButtonStyle(
                         shape=ft.RoundedRectangleBorder(radius=8),

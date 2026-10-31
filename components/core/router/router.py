@@ -1,11 +1,13 @@
-"""Mapeia rotas para as views (páginas) correspondentes da aplicação."""
-
-import flet as ft
+"""
+Módulo de Roteamento (Router)
+    Responsável por mapear as strings de rota aos respectivos construtores de View.
+"""
 import logging as lg
+import flet as ft
 from typing import Callable
 
-# Constantes de rotas
-from .rotas_cts import (
+# Importação dos Identificadores das Rotas
+from components.core.router.rotas_cts import (
     ROTA_INICIAL,
     ROTA_LOGIN,
     ROTA_INICIO,
@@ -17,12 +19,14 @@ from .rotas_cts import (
     ROTA_RELATORIOS_DASHBOARD,
     ROTA_RELATORIOS_DADOS,
     ROTA_CURSOS,
+    ROTA_INDICADORES,
     ROTA_FORMULARIO,
     ROTA_CONFIGURACOES,
 )
 
 # Construtores de tela (Views)
 from components.landing.landing import ViewLanding
+from components.landing.indicadores.indicadores_view import ViewIndicadores
 from models.login.login import ViewLogin
 from models.inicio.inicio import ViewInicio
 from models.cursos.cursos import ViewCursos
@@ -43,6 +47,7 @@ Tabela de Roteamento:
 '''
 ROTAS: dict[str, ViewBuilder] = {
     ROTA_INICIAL: ViewLanding,
+    ROTA_INDICADORES: ViewIndicadores,
     ROTA_LOGIN: ViewLogin,
     ROTA_INICIO: ViewInicio,
     ROTA_DASHBOARD: ViewDashboard,

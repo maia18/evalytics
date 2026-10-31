@@ -2,10 +2,12 @@ import flet as ft
 from typing import Callable
 from components.landing.palette import (
     PAGE,
+    SURFACE,
+    BORDER,
     TEXT,
     MUTED,
-    ACCENT,
-    ACCENT_INK,
+    ROXO,
+    ROXO_CLARO,
     MAX_CONTENT_WIDTH,
 )
 
@@ -17,52 +19,62 @@ def criar_cta(page: ft.Page = None, mudar_tela: Callable[[str], None] = None) ->
     return ft.Container(
         key=ft.ScrollKey("acessar"),
         bgcolor=PAGE,
-        padding=ft.Padding.only(top=24, bottom=72, left=24, right=24),
+        padding=ft.Padding.only(top=16, bottom=72, left=24, right=24),
         alignment=ft.Alignment.CENTER,
         content=ft.Container(
             width=MAX_CONTENT_WIDTH,
-            content=ft.Column(
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=0,
-                controls=[
-                    # Título
-                    ft.Text(
-                        "Acompanhe os resultados da sua instituição.",
-                        size=28,
-                        weight=ft.FontWeight.W_700,
-                        color=TEXT,
-                        text_align=ft.TextAlign.CENTER,
-                    ),
-
-                    # Parágrafo
-                    ft.Container(
-                        width=380,
-                        margin=ft.Margin.only(top=14, bottom=18),
-                        content=ft.Text(
-                            "Entre no Evalytics para consultar avaliações, indicadores e relatórios.",
-                            size=14,
-                            color=MUTED,
+            content=ft.Container(
+                bgcolor=SURFACE,
+                border=ft.Border.all(1, BORDER),
+                border_radius=16,
+                padding=ft.Padding.symmetric(horizontal=32, vertical=40),
+                content=ft.Column(
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=0,
+                    controls=[
+                        # Título
+                        ft.Text(
+                            "Acompanhe os resultados da sua instituição.",
+                            size=26,
+                            weight=ft.FontWeight.W_700,
+                            color=TEXT,
                             text_align=ft.TextAlign.CENTER,
                         ),
-                    ),
 
-                    # Botão de Ação
-                    ft.ElevatedButton(
-                        "Entrar na plataforma",
-                        bgcolor=ACCENT,
-                        color=ACCENT_INK,
-                        height=38,
-                        style=ft.ButtonStyle(
-                            shape=ft.RoundedRectangleBorder(radius=8),
-                            padding=ft.Padding.symmetric(horizontal=19),
-                            text_style=ft.TextStyle(
-                                size=13,
-                                weight=ft.FontWeight.W_600,
+                        # Parágrafo
+                        ft.Container(
+                            width=420,
+                            margin=ft.Margin.only(top=12, bottom=22),
+                            content=ft.Text(
+                                "Entre no Evalytics para consultar avaliações, indicadores e relatórios estruturados.",
+                                size=14,
+                                color=MUTED,
+                                text_align=ft.TextAlign.CENTER,
                             ),
                         ),
-                        on_click=lambda e: mudar_tela("/login") if mudar_tela else None,
-                    ),
-                ],
+
+                        # Botão de Ação
+                        ft.ElevatedButton(
+                            "Entrar na plataforma",
+                            bgcolor=ROXO,
+                            color="#ffffff",
+                            height=40,
+                            style=ft.ButtonStyle(
+                                shape=ft.RoundedRectangleBorder(radius=8),
+                                padding=ft.Padding.symmetric(horizontal=24),
+                                elevation={
+                                    ft.ControlState.DEFAULT: 0,
+                                    ft.ControlState.HOVERED: 4,
+                                },
+                                text_style=ft.TextStyle(
+                                    size=13,
+                                    weight=ft.FontWeight.W_600,
+                                ),
+                            ),
+                            on_click=lambda e: mudar_tela("/login") if mudar_tela else None,
+                        ),
+                    ],
+                ),
             ),
         ),
     )

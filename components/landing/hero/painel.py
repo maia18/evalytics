@@ -4,14 +4,17 @@ from components.landing.palette import (
     SURFACE,
     BORDER,
     MUTED,
-    ACCENT,
+    ROXO_CLARO,
+    VERDE,
+    ROSA,
+    LARANJA,
     CMD_TEXT,
 )
 
 def criar_painel_hero(page: ft.Page = None) -> ft.Container:
     """
     Cria a caixa de terminal/demonstração simulando o fluxo de comandos da plataforma.
-    Inclui botão interativo para copiar o conteúdo da prévia.
+    Inclui botões coloridos de janela de terminal e botão interativo para copiar o código.
     """
 
     texto_previa = (
@@ -22,11 +25,18 @@ def criar_painel_hero(page: ft.Page = None) -> ft.Container:
     )
 
     btn_copiar = ft.TextButton(
-        content=ft.Text(
-            "Copiar prévia",
-            size=11,
-            color=MUTED,
-            font_family="monospace",
+        content=ft.Row(
+            spacing=4,
+            tight=True,
+            controls=[
+                ft.Icon(ft.Icons.COPY_ROUNDED, size=12, color=MUTED),
+                ft.Text(
+                    "Copiar prévia",
+                    size=11,
+                    color=MUTED,
+                    font_family="monospace",
+                ),
+            ],
         ),
         style=ft.ButtonStyle(
             overlay_color=ft.Colors.TRANSPARENT,
@@ -37,28 +47,33 @@ def criar_painel_hero(page: ft.Page = None) -> ft.Container:
     async def copiar_texto(e):
         if page:
             await page.set_clipboard(texto_previa)
-            btn_copiar.content.value = "✓ Prévia copiada"
-            btn_copiar.content.color = ACCENT
+            btn_copiar.content.controls[0].name = ft.Icons.CHECK_ROUNDED
+            btn_copiar.content.controls[0].color = VERDE
+            btn_copiar.content.controls[1].value = "Prévia copiada"
+            btn_copiar.content.controls[1].color = VERDE
             btn_copiar.update()
 
             await asyncio.sleep(2)
-            btn_copiar.content.value = "Copiar prévia"
-            btn_copiar.content.color = MUTED
+            btn_copiar.content.controls[0].name = ft.Icons.COPY_ROUNDED
+            btn_copiar.content.controls[0].color = MUTED
+            btn_copiar.content.controls[1].value = "Copiar prévia"
+            btn_copiar.content.controls[1].color = MUTED
             btn_copiar.update()
 
     btn_copiar.on_click = copiar_texto
 
     def _linha_cmd(comando: str) -> ft.Row:
         return ft.Row(
-            spacing=4,
+            spacing=6,
             tight=True,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 ft.Text(
                     "$",
                     size=12,
-                    color=MUTED,
+                    color=ROXO_CLARO,
                     font_family="monospace",
+                    weight=ft.FontWeight.BOLD,
                 ),
                 ft.Text(
                     comando,
@@ -69,21 +84,38 @@ def criar_painel_hero(page: ft.Page = None) -> ft.Container:
             ],
         )
 
+    # Bolinhas decorativas do terminal
+    pontos_janela = ft.Row(
+        spacing=6,
+        tight=True,
+        controls=[
+            ft.Container(width=10, height=10, border_radius=5, bgcolor=ROSA),
+            ft.Container(width=10, height=10, border_radius=5, bgcolor=LARANJA),
+            ft.Container(width=10, height=10, border_radius=5, bgcolor=VERDE),
+        ],
+    )
+
     return ft.Container(
-        width=480,
+        width=500,
         bgcolor=SURFACE,
         border=ft.Border.all(1, BORDER),
-        border_radius=10,
-        padding=ft.Padding.only(left=22, right=22, top=16, bottom=18),
+        border_radius=12,
+        padding=ft.Padding.only(left=20, right=20, top=14, bottom=18),
         content=ft.Column(
-            spacing=6,
+            spacing=8,
             horizontal_alignment=ft.CrossAxisAlignment.START,
             controls=[
-                # Cabeçalho do terminal com botão copiar
+                # Barra superior do terminal
                 ft.Row(
-                    alignment=ft.MainAxisAlignment.END,
-                    controls=[btn_copiar],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls=[
+                        pontos_janela,
+                        btn_copiar,
+                    ],
                 ),
+
+                ft.Divider(height=1, color=BORDER),
 
                 # Linha 1: $ evalytics login
                 _linha_cmd("evalytics login"),
@@ -95,8 +127,9 @@ def criar_painel_hero(page: ft.Page = None) -> ft.Container:
                 ft.Text(
                     "✓ [N] respostas consolidadas por eixo",
                     size=12,
-                    color=ACCENT,
+                    color=VERDE,
                     font_family="monospace",
+                    weight=ft.FontWeight.W_600,
                 ),
 
                 # Linha 4: PDF e CSV prontos para exportar.

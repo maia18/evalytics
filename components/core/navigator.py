@@ -34,6 +34,7 @@ class Navigator:
         rotas_publicas = {
             "/",
             "/login",
+            "/indicadores",
         }
 
         if rota not in rotas_publicas and not auth_state.autenticado:
