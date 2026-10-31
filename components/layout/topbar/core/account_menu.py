@@ -486,17 +486,22 @@ def abrir_configuracoes_conta(
         on_change=alterar_aparencia,
         active_color=COR_PRIMARIA,
     )
-    preferencia_densidade = ft.Dropdown(
-        label="Densidade da interface",
-        value=preferencias_pendentes["densidade"],
-        options=[
-            ft.dropdown.Option(key="standard", text="Padrão"),
-            ft.dropdown.Option(key="compact", text="Compacta"),
-        ],
-        on_select=lambda e: preferencias_pendentes.update({"densidade": e.control.value}),
-        border_radius=8,
-        border_color=ft.Colors.GREY_600,
-        focused_border_color=COR_PRIMARIA,
+    texto_densidade = ft.Text(
+        "Compacta" if preferencias_pendentes["densidade"] == "compact" else "Padrão",
+        size=12,
+        color=cores[TEXTO_SECUNDARIO],
+    )
+
+    def alterar_densidade(e):
+        compacta = bool(e.control.value)
+        preferencias_pendentes["densidade"] = "compact" if compacta else "standard"
+        texto_densidade.value = "Compacta" if compacta else "Padrão"
+        page.update()
+
+    preferencia_densidade = ft.Switch(
+        value=preferencias_pendentes["densidade"] == "compact",
+        on_change=alterar_densidade,
+        active_color=COR_PRIMARIA,
     )
     preferencia_idioma = ft.Dropdown(
         label="Idioma",
@@ -567,7 +572,25 @@ def abrir_configuracoes_conta(
                             ],
                         ),
                         ft.Text("EXIBIÇÃO", size=10, weight=ft.FontWeight.W_700, color=cores[TEXTO_SECUNDARIO]),
-                        preferencia_densidade,
+                        ft.Row(
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            controls=[
+                                ft.Column(
+                                    spacing=2,
+                                    controls=[
+                                        ft.Text("Densidade da interface", color=cores[TEXTO_PRINCIPAL], size=13),
+                                        ft.Text("Alternar entre padrão e compacta.", color=cores[TEXTO_SECUNDARIO], size=11),
+                                    ],
+                                ),
+                                ft.Row(
+                                    spacing=6,
+                                    tight=True,
+                                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                    controls=[texto_densidade, preferencia_densidade],
+                                ),
+                            ],
+                        ),
                     ],
                 ),
             ),
