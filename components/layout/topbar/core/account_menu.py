@@ -443,6 +443,24 @@ def abrir_configuracoes_conta(
 ):
     """Mostra atalhos de configurações pessoais da conta, sem abrir as configurações institucionais."""
     dialogo = None
+    rota = getattr(page, "rota_navegacao_atual", None) or page.route
+    dicas_por_rota = {
+        "/inicio": ("Início", "Use os atalhos para iniciar uma avaliação ou acessar cursos, dashboard e relatórios."),
+        "/dashboard": ("Dashboard", "Abra a Visão Geral para conferir os indicadores ou Acompanhamento para consultar avaliações."),
+        "/dashboard/visao-geral": ("Visão Geral", "Selecione semestre e curso, depois aplique os filtros para atualizar os indicadores."),
+        "/dashboard/avaliacoes": ("Acompanhamento", "Use os filtros para localizar avaliações e acompanhar seus registros."),
+        "/avaliacoes": ("Avaliações", "Consulte as avaliações cadastradas ou inicie uma nova pelo menu lateral."),
+        "/cursos": ("Cursos", "Pesquise pelo nome ou código; selecione departamento e status e aplique os filtros."),
+        "/relatorios": ("Relatórios", "Escolha uma subtela na navegação de Relatórios para abrir o dashboard ou os dados para exportação."),
+        "/relatorios/dashboard": ("Dashboard Executivo", "Selecione semestre, curso e eixo e aplique os filtros para atualizar a análise."),
+        "/relatorios/dados": ("Dados e Exportação", "Defina os filtros antes de gerar o arquivo PDF ou CSV."),
+        "/configuracoes": ("Configurações", "Escolha um eixo para consultar e editar os indicadores e seus critérios."),
+        "/formulario": ("Avaliação", "Responda aos critérios de cada eixo; revise as respostas antes de finalizar."),
+    }
+    nome_tela, dica_tela = dicas_por_rota.get(
+        rota,
+        ("Evalytics", "Use o menu lateral para acessar avaliações, cursos, dashboard e relatórios."),
+    )
     preferencias_pendentes = {
         "tema_escuro": getattr(page, "is_dark_mode", False),
         "densidade": getattr(page, "preferencia_densidade_visual", "standard"),
@@ -514,6 +532,7 @@ def abrir_configuracoes_conta(
 
     conteudo = ft.Column(
         tight=True,
+        scroll=ft.ScrollMode.AUTO,
         spacing=14,
         controls=[
             ft.Text(
@@ -594,6 +613,27 @@ def abrir_configuracoes_conta(
                     ],
                 ),
             ),
+            ft.Container(
+                padding=12,
+                bgcolor=cores[SURFACE],
+                border=ft.Border.all(1, ft.Colors.with_opacity(0.16, ft.Colors.GREY_400)),
+                border_radius=10,
+                content=ft.Row(
+                    spacing=10,
+                    vertical_alignment=ft.CrossAxisAlignment.START,
+                    controls=[
+                        ft.Icon(ft.Icons.TIPS_AND_UPDATES_OUTLINED, size=18, color=COR_PRIMARIA),
+                        ft.Column(
+                            expand=True,
+                            spacing=4,
+                            controls=[
+                                ft.Text(f"AJUDA RÁPIDA · {nome_tela.upper()}", size=10, weight=ft.FontWeight.W_700, color=cores[TEXTO_SECUNDARIO]),
+                                ft.Text(dica_tela, size=12, color=cores[TEXTO_PRINCIPAL]),
+                            ],
+                        ),
+                    ],
+                ),
+            ),
         ],
     )
     dialogo = ft.AlertDialog(
@@ -601,7 +641,11 @@ def abrir_configuracoes_conta(
         bgcolor=cores[SURFACE],
         shape=ft.RoundedRectangleBorder(radius=14),
         title=ft.Text("Configurações da conta", color=cores[TEXTO_PRINCIPAL], weight=ft.FontWeight.W_700),
-        content=ft.Container(width=420, content=conteudo),
+        content=ft.Container(
+            width=420,
+            height=max(220, min(540, (page.height or 760) - 220)),
+            content=conteudo,
+        ),
         actions=[
             ft.TextButton("Fechar", on_click=fechar_configuracoes),
             ft.ElevatedButton(
