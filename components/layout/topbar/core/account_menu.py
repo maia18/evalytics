@@ -2,6 +2,7 @@ import asyncio
 import requests
 import flet as ft
 from typing import Callable
+from datetime import date, datetime
 
 from components.core.auth.auth_state import auth_state
 from components.core.constants.constants import TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, SURFACE, COR_PRIMARIA
@@ -13,6 +14,7 @@ from components.core.router.rotas_cts import (
     ROTA_RELATORIOS,
 )
 from database.services.firebase_keys import FIREBASE_API_KEY
+from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
 
 
 def _exibir_dialogo(page: ft.Page, titulo: str, conteudo: ft.Control, cores: dict[str, str]):
@@ -430,6 +432,123 @@ def abrir_sobre(page: ft.Page, cores: dict[str, str]):
     _exibir_dialogo(page, "Sobre o Evalytics", conteudo, cores)
 
 
+def _chave_data_atividade(valor) -> float:
+    try:
+        if isinstance(valor, datetime):
+            return valor.timestamp()
+        if isinstance(valor, date):
+            return datetime.combine(valor, datetime.min.time()).timestamp()
+        if isinstance(valor, str):
+            data = datetime.fromisoformat(valor.replace("Z", "+00:00"))
+            return data.timestamp()
+    except (OverflowError, OSError, TypeError, ValueError):
+        pass
+    return 0.0
+
+
+def _formatar_data_atividade(valor) -> str:
+    try:
+        if isinstance(valor, datetime):
+            return valor.strftime("%d/%m/%Y")
+        if isinstance(valor, date):
+            return valor.strftime("%d/%m/%Y")
+        if isinstance(valor, str):
+            return datetime.fromisoformat(valor.replace("Z", "+00:00")).strftime("%d/%m/%Y")
+    except (OverflowError, OSError, TypeError, ValueError):
+        pass
+    return "Data indisponível"
+
+
+async def abrir_atividade_recente(
+    page: ft.Page,
+    cores: dict[str, str],
+    mudar_tela: Callable[[str], None],
+):
+    lista_atividades = ft.Column(height=340, spacing=8, scroll=ft.ScrollMode.AUTO)
+    conteudo = ft.Column(
+        tight=True,
+        spacing=12,
+        controls=[
+            ft.Text("Avaliações institucionais mais recentes.", size=12, color=cores[TEXTO_SECUNDARIO]),
+            lista_atividades,
+            ft.TextButton(
+                "Ver todas as avaliações",
+                icon=ft.Icons.ARROW_FORWARD,
+                on_click=lambda e: mudar_tela(ROTA_AVALIACOES),
+            ),
+        ],
+    )
+    lista_atividades.controls.append(
+        ft.Row(
+            spacing=10,
+            controls=[
+                ft.ProgressRing(width=18, height=18, stroke_width=2),
+                ft.Text("Carregando avaliações...", size=12, color=cores[TEXTO_SECUNDARIO]),
+            ],
+        )
+    )
+    _exibir_dialogo(page, "Atividade recente", conteudo, cores)
+
+    avaliacoes = await asyncio.to_thread(listar_avaliacoes)
+    recentes = sorted(
+        avaliacoes,
+        key=lambda item: _chave_data_atividade(item.get("data_avaliacao")),
+        reverse=True,
+    )[:5]
+
+    lista_atividades.controls.clear()
+    if not recentes:
+        lista_atividades.controls.append(
+            ft.Container(
+                padding=16,
+                border=ft.Border.all(1, ft.Colors.with_opacity(0.16, ft.Colors.GREY_400)),
+                border_radius=10,
+                content=ft.Text("Nenhuma avaliação encontrada.", size=12, color=cores[TEXTO_SECUNDARIO]),
+            )
+        )
+    else:
+        for avaliacao in recentes:
+            curso = avaliacao.get("curso_nome") or "Curso sem identificação"
+            data = _formatar_data_atividade(avaliacao.get("data_avaliacao"))
+            lista_atividades.controls.append(
+                ft.Container(
+                    padding=12,
+                    bgcolor=cores[SURFACE],
+                    border=ft.Border.all(1, ft.Colors.with_opacity(0.16, ft.Colors.GREY_400)),
+                    border_radius=10,
+                    content=ft.Row(
+                        spacing=10,
+                        controls=[
+                            ft.Container(
+                                width=34,
+                                height=34,
+                                border_radius=9,
+                                bgcolor=ft.Colors.with_opacity(0.12, COR_PRIMARIA),
+                                alignment=ft.Alignment.CENTER,
+                                content=ft.Icon(ft.Icons.ASSIGNMENT_OUTLINED, size=18, color=COR_PRIMARIA),
+                            ),
+                            ft.Column(
+                                expand=True,
+                                spacing=3,
+                                controls=[
+                                    ft.Text(
+                                        curso,
+                                        size=12,
+                                        weight=ft.FontWeight.W_600,
+                                        color=cores[TEXTO_PRINCIPAL],
+                                        max_lines=1,
+                                        overflow=ft.TextOverflow.ELLIPSIS,
+                                    ),
+                                    ft.Text(data, size=10, color=cores[TEXTO_SECUNDARIO]),
+                                ],
+                            ),
+                        ],
+                    ),
+                )
+            )
+    page.update()
+
+
 def criar_menu_conta(
     page: ft.Page,
     cores: dict[str, str],
@@ -507,6 +626,9 @@ def criar_menu_conta(
     async def abrir_perfil_click(e):
         await abrir_perfil(page, cores, atualizar_identificacao)
 
+    async def abrir_atividade_click(e):
+        await abrir_atividade_recente(page, cores, mudar_tela)
+
     menu = ft.PopupMenuButton(
         content=ft.CircleAvatar(
             radius=14,
@@ -523,6 +645,11 @@ def criar_menu_conta(
                 content="Meu perfil",
                 icon=ft.Icons.PERSON_OUTLINE,
                 on_click=abrir_perfil_click,
+            ),
+            ft.PopupMenuItem(
+                content="Atividade recente",
+                icon=ft.Icons.HISTORY,
+                on_click=abrir_atividade_click,
             ),
             ft.PopupMenuItem(
                 content="Ajuda e suporte",
