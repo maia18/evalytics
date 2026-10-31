@@ -18,7 +18,7 @@ def criar_secao_recursos(
     """
     Constrói a seção de benefícios em grade com 3 cards de mesmo tamanho e botões de ação:
     1. Avaliações por eixo (Roxo, com simulação interativa de avaliação)
-    2. Indicadores normativos (Ciano, com ação para abrir a página de indicadores)
+    2. Indicadores normativos (Ciano, 3 eixos e 5 critérios de pontuação)
     3. Sobre a plataforma (Rosa, com ação de rolagem até a seção Sobre)
     """
 
@@ -39,10 +39,10 @@ def criar_secao_recursos(
                 scroll_key="recursos-avaliacoes",
             ),
 
-            # Card 2: Indicadores (Abre a página dedicada)
+            # Card 2: Indicadores (Abre a página dedicada com 3 eixos e 5 critérios)
             criar_card_responsivo(
                 titulo="Indicadores normativos",
-                descricao="Explore os 24 indicadores oficiais do SINAES/MEC, organizados em 5 eixos com escala de pontuação de 1 a 5.",
+                descricao="Explore os 58 indicadores oficiais do SINAES/MEC, organizados em 3 eixos com 5 critérios de pontuação (1 a 5).",
                 cor_destaque=CIANO,
                 tag="INDICADORES",
                 acao_texto="Ver página de indicadores →",

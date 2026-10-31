@@ -85,7 +85,7 @@ def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
             _pilar_card(
                 numero="02",
                 titulo="Conformidade SINAES/MEC",
-                descricao="24 indicadores normativos divididos em 5 eixos com critérios objetivos de pontuação de 1 a 5.",
+                descricao="58 indicadores normativos divididos nos 3 eixos oficiais com 5 critérios de pontuação de 1 a 5.",
                 cor=CIANO,
             ),
             _pilar_card(
@@ -147,7 +147,7 @@ def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
                         ],
                     ),
 
-                    # Grade dos 3 Pilares com alturas perfeitamente padronizadas
+                    # Grade dos 3 Pilares com alturas padronizadas
                     pilares,
                 ],
             ),

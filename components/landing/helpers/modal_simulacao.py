@@ -21,14 +21,16 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
 
     nota_selecionada = {"valor": 4}
 
-    # Opções de resposta com escala de 1 a 5
+    # Opções de resposta com escala de 1 a 5 critérios
     opcoes_escala = [
-        ("1", "1 — Crítico / Não atende", ROSA),
-        ("2", "2 — Insuficiente / Atende pouco", LARANJA),
+        ("1", "1 — Crítico / Não atende aos critérios", ROSA),
+        ("2", "2 — Insuficiente / Atende com restrições", LARANJA),
         ("3", "3 — Adequado / Atende satisfatoriamente", CIANO),
         ("4", "4 — Muito Bom / Supera expectativas", ROXO_CLARO),
         ("5", "5 — Excelente / Práticas inovadoras", VERDE),
     ]
+
+    cores_por_nota = {val: cor for val, _, cor in opcoes_escala}
 
     container_opcoes = ft.Column(spacing=6)
 
@@ -85,7 +87,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                             ],
                         ),
                         ft.Text(
-                            f"{valor_int}/5",
+                            f"Critério {valor_int}/5",
                             size=11,
                             color=cor if selecionado else MUTED,
                             font_family="monospace",
@@ -125,7 +127,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
 
     def submeter_simulacao(e):
         nota = nota_selecionada["valor"]
-        cor_nota = dict(opcoes_escala).get(str(nota), ROXO_CLARO)
+        cor_nota = cores_por_nota.get(str(nota), ROXO_CLARO)
 
         # Transição para o estado de Sucesso
         conteudo_modal.controls.clear()
@@ -168,8 +170,8 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                                         spacing=2,
                                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                                         controls=[
-                                            ft.Text("Nota Atribuída", size=10, color=MUTED),
-                                            ft.Text(f"{nota}.0 / 5.0", size=16, weight=ft.FontWeight.W_700, color=VERDE),
+                                            ft.Text("Critério", size=10, color=MUTED),
+                                            ft.Text(f"{nota}.0 / 5.0", size=16, weight=ft.FontWeight.W_700, color=cor_nota),
                                         ],
                                     ),
                                     ft.Container(width=1, height=24, bgcolor=BORDER),
@@ -178,7 +180,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                                         controls=[
                                             ft.Text("Eixo Avaliativo", size=10, color=MUTED),
-                                            ft.Text("Eixo 1 — Políticas", size=13, weight=ft.FontWeight.W_600, color=TEXT),
+                                            ft.Text("Eixo 1 — Didático-Pedagógica", size=12, weight=ft.FontWeight.W_600, color=TEXT),
                                         ],
                                     ),
                                     ft.Container(width=1, height=24, bgcolor=BORDER),
@@ -187,14 +189,14 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                                         controls=[
                                             ft.Text("Privacidade", size=10, color=MUTED),
-                                            ft.Text("100% Anônimo", size=13, weight=ft.FontWeight.W_600, color=CIANO),
+                                            ft.Text("100% Anônimo", size=12, weight=ft.FontWeight.W_600, color=CIANO),
                                         ],
                                     ),
                                 ],
                             ),
                         ),
                         ft.Text(
-                            "No Evalytics, cada resposta é processada em tempo real e alimenta os relatórios institucionais "
+                            "No Evalytics, cada resposta é processada em tempo real e alimenta os relatórios dos 3 eixos institucionais "
                             "sem expor a identidade de quem respondeu.",
                             size=12,
                             color=MUTED,
@@ -253,7 +255,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                                 bgcolor=ft.Colors.with_opacity(0.12, ROXO_CLARO),
                                 border_radius=10,
                                 content=ft.Text(
-                                    "EIXO 1 • POLÍTICAS INSTITUCIONAIS",
+                                    "EIXO 1 • ORGANIZAÇÃO DIDÁTICO-PEDAGÓGICA",
                                     size=10,
                                     weight=ft.FontWeight.W_700,
                                     color=ROXO_CLARO,
@@ -277,7 +279,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
         ft.Column(
             spacing=4,
             controls=[
-                ft.Text("Selecione sua percepção:", size=11, weight=ft.FontWeight.W_600, color=MUTED),
+                ft.Text("Selecione o critério correspondente:", size=11, weight=ft.FontWeight.W_600, color=MUTED),
                 container_opcoes,
             ],
         ),

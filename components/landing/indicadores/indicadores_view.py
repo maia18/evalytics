@@ -18,21 +18,17 @@ from components.landing.palette import (
 )
 from database.indicadores import INDICADORES
 
-# Nomes oficiais dos eixos do Sinaes/MEC
+# Nomes oficiais dos 3 eixos do SINAES/MEC no Evalytics
 NOMES_EIXOS = {
-    1: "Eixo 1 — Planejamento e Avaliação Institucional",
-    2: "Eixo 2 — Desenvolvimento Institucional",
-    3: "Eixo 3 — Políticas Acadêmicas",
-    4: "Eixo 4 — Políticas de Gestão",
-    5: "Eixo 5 — Infraestrutura",
+    1: "Eixo 1 — Organização Didático-Pedagógica",
+    2: "Eixo 2 — Corpo Docente e Tutorial",
+    3: "Eixo 3 — Infraestrutura",
 }
 
 CORES_EIXOS = {
     1: ROXO_CLARO,
     2: CIANO,
-    3: ROSA,
-    4: LARANJA,
-    5: VERDE,
+    3: VERDE,
 }
 
 CORES_CONCEITOS = {
@@ -44,18 +40,18 @@ CORES_CONCEITOS = {
 }
 
 ROTULOS_CONCEITOS = {
-    "1": "1 — Não implantado / Crítico",
-    "2": "2 — Parcialmente implantado / Insuficiente",
-    "3": "3 — Implantado / Adequado",
-    "4": "4 — Muito bom / Evidências claras",
-    "5": "5 — Excelente / Práticas inovadoras",
+    "1": "Critério 1 — Não implantado / Insatisfatório",
+    "2": "Critério 2 — Parcialmente implantado / Limitado",
+    "3": "Critério 3 — Implantado / Adequado",
+    "4": "Critério 4 — Muito bom / Evidências claras",
+    "5": "Critério 5 — Excelente / Práticas inovadoras",
 }
 
 def ViewIndicadores(
     page: ft.Page,
     mudar_tela: Callable[[str], None],
 ) -> ft.View:
-    """View pública dedicada para apresentação e consulta de Indicadores Institucionais."""
+    """View pública dedicada para apresentação e consulta dos 58 Indicadores Institucionais nos 3 Eixos."""
 
     filtro_eixo_atual = 0  # 0 significa todos
     termo_busca_atual = ""
@@ -97,7 +93,7 @@ def ViewIndicadores(
             controls=[
                 ft.Divider(height=1, color=BORDER),
                 ft.Text(
-                    "Critérios de Pontuação (Conceitos 1 a 5):",
+                    "Critérios de Avaliação (Conceitos 1 a 5):",
                     size=12,
                     weight=ft.FontWeight.W_600,
                     color=TEXT,
@@ -109,7 +105,7 @@ def ViewIndicadores(
             texto_criterio = criterios.get(nivel)
             if texto_criterio:
                 cor_nivel = CORES_CONCEITOS.get(nivel, ROXO_CLARO)
-                rotulo = ROTULOS_CONCEITOS.get(nivel, f"Conceito {nivel}")
+                rotulo = ROTULOS_CONCEITOS.get(nivel, f"Critério {nivel}")
                 criterios_coluna.controls.append(
                     ft.Container(
                         padding=ft.Padding.symmetric(horizontal=12, vertical=8),
@@ -147,7 +143,7 @@ def ViewIndicadores(
                 tight=True,
                 controls=[
                     ft.Text(
-                        "Ver critérios de pontuação",
+                        "Ver os 5 critérios de pontuação",
                         size=12,
                         weight=ft.FontWeight.W_600,
                         color=cor_eixo,
@@ -170,7 +166,7 @@ def ViewIndicadores(
             detalhes_abertos = not detalhes_abertos
             criterios_coluna.visible = detalhes_abertos
             btn_toggle.content.controls[0].value = (
-                "Ocultar critérios de pontuação" if detalhes_abertos else "Ver critérios de pontuação"
+                "Ocultar critérios de pontuação" if detalhes_abertos else "Ver os 5 critérios de pontuação"
             )
             btn_toggle.content.controls[1].name = (
                 ft.Icons.KEYBOARD_ARROW_UP_ROUNDED if detalhes_abertos else ft.Icons.KEYBOARD_ARROW_DOWN_ROUNDED
@@ -231,7 +227,7 @@ def ViewIndicadores(
 
         itens_filtrados = []
         for idx, item in enumerate(INDICADORES, start=1):
-            # Filtro por Eixo
+            # Filtro por Eixo (1, 2 ou 3)
             if filtro_eixo_atual > 0 and item.get("eixo") != filtro_eixo_atual:
                 continue
 
@@ -273,7 +269,7 @@ def ViewIndicadores(
 
     # Barra de busca interativa
     campo_busca = ft.TextField(
-        hint_text="Buscar por título ou palavra-chave nos critérios...",
+        hint_text="Buscar por título ou palavra-chave nos 5 critérios...",
         hint_style=ft.TextStyle(color=MUTED, size=13),
         text_style=ft.TextStyle(color=TEXT, size=13),
         bgcolor=SURFACE_ALT,
@@ -299,7 +295,7 @@ def ViewIndicadores(
         font_family="monospace",
     )
 
-    # Botões de filtro por Eixo
+    # Botões de filtro pelos 3 Eixos
     def _criar_chip_filtro(rotulo: str, eixo_id: int, cor_destaque: str):
         selecionado = filtro_eixo_atual == eixo_id
         return ft.OutlinedButton(
@@ -324,13 +320,15 @@ def ViewIndicadores(
     )
 
     def atualizar_chips_eixos():
+        total_eixo1 = sum(1 for i in INDICADORES if i.get("eixo") == 1)
+        total_eixo2 = sum(1 for i in INDICADORES if i.get("eixo") == 2)
+        total_eixo3 = sum(1 for i in INDICADORES if i.get("eixo") == 3)
+
         chips_eixos_row.controls = [
-            _criar_chip_filtro("Todos os Eixos", 0, ROXO_CLARO),
-            _criar_chip_filtro("Eixo 1 (Planejamento)", 1, ROXO_CLARO),
-            _criar_chip_filtro("Eixo 2 (Institucional)", 2, CIANO),
-            _criar_chip_filtro("Eixo 3 (Políticas Acadêmicas)", 3, ROSA),
-            _criar_chip_filtro("Eixo 4 (Gestão)", 4, LARANJA),
-            _criar_chip_filtro("Eixo 5 (Infraestrutura)", 5, VERDE),
+            _criar_chip_filtro(f"Todos os Eixos ({len(INDICADORES)})", 0, ROXO_CLARO),
+            _criar_chip_filtro(f"Eixo 1 (Didático-Pedagógica • {total_eixo1})", 1, ROXO_CLARO),
+            _criar_chip_filtro(f"Eixo 2 (Corpo Docente • {total_eixo2})", 2, CIANO),
+            _criar_chip_filtro(f"Eixo 3 (Infraestrutura • {total_eixo3})", 3, VERDE),
         ]
 
     def mudar_filtro_eixo(novo_eixo: int):
@@ -342,7 +340,7 @@ def ViewIndicadores(
     atualizar_chips_eixos()
 
     # =========================================================
-    # KPI CARDS DO TOPO
+    # KPI CARDS DO TOPO (58 INDICADORES, 3 EIXOS, 5 CRITÉRIOS)
     # =========================================================
     def _kpi_card(valor: str, rotulo: str, cor: str) -> ft.Container:
         return ft.Container(
@@ -375,8 +373,8 @@ def ViewIndicadores(
         run_spacing=12,
         controls=[
             _kpi_card(f"{len(INDICADORES)}", "Indicadores Normativos", ROXO_CLARO),
-            _kpi_card("5 Eixos", "Dimensões Avaliativas", CIANO),
-            _kpi_card("Conceitos 1 a 5", "Escala de Pontuação", VERDE),
+            _kpi_card("3 Eixos", "Dimensões Avaliativas", CIANO),
+            _kpi_card("5 Critérios", "Por Indicador (Conceitos 1 a 5)", VERDE),
             _kpi_card("100% SINAES", "Conformidade MEC", LARANJA),
         ],
     )
@@ -481,8 +479,9 @@ def ViewIndicadores(
                                         color=TEXT,
                                     ),
                                     ft.Text(
-                                        "Explore os eixos avaliativos oficiais do SINAES/MEC, critérios de pontuação de 1 a 5 "
-                                        "e métricas de qualidade adotadas pelo Evalytics para transformar respostas em melhoria contínua.",
+                                        "Explore os 58 indicadores distribuídos nos 3 eixos avaliativos oficiais do SINAES/MEC "
+                                        "(Organização Didático-Pedagógica, Corpo Docente e Infraestrutura), cada um com 5 critérios "
+                                        "objetivos de pontuação (Conceitos 1 a 5).",
                                         size=14,
                                         color=MUTED,
                                     ),
@@ -492,7 +491,7 @@ def ViewIndicadores(
                             # Cards KPI
                             kpis,
 
-                            # Barra de busca e filtros
+                            # Barra de busca e filtros pelos 3 Eixos
                             ft.Column(
                                 spacing=12,
                                 controls=[
