@@ -5,7 +5,6 @@ from components.core.constants.constants import (
     SURFACE, 
     COR_PRIMARIA,
 )
-from components.layout.topbar.topbar_utils import obter_icone_tema
 from utils.services.location.location_service import obter_localizacao
 from .core.notifications.topbar_notifications import criar_componentes_notificacoes
 from .core.account_menu import criar_menu_conta
@@ -24,7 +23,6 @@ def criar_topbar_content(
     """Constrói a faixa de navegação superior (Cabeçalho da Página)."""
 
     local_atual = obter_localizacao()
-    icone_tema = obter_icone_tema(dark_mode)
     tela_muito_estreita = page.width is not None and page.width < 400
     titulo_exibido = titulo.split()[0] if tela_muito_estreita else titulo
 
@@ -99,12 +97,6 @@ def criar_topbar_content(
                                 ft.Text(local_atual, size=10, weight="w500", color=cores[TEXTO_PRINCIPAL]),
                             ],
                         ),
-                    ),
-                    
-                    # Botão de Toggle de Tema (Chama o callback recebido por parâmetro)
-                    ft.IconButton(
-                        icon=icone_tema,
-                        on_click=lambda e: atualizar_tema(),
                     ),
                     
                     # Ícone do sininho de notificações

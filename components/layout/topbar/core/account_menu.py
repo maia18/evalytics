@@ -448,11 +448,11 @@ def abrir_configuracoes_conta(
         page.run_task(abrir_perfil, None)
 
     async def aplicar_aparencia():
-        # Deixa o evento do Switch e a atualização do diálogo terminarem antes
-        # de o Navigator desmontar a view atual.
+        # Deixa o evento do Switch terminar antes de o Navigator remontar a view.
         await asyncio.sleep(0.1)
         modo_escuro_atual = getattr(page, "is_dark_mode", False)
         rota_atual = getattr(page, "rota_navegacao_atual", None) or page.route
+        page._reabrir_preferencias_conta = True
         toggle_dark_mode(page, modo_escuro_atual, mudar_tela, rota_atual)
 
     def alterar_aparencia(e):
@@ -744,6 +744,20 @@ def criar_menu_conta(
             mudar_tela,
         )
 
+    async def reabrir_preferencias_apos_troca():
+        await asyncio.sleep(0.2)
+        if not getattr(page, "_reabrir_preferencias_conta", False):
+            return
+        page._reabrir_preferencias_conta = False
+        abrir_configuracoes_conta(
+            page,
+            cores,
+            estado["nome"],
+            estado["email"],
+            abrir_perfil_click,
+            mudar_tela,
+        )
+
     menu = ft.PopupMenuButton(
         content=ft.CircleAvatar(
             radius=14,
@@ -792,4 +806,6 @@ def criar_menu_conta(
     )
     if not email_inicial:
         page.run_task(carregar_identificacao)
+    if getattr(page, "_reabrir_preferencias_conta", False):
+        page.run_task(reabrir_preferencias_apos_troca)
     return menu
