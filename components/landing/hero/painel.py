@@ -13,15 +13,15 @@ from components.landing.palette import (
 
 def criar_painel_hero(page: ft.Page = None) -> ft.Container:
     """
-    Cria a caixa de terminal/demonstração simulando o fluxo de comandos da plataforma.
-    Inclui botões coloridos de janela de terminal e botão interativo para copiar o código.
+    Cria uma prévia demonstrativa do fluxo de resultados da plataforma.
     """
 
     texto_previa = (
-        "$ evalytics login\n"
-        "$ evalytics relatorio --curso [CURSO] --semestre [SEMESTRE]\n"
-        "✓ [N] respostas consolidadas por eixo\n"
-        "PDF e CSV prontos para exportar."
+        "AVALIAÇÃO INSTITUCIONAL\n"
+        "Curso: [NOME DO CURSO]\n"
+        "Semestre: [SEMESTRE]\n"
+        "Respostas: [TOTAL DE RESPOSTAS]\n"
+        "Exportação: PDF · CSV"
     )
 
     btn_copiar = ft.TextButton(
@@ -76,7 +76,7 @@ def criar_painel_hero(page: ft.Page = None) -> ft.Container:
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 ft.Text(
-                    "$",
+                    "›",
                     size=12,
                     color=ROXO_CLARO,
                     font_family="monospace",
@@ -124,15 +124,14 @@ def criar_painel_hero(page: ft.Page = None) -> ft.Container:
 
                 ft.Divider(height=1, color=BORDER),
 
-                # Linha 1: $ evalytics login
-                _linha_cmd("evalytics login"),
+                # Conteúdo ilustrativo, sem simular comandos inexistentes.
+                _linha_cmd("AVALIAÇÃO INSTITUCIONAL"),
 
-                # Linha 2: $ evalytics relatorio --curso [CURSO] --semestre [SEMESTRE]
-                _linha_cmd("evalytics relatorio --curso [CURSO] --semestre [SEMESTRE]"),
+                _linha_cmd("Curso: [NOME DO CURSO]"),
 
                 # Linha 3: ✓ [N] respostas consolidadas por eixo
                 ft.Text(
-                    "✓ [N] respostas consolidadas por eixo",
+                    "Respostas: [TOTAL DE RESPOSTAS]",
                     size=12,
                     color=VERDE,
                     font_family="monospace",
@@ -141,7 +140,7 @@ def criar_painel_hero(page: ft.Page = None) -> ft.Container:
 
                 # Linha 4: PDF e CSV prontos para exportar.
                 ft.Text(
-                    "PDF e CSV prontos para exportar.",
+                    "Semestre: [SEMESTRE]  ·  Exportação: PDF / CSV",
                     size=12,
                     color=MUTED,
                     font_family="monospace",

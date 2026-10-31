@@ -375,7 +375,7 @@ def ViewIndicadores(
             _kpi_card(f"{len(INDICADORES)}", "Indicadores Normativos", ROXO_CLARO),
             _kpi_card("3 Eixos", "Dimensões Avaliativas", CIANO),
             _kpi_card("5 Critérios", "Por Indicador (Conceitos 1 a 5)", VERDE),
-            _kpi_card("100% SINAES", "Conformidade MEC", LARANJA),
+            _kpi_card("SINAES/MEC", "Referência dos indicadores", LARANJA),
         ],
     )
 
@@ -479,9 +479,9 @@ def ViewIndicadores(
                                         color=TEXT,
                                     ),
                                     ft.Text(
-                                        "Explore os 58 indicadores distribuídos nos 3 eixos avaliativos oficiais do SINAES/MEC "
-                                        "(Organização Didático-Pedagógica, Corpo Docente e Infraestrutura), cada um com 5 critérios "
-                                        "objetivos de pontuação (Conceitos 1 a 5).",
+                                        f"Consulte os {len(INDICADORES)} indicadores organizados em três eixos avaliativos "
+                                        "(Organização Didático-Pedagógica, Corpo Docente e Infraestrutura). "
+                                        "Cada indicador apresenta critérios com conceitos de 1 a 5.",
                                         size=14,
                                         color=MUTED,
                                     ),
@@ -527,7 +527,7 @@ def ViewIndicadores(
                                             text_align=ft.TextAlign.CENTER,
                                         ),
                                         ft.Text(
-                                            "Acesse a plataforma para associar esses indicadores a perguntas, cursos e relatórios em tempo real.",
+                                            "Acesse a plataforma para organizar avaliações por curso e consultar os resultados no dashboard e nos relatórios.",
                                             size=13,
                                             color=MUTED,
                                             text_align=ft.TextAlign.CENTER,

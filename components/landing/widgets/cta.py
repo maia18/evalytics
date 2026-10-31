@@ -34,7 +34,7 @@ def criar_cta(page: ft.Page = None, mudar_tela: Callable[[str], None] = None) ->
                     controls=[
                         # Título
                         ft.Text(
-                            "Acompanhe os resultados da sua instituição.",
+                            "Consulte as avaliações da sua instituição.",
                             size=26,
                             weight=ft.FontWeight.W_700,
                             color=TEXT,
@@ -46,7 +46,7 @@ def criar_cta(page: ft.Page = None, mudar_tela: Callable[[str], None] = None) ->
                             width=420,
                             margin=ft.Margin.only(top=12, bottom=22),
                             content=ft.Text(
-                                "Entre no Evalytics para consultar avaliações, indicadores e relatórios estruturados.",
+                                "Filtre resultados por curso, semestre e eixo. Acesse o dashboard e as opções de exportação.",
                                 size=14,
                                 color=MUTED,
                                 text_align=ft.TextAlign.CENTER,
@@ -55,7 +55,7 @@ def criar_cta(page: ft.Page = None, mudar_tela: Callable[[str], None] = None) ->
 
                         # Botão de Ação
                         ft.ElevatedButton(
-                            "Entrar na plataforma",
+                            "Acessar a plataforma",
                             bgcolor=ROXO,
                             color="#ffffff",
                             height=40,

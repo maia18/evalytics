@@ -31,7 +31,7 @@ def criar_secao_recursos(
             # Card 1: Avaliações (com ação de Simular Avaliação)
             criar_card_responsivo(
                 titulo="Avaliações por eixo",
-                descricao="Organize perguntas e respostas da avaliação institucional estruturadas por curso, semestre e eixo avaliativo.",
+                descricao="Organize perguntas e respostas por curso, semestre e eixo avaliativo.",
                 cor_destaque=ROXO_CLARO,
                 tag="AVALIAÇÕES",
                 acao_texto="Simular uma avaliação →",
@@ -41,8 +41,8 @@ def criar_secao_recursos(
 
             # Card 2: Indicadores (Abre a página dedicada com 3 eixos e 5 critérios)
             criar_card_responsivo(
-                titulo="Indicadores normativos",
-                descricao="Explore os 58 indicadores oficiais do SINAES/MEC, organizados em 3 eixos com 5 critérios de pontuação (1 a 5).",
+                titulo="Indicadores por eixo",
+                descricao="Consulte os indicadores e critérios usados na avaliação, organizados por eixo.",
                 cor_destaque=CIANO,
                 tag="INDICADORES",
                 acao_texto="Ver página de indicadores →",
@@ -52,11 +52,11 @@ def criar_secao_recursos(
 
             # Card 3: Sobre (Conhecer o projeto)
             criar_card_responsivo(
-                titulo="Sobre a plataforma",
-                descricao="Desenvolvido para transformar o processo de autoavaliação institucional em um ciclo transparente de melhoria contínua.",
+                titulo="Resultados e exportação",
+                descricao="Acompanhe resultados no dashboard e exporte relatórios em PDF ou dados em CSV.",
                 cor_destaque=ROSA,
                 tag="INSTITUCIONAL",
-                acao_texto="Conhecer o Evalytics ↓",
+                acao_texto="Entender o fluxo ↓",
                 on_acao=ir_para_sobre,
                 scroll_key="sobre-card",
             ),

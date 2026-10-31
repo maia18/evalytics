@@ -78,20 +78,20 @@ def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
         controls=[
             _pilar_card(
                 numero="01",
-                titulo="Coleta Estruturada",
-                descricao="Formulários institucionais seguros e anônimos, segmentados por cursos, turmas e eixos temáticos.",
+                titulo="Organizar avaliações",
+                descricao="Agrupe avaliações e respostas por curso, semestre e eixo avaliativo.",
                 cor=ROXO_CLARO,
             ),
             _pilar_card(
                 numero="02",
-                titulo="Conformidade SINAES/MEC",
-                descricao="58 indicadores normativos divididos nos 3 eixos oficiais com 5 critérios de pontuação de 1 a 5.",
+                titulo="Consultar indicadores",
+                descricao="Explore os indicadores institucionais e os critérios de avaliação associados.",
                 cor=CIANO,
             ),
             _pilar_card(
                 numero="03",
-                titulo="Gestão por Evidências",
-                descricao="Resultados consolidados em tempo real que apoiam coordenadores e gestores na tomada de decisões estratégicas.",
+                titulo="Analisar resultados",
+                descricao="Consulte os resultados no dashboard e exporte relatórios em PDF ou dados em CSV.",
                 cor=VERDE,
             ),
         ],
@@ -127,7 +127,7 @@ def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
                                 ),
                             ),
                             ft.Text(
-                                "Da avaliação à melhoria contínua.",
+                                "Da avaliação ao relatório, em um só lugar.",
                                 size=28,
                                 weight=ft.FontWeight.W_700,
                                 color=TEXT,
@@ -136,9 +136,9 @@ def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
                             ft.Container(
                                 width=540,
                                 content=ft.Text(
-                                    "O Evalytics foi desenvolvido para transformar o processo de avaliação institucional "
-                                    "em um fluxo simples, colaborativo e estruturado. Centralizamos respostas, indicadores e análises "
-                                    "para que cada ciclo avaliativo resulte em melhorias reais para a comunidade acadêmica.",
+                                    "No Evalytics, cada avaliação pode ser organizada por curso e semestre. "
+                                    "As respostas ficam agrupadas por eixo e podem ser consultadas no dashboard "
+                                    "ou exportadas em PDF e CSV.",
                                     size=14,
                                     color=MUTED,
                                     text_align=ft.TextAlign.CENTER,

@@ -38,7 +38,7 @@ def criar_hero_texto(
                             border_radius=6,
                         ),
                         ft.Text(
-                            "avaliação institucional por dados",
+                            "AVALIAÇÃO INSTITUCIONAL · EVALYTICS",
                             size=12,
                             weight=ft.FontWeight.W_600,
                             color=ROXO_CLARO,
@@ -52,7 +52,7 @@ def criar_hero_texto(
             ft.Container(
                 width=580,
                 content=ft.Text(
-                    "Avaliações institucionais, organizadas por curso e eixo.",
+                    "Avaliações institucionais organizadas por curso e eixo.",
                     size=42,
                     weight=ft.FontWeight.W_700,
                     color=TEXT,
@@ -65,8 +65,8 @@ def criar_hero_texto(
                 width=450,
                 margin=ft.Margin.only(top=18, bottom=24),
                 content=ft.Text(
-                    "Crie avaliações, acompanhe resultados por curso, "
-                    "semestre e eixo avaliativo e exporte relatórios em PDF ou CSV.",
+                    "Organize avaliações por curso, semestre e eixo. Consulte os resultados "
+                    "no dashboard e exporte relatórios em PDF ou dados em CSV.",
                     size=15,
                     color=MUTED,
                     text_align=ft.TextAlign.CENTER,

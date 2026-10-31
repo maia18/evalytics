@@ -30,7 +30,7 @@ def criar_rodape(ir_para_inicio: Optional[Callable] = None) -> ft.Container:
     )
 
     descricao = ft.Text(
-        "Avaliação institucional por dados.",
+        "Avaliações organizadas por curso e eixo.",
         size=12,
         color=MUTED,
     )
