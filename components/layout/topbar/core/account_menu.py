@@ -442,22 +442,27 @@ def abrir_configuracoes_conta(
 ):
     """Mostra atalhos de configurações pessoais da conta, sem abrir as configurações institucionais."""
     dialogo = None
+    preferencias_pendentes = {"tema_escuro": getattr(page, "is_dark_mode", False)}
 
     def ir_para_perfil(e):
         _fechar_dialogo(page, dialogo)
         page.run_task(abrir_perfil, None)
 
     async def aplicar_aparencia():
-        # Deixa o evento do Switch terminar antes de o Navigator remontar a view.
+        # Deixa o evento de fechamento terminar antes de o Navigator remontar a view.
         await asyncio.sleep(0.1)
         modo_escuro_atual = getattr(page, "is_dark_mode", False)
         rota_atual = getattr(page, "rota_navegacao_atual", None) or page.route
-        page._reabrir_preferencias_conta = True
         toggle_dark_mode(page, modo_escuro_atual, mudar_tela, rota_atual)
 
     def alterar_aparencia(e):
+        preferencias_pendentes["tema_escuro"] = bool(e.control.value)
+
+    def fechar_configuracoes(e):
         _fechar_dialogo(page, dialogo)
-        page.run_task(aplicar_aparencia)
+        modo_escuro_atual = getattr(page, "is_dark_mode", False)
+        if preferencias_pendentes["tema_escuro"] != modo_escuro_atual:
+            page.run_task(aplicar_aparencia)
 
     preferencia_tema = ft.Switch(
         label="Tema escuro",
@@ -522,7 +527,7 @@ def abrir_configuracoes_conta(
         title=ft.Text("Configurações da conta", color=cores[TEXTO_PRINCIPAL], weight=ft.FontWeight.W_700),
         content=ft.Container(width=420, content=conteudo),
         actions=[
-            ft.TextButton("Fechar", on_click=lambda e: _fechar_dialogo(page, dialogo)),
+            ft.TextButton("Fechar", on_click=fechar_configuracoes),
             ft.ElevatedButton(
                 "Abrir meu perfil",
                 bgcolor=COR_PRIMARIA,
@@ -744,20 +749,6 @@ def criar_menu_conta(
             mudar_tela,
         )
 
-    async def reabrir_preferencias_apos_troca():
-        await asyncio.sleep(0.2)
-        if not getattr(page, "_reabrir_preferencias_conta", False):
-            return
-        page._reabrir_preferencias_conta = False
-        abrir_configuracoes_conta(
-            page,
-            cores,
-            estado["nome"],
-            estado["email"],
-            abrir_perfil_click,
-            mudar_tela,
-        )
-
     menu = ft.PopupMenuButton(
         content=ft.CircleAvatar(
             radius=14,
@@ -806,6 +797,4 @@ def criar_menu_conta(
     )
     if not email_inicial:
         page.run_task(carregar_identificacao)
-    if getattr(page, "_reabrir_preferencias_conta", False):
-        page.run_task(reabrir_preferencias_apos_troca)
     return menu
