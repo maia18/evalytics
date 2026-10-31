@@ -436,32 +436,69 @@ def criar_menu_conta(
     mudar_tela: Callable[[str], None],
 ) -> ft.PopupMenuButton:
     usuario = auth_state.usuario or {}
+    email_inicial = usuario.get("email", "")
+    nome_inicial = usuario.get("displayName") or usuario.get("name") or ""
+    nome_email = email_inicial.partition("@")[0]
     estado = {
-        "nome": usuario.get("displayName") or usuario.get("name") or "Conta",
-        "email": usuario.get("email", ""),
+        "nome": nome_inicial or nome_email or "Carregando conta...",
+        "email": email_inicial,
     }
+    consulta_perfil = {"em_andamento": False, "concluida": bool(email_inicial)}
 
     def obter_iniciais(nome: str) -> str:
         partes = [parte for parte in nome.replace(".", " ").replace("_", " ").split() if parte]
         return "".join(parte[0] for parte in partes[:2]).upper() or "U"
 
-    nome_avatar = estado["nome"] if estado["nome"] != "Conta" else estado["email"].partition("@")[0]
-    avatar_texto = ft.Text(obter_iniciais(nome_avatar), size=10, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE)
+    nome_avatar = estado["nome"]
+    texto_inicial = "…" if nome_avatar == "Carregando conta..." else obter_iniciais(nome_avatar)
+    avatar_texto = ft.Text(texto_inicial, size=10, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE)
     nome_texto = ft.Text(estado["nome"], size=12, weight=ft.FontWeight.W_600, color=cores[TEXTO_PRINCIPAL])
-    email_texto = ft.Text(estado["email"] or "Usuário autenticado", size=10, color=ft.Colors.GREY_500)
+    email_texto = ft.Text(
+        estado["email"] or "Buscando dados da conta...",
+        size=10,
+        color=ft.Colors.GREY_500,
+    )
 
     def atualizar_identificacao(nome: str, email: str):
-        estado["nome"] = nome or "Conta"
         estado["email"] = email or ""
-        identificador_avatar = (
-            estado["nome"]
-            if estado["nome"] != "Conta"
-            else estado["email"].partition("@")[0]
-        )
+        estado["nome"] = nome or estado["email"].partition("@")[0] or "Conta"
+        identificador_avatar = estado["nome"]
         avatar_texto.value = obter_iniciais(identificador_avatar)
         nome_texto.value = estado["nome"]
-        email_texto.value = estado["email"] or "Usuário autenticado"
+        email_texto.value = estado["email"] or "E-mail indisponível"
         page.update()
+
+    async def carregar_identificacao(e=None):
+        if consulta_perfil["em_andamento"] or consulta_perfil["concluida"]:
+            return
+        token = auth_state.id_token
+        if not token or not FIREBASE_API_KEY:
+            consulta_perfil["concluida"] = True
+            atualizar_identificacao("Conta", "")
+            return
+
+        consulta_perfil["em_andamento"] = True
+        try:
+            resposta = await asyncio.to_thread(
+                requests.post,
+                f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}",
+                json={"idToken": token},
+                timeout=8,
+            )
+            usuarios = resposta.json().get("users", []) if resposta.status_code == 200 else []
+            if usuarios:
+                dados = usuarios[0]
+                await auth_state.atualizar_dados_usuario(dados)
+                email = dados.get("email", "")
+                nome = dados.get("displayName") or dados.get("name") or email.partition("@")[0]
+                atualizar_identificacao(nome or "Conta", email)
+            else:
+                atualizar_identificacao("Conta", "")
+        except (requests.RequestException, ValueError):
+            atualizar_identificacao("Conta", "")
+        finally:
+            consulta_perfil["em_andamento"] = False
+            consulta_perfil["concluida"] = True
 
     async def fazer_logout(e):
         await auth_state.encerrar_sessao(page)
@@ -470,7 +507,7 @@ def criar_menu_conta(
     async def abrir_perfil_click(e):
         await abrir_perfil(page, cores, atualizar_identificacao)
 
-    return ft.PopupMenuButton(
+    menu = ft.PopupMenuButton(
         content=ft.CircleAvatar(
             radius=14,
             bgcolor=COR_PRIMARIA,
@@ -508,4 +545,8 @@ def criar_menu_conta(
         menu_position=ft.PopupMenuPosition.UNDER,
         shape=ft.RoundedRectangleBorder(radius=10),
         tooltip="Menu da conta",
+        on_open=carregar_identificacao,
     )
+    if not email_inicial:
+        page.run_task(carregar_identificacao)
+    return menu
