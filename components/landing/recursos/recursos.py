@@ -1,126 +1,42 @@
 import flet as ft
-from components.landing.palette import FUNDO, SUPERFICIE, TEXTO, TEXTO_SECUNDARIO, ROXO, ROSA, CIANO, LARANJA
+from components.landing.palette import PAGE, MAX_CONTENT_WIDTH
 from components.landing.recursos.card import criar_card_responsivo
-from components.landing.transicao import criar_fluxo_animado, preparar_entrada
 
-def criar_secao_recursos(page: ft.Page) -> ft.Container:
+def criar_secao_recursos(page: ft.Page = None) -> ft.Container:
     """
-    Constrói a seção de recursos da Landing Page.
-        Apresenta os principais módulos do Evalytics em uma grade 2×2 com layout horizontal.
+    Constrói a seção de benefícios (Recursos do Evalytics) em grade de 3 colunas.
     """
 
-    # =========================================================
-    # CABEÇALHO DA SEÇÃO
-    # =========================================================
-
-    titulo_recursos = ft.Column(
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        spacing=10,
-        controls=[
-            ft.Text(
-                "Tudo em um só lugar",
-                size=28,
-                weight=ft.FontWeight.BOLD,
-                color=TEXTO,
-                text_align=ft.TextAlign.CENTER,
-            ),
-
-            ft.Container(
-                width=float("inf"),
-                content=ft.Text(
-                    "Módulos integrados para cobrir todo o ciclo "
-                    "de avaliação institucional.",
-                    size=14,
-                    color=TEXTO_SECUNDARIO,
-                    text_align=ft.TextAlign.CENTER,
-                ),
-            ),
-        ],
-    )
-
-    # =========================================================
-    # CARDS DE RECURSOS
-    # =========================================================
-
-    cards_recursos = ft.ResponsiveRow(
+    cards = ft.ResponsiveRow(
         columns=12,
         alignment=ft.MainAxisAlignment.CENTER,
-        run_spacing=16,
-        spacing=16,
+        spacing=12,
+        run_spacing=12,
         controls=[
             criar_card_responsivo(
-                ft.Icons.RATE_REVIEW_OUTLINED,
-                "Avaliações",
-                "Colete e organize avaliações institucionais "
-                "de forma estruturada e eficiente.",
-                ROXO,
+                titulo="Avaliações por eixo",
+                descricao="Organize perguntas e respostas da avaliação institucional por eixo e curso.",
+                scroll_key="recursos-avaliacoes",
             ),
-
             criar_card_responsivo(
-                ft.Icons.INSERT_CHART_OUTLINED,
-                "Indicadores",
-                "Acompanhe indicadores que ajudam a compreender "
-                "os resultados das avaliações.",
-                CIANO,
+                titulo="Resultados filtráveis",
+                descricao="Consulte avaliações, respostas e médias com filtros de curso e semestre.",
+                scroll_key="indicadores",
             ),
-
             criar_card_responsivo(
-                ft.Icons.SCHOOL_OUTLINED,
-                "Cursos",
-                "Organize informações relacionadas aos cursos "
-                "e à realidade acadêmica.",
-                ROSA,
-            ),
-
-            criar_card_responsivo(
-                ft.Icons.ASSESSMENT_OUTLINED,
-                "Relatórios",
-                "Visualize resultados de forma organizada para "
-                "apoiar a análise institucional.",
-                LARANJA,
+                titulo="PDF e CSV",
+                descricao="Gere a cópia da avaliação em PDF e exporte os dados brutos em CSV.",
+                scroll_key="relatorios",
             ),
         ],
-    )
-
-    # =========================================================
-    # SEÇÃO
-    # =========================================================
-
-    conteudo = ft.Container(
-        padding=ft.Padding.symmetric(horizontal=32, vertical=112),
-        content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=36,
-            controls=[titulo_recursos, cards_recursos],
-        ),
     )
 
     return ft.Container(
-        key=ft.ScrollKey("recursos"),
-        bgcolor=FUNDO,
-        gradient=ft.LinearGradient(
-            begin=ft.Alignment.TOP_CENTER,
-            end=ft.Alignment.BOTTOM_CENTER,
-            colors=[
-                FUNDO,
-                "#20182A",
-                "#705C8A",
-                "#D7C9E9",
-                SUPERFICIE,
-                SUPERFICIE,
-                "#D7C9E9",
-                "#705C8A",
-                "#20182A",
-                FUNDO,
-            ],
-            stops=[0, 0.07, 0.14, 0.21, 0.28, 0.72, 0.79, 0.86, 0.93, 1],
-        ),
-        clip_behavior=ft.ClipBehavior.NONE,
-        content=ft.Stack(
-            clip_behavior=ft.ClipBehavior.NONE,
-            controls=[
-                *criar_fluxo_animado(page, 460),
-                preparar_entrada(page, conteudo, 0.48),
-            ],
+        bgcolor=PAGE,
+        padding=ft.Padding.only(left=24, right=24, bottom=64),
+        alignment=ft.Alignment.CENTER,
+        content=ft.Container(
+            width=MAX_CONTENT_WIDTH,
+            content=cards,
         ),
     )

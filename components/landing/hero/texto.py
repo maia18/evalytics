@@ -1,96 +1,103 @@
 import flet as ft
 from typing import Callable
-
-from components.landing.palette import ROXO, ROXO_CLARO, TEXTO_CLARO, TEXTO_CLARO_SECUNDARIO
-
+from components.landing.palette import (
+    TEXT,
+    MUTED,
+    ACCENT,
+    ACCENT_INK,
+    PAGE,
+    BORDER_STRONG,
+)
 
 def criar_hero_texto(
     mudar_tela: Callable[[str], None],
     ir_para_recursos: Callable,
 ) -> ft.Column:
-    """Mensagem principal da apresentação institucional Qualtrics-inspired."""
+    """Cria a seção de título, descrição e ações principais do Hero."""
+
     return ft.Column(
-        spacing=18,
-        horizontal_alignment=ft.CrossAxisAlignment.START,
+        spacing=0,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
+            # Eyebrow / Tag em monospace
             ft.Container(
-                padding=ft.Padding.symmetric(horizontal=12, vertical=7),
-                border_radius=24,
-                bgcolor="#2A2238",
-                content=ft.Row(
-                    tight=True,
-                    spacing=7,
-                    controls=[
-                        ft.Icon(ft.Icons.AUTO_AWESOME, size=14, color=ROXO_CLARO),
-                        ft.Text(
-                            "AVALIAÇÃO INSTITUCIONAL, COM MAIS CLAREZA",
-                            size=11,
-                            weight=ft.FontWeight.BOLD,
-                            color=ROXO_CLARO,
-                        ),
-                    ],
+                margin=ft.Margin.only(bottom=16),
+                content=ft.Text(
+                    "avaliação institucional por dados",
+                    size=12,
+                    weight=ft.FontWeight.W_500,
+                    color=ACCENT,
+                    font_family="monospace",
+                    text_align=ft.TextAlign.CENTER,
                 ),
             ),
-            ft.Column(
-                spacing=0,
-                horizontal_alignment=ft.CrossAxisAlignment.START,
-                controls=[
-                    ft.Text(
-                        "Ouça sua comunidade.",
-                        size=42,
-                        weight=ft.FontWeight.BOLD,
-                        color=TEXTO_CLARO,
-                        text_align=ft.TextAlign.LEFT,
-                    ),
-                    ft.Text(
-                        "Melhore com dados.",
-                        size=42,
-                        weight=ft.FontWeight.BOLD,
-                        color=ROXO_CLARO,
-                        text_align=ft.TextAlign.LEFT,
-                    ),
-                ],
+
+            # Título principal (h1)
+            ft.Container(
+                width=560,
+                content=ft.Text(
+                    "Avaliações institucionais, organizadas por curso e eixo.",
+                    size=42,
+                    weight=ft.FontWeight.W_700,
+                    color=TEXT,
+                    text_align=ft.TextAlign.CENTER,
+                ),
             ),
-            ft.Text(
-                "Crie avaliações, acompanhe cada eixo e transforme as respostas "
-                "da comunidade acadêmica em próximos passos concretos.",
-                size=16,
-                color=TEXTO_CLARO_SECUNDARIO,
-                text_align=ft.TextAlign.LEFT,
+
+            # Parágrafo de apoio (hero-copy)
+            ft.Container(
+                width=430,
+                margin=ft.Margin.only(top=18, bottom=24),
+                content=ft.Text(
+                    "Crie avaliações, acompanhe resultados por curso, "
+                    "semestre e eixo avaliativo e exporte relatórios em PDF ou CSV.",
+                    size=15,
+                    color=MUTED,
+                    text_align=ft.TextAlign.CENTER,
+                ),
             ),
+
+            # Ações do Hero (botões)
             ft.Row(
-                alignment=ft.MainAxisAlignment.START,
-                spacing=12,
-                run_spacing=8,
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=10,
                 wrap=True,
                 controls=[
+                    # Botão Primário: Acessar plataforma
                     ft.ElevatedButton(
-                        "Começar agora",
-                        bgcolor=ROXO,
-                        color=ft.Colors.WHITE,
-                        height=48,
-                        on_click=lambda e: mudar_tela("/login"),
+                        "Acessar plataforma",
+                        bgcolor=ACCENT,
+                        color=ACCENT_INK,
+                        height=38,
                         style=ft.ButtonStyle(
-                            shape=ft.RoundedRectangleBorder(radius=12),
-                            padding=ft.Padding.symmetric(horizontal=22),
+                            shape=ft.RoundedRectangleBorder(radius=8),
+                            padding=ft.Padding.symmetric(horizontal=19),
+                            text_style=ft.TextStyle(
+                                size=13,
+                                weight=ft.FontWeight.W_600,
+                            ),
                         ),
+                        on_click=lambda e: mudar_tela("/login"),
                     ),
-                    ft.TextButton(
-                        "Conhecer recursos  ↓",
-                        height=48,
+
+                    # Botão Secundário: Ver recursos
+                    ft.OutlinedButton(
+                        "Ver recursos",
+                        height=38,
                         style=ft.ButtonStyle(
-                            color=TEXTO_CLARO,
-                            padding=ft.Padding.symmetric(horizontal=12, vertical=12),
+                            bgcolor=PAGE,
+                            color=TEXT,
+                            side=ft.BorderSide(1, BORDER_STRONG),
+                            shape=ft.RoundedRectangleBorder(radius=8),
+                            padding=ft.Padding.symmetric(horizontal=19),
+                            text_style=ft.TextStyle(
+                                size=13,
+                                weight=ft.FontWeight.W_600,
+                            ),
                         ),
                         on_click=ir_para_recursos,
                     ),
                 ],
-            ),
-            ft.Text(
-                "Feito para instituições que querem evoluir a partir da escuta.",
-                size=12,
-                color=TEXTO_CLARO_SECUNDARIO,
-                text_align=ft.TextAlign.LEFT,
             ),
         ],
     )

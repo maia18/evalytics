@@ -1,67 +1,74 @@
 import flet as ft
-from typing import Callable
-from components.landing.palette import ROXO, ROXO_CLARO, TEXTO_CLARO_SECUNDARIO
+from typing import Callable, Optional
+from components.landing.palette import (
+    TEXT,
+    MUTED,
+    ACCENT,
+    ACCENT_INK,
+)
 
 def criar_menu_desktop(
     mudar_tela: Callable[[str], None], 
     ir_para_recursos: Callable, 
-    ir_para_sobre: Callable
+    ir_para_indicadores: Optional[Callable] = None,
+    ir_para_relatorios: Optional[Callable] = None,
+    ir_para_sobre: Optional[Callable] = None,
 ) -> ft.Row:
     """
-    Cria o menu de navegação para dispositivos desktop.
-
-        O componente exibe os principais atalhos da Landing Page, permitindo que o usuário:
-
-            - Navegue até a seção de recursos;
-            - Navegue até a seção sobre;
-            - Acesse a tela de login.
+    Cria a barra de navegação para desktop.
+    Exibe os links: Recursos, Indicadores, Relatórios e o botão de ação Entrar.
     """
 
+    def _nav_link(texto: str, on_click: Optional[Callable]) -> ft.TextButton:
+        return ft.TextButton(
+            content=ft.Text(
+                texto,
+                size=13,
+                weight=ft.FontWeight.W_500,
+            ),
+            style=ft.ButtonStyle(
+                color={
+                    ft.ControlState.HOVERED: TEXT,
+                    ft.ControlState.DEFAULT: MUTED,
+                },
+                overlay_color=ft.Colors.TRANSPARENT,
+                padding=ft.Padding.symmetric(horizontal=10, vertical=8),
+            ),
+            on_click=on_click,
+        )
+
+    # Fallback se indicadores/relatorios não forem passados
+    handler_indicadores = ir_para_indicadores or ir_para_recursos
+    handler_relatorios = ir_para_relatorios or ir_para_sobre or ir_para_recursos
+
     return ft.Row(
-        spacing=16, # Espaçamento horizontal entre os itens do menu.
-        vertical_alignment=ft.CrossAxisAlignment.CENTER, # Mantém todos os botões alinhados verticalmente.
-
+        spacing=20,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
+            # Links de navegação
+            _nav_link("Recursos", ir_para_recursos),
+            _nav_link("Indicadores", handler_indicadores),
+            _nav_link("Relatórios", handler_relatorios),
 
-            # =================================================
-            # LINK: RECURSOS
-            # =================================================
-            
-            # Realiza a navegação interna até a seção de funcionalidades da Landing Page.
-            ft.TextButton(
-                "Recursos",
-                style=ft.ButtonStyle(
-                    color=TEXTO_CLARO_SECUNDARIO,
-                ),
-                on_click=ir_para_recursos,
-            ),
+            ft.Container(width=4),
 
-            # =================================================
-            # LINK: SOBRE
-            # =================================================
-            
-            # Realiza a navegação interna até a seção institucional da plataforma.
-            ft.TextButton(
-                "Sobre",
-                style=ft.ButtonStyle(
-                    color=TEXTO_CLARO_SECUNDARIO,
-                ),
-                on_click=ir_para_sobre,
-            ),
-
-            # =================================================
-            # LINK: LOGIN
-            # =================================================
-            
-            # Direciona o usuário para a área autenticada da aplicação através da tela de login.
+            # Botão de ação primário: Entrar
             ft.ElevatedButton(
                 "Entrar",
-                bgcolor=ROXO,
-                color=ft.Colors.WHITE,
-                height=40,
+                bgcolor=ACCENT,
+                color=ACCENT_INK,
+                height=38,
                 style=ft.ButtonStyle(
-                    shape=ft.RoundedRectangleBorder(radius=20),
-                    padding=ft.Padding.symmetric(horizontal=20),
+                    shape=ft.RoundedRectangleBorder(radius=8),
+                    padding=ft.Padding.symmetric(horizontal=18),
+                    elevation={
+                        ft.ControlState.DEFAULT: 0,
+                        ft.ControlState.HOVERED: 2,
+                    },
+                    text_style=ft.TextStyle(
+                        size=13,
+                        weight=ft.FontWeight.W_600,
+                    ),
                 ),
                 on_click=lambda e: mudar_tela("/login"),
             ),
