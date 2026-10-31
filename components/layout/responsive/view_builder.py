@@ -17,6 +17,7 @@ def montar_view(
     
     page.on_resize = ajustar_responsividade  # Vincula o resize nativo à função de ajuste
     ajustar_responsividade()  # Aplica a formatação inicial
+    espacamento_conteudo = 10 if getattr(page, "preferencia_densidade_visual", "standard") == "compact" else 16
     return ft.View(
         route=route,
         padding=0,  # Remove espaçamento padrão ao redor da janela
@@ -40,7 +41,7 @@ def montar_view(
 
                                     ft.Container(
                                         expand=True,
-                                        padding=16,
+                                        padding=espacamento_conteudo,
                                         content=conteudo_principal,
                                     ),
                                 ],

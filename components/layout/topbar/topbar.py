@@ -40,7 +40,11 @@ class TopBar(ft.Container):
 
         # Estilização
         self.bgcolor = self.cores[CARD]
-        self.padding = 20
+        compacto = getattr(page, "preferencia_densidade_visual", "standard") == "compact"
+        self.padding = ft.Padding.symmetric(
+            horizontal=12 if compacto else 20,
+            vertical=8 if compacto else 20,
+        )
         self.border = ft.Border(bottom=ft.BorderSide(1, self.cores[BORDA]))
 
         # Conteúdo
