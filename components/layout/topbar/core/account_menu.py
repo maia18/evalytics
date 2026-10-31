@@ -7,6 +7,7 @@ from datetime import date, datetime
 from components.core.auth.auth_state import auth_state
 from components.core.constants.constants import TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, SURFACE, COR_PRIMARIA
 from components.core.theme.darkmode_toggle import toggle_dark_mode
+from components.core.theme.theme_config import configurar_tema
 from components.core.router.rotas_cts import (
     ROTA_AVALIACOES,
     ROTA_DASHBOARD_VISAO_GERAL,
@@ -442,7 +443,10 @@ def abrir_configuracoes_conta(
 ):
     """Mostra atalhos de configurações pessoais da conta, sem abrir as configurações institucionais."""
     dialogo = None
-    preferencias_pendentes = {"tema_escuro": getattr(page, "is_dark_mode", False)}
+    preferencias_pendentes = {
+        "tema_escuro": getattr(page, "is_dark_mode", False),
+        "densidade": getattr(page, "preferencia_densidade_visual", "standard"),
+    }
 
     def ir_para_perfil(e):
         _fechar_dialogo(page, dialogo)
@@ -451,9 +455,21 @@ def abrir_configuracoes_conta(
     async def aplicar_aparencia():
         # Deixa o evento de fechamento terminar antes de o Navigator remontar a view.
         await asyncio.sleep(0.1)
-        modo_escuro_atual = getattr(page, "is_dark_mode", False)
         rota_atual = getattr(page, "rota_navegacao_atual", None) or page.route
-        toggle_dark_mode(page, modo_escuro_atual, mudar_tela, rota_atual)
+        modo_escuro_atual = getattr(page, "is_dark_mode", False)
+        densidade_atual = getattr(page, "preferencia_densidade_visual", "standard")
+        tema_mudou = preferencias_pendentes["tema_escuro"] != modo_escuro_atual
+        densidade_mudou = preferencias_pendentes["densidade"] != densidade_atual
+        page.preferencia_densidade_visual = preferencias_pendentes["densidade"]
+
+        if tema_mudou:
+            toggle_dark_mode(page, modo_escuro_atual, mudar_tela, rota_atual)
+        elif densidade_mudou:
+            configurar_tema(page, modo_escuro_atual)
+            if rota_atual:
+                mudar_tela(rota_atual)
+            else:
+                page.update()
 
     def alterar_aparencia(e):
         preferencias_pendentes["tema_escuro"] = bool(e.control.value)
@@ -469,6 +485,26 @@ def abrir_configuracoes_conta(
         value=getattr(page, "is_dark_mode", False),
         on_change=alterar_aparencia,
         active_color=COR_PRIMARIA,
+    )
+    preferencia_densidade = ft.Dropdown(
+        label="Densidade da interface",
+        value=preferencias_pendentes["densidade"],
+        options=[
+            ft.dropdown.Option(key="standard", text="Padrão"),
+            ft.dropdown.Option(key="compact", text="Compacta"),
+        ],
+        on_select=lambda e: preferencias_pendentes.update({"densidade": e.control.value}),
+        border_radius=8,
+        border_color=ft.Colors.GREY_600,
+        focused_border_color=COR_PRIMARIA,
+    )
+    preferencia_idioma = ft.Dropdown(
+        label="Idioma",
+        value="pt-BR",
+        options=[ft.dropdown.Option(key="pt-BR", text="Português (Brasil)")],
+        disabled=True,
+        border_radius=8,
+        border_color=ft.Colors.GREY_600,
     )
 
     conteudo = ft.Column(
@@ -502,19 +538,36 @@ def abrir_configuracoes_conta(
             ft.Divider(height=1),
             ft.Text("PREFERÊNCIAS", size=10, weight=ft.FontWeight.W_700, color=cores[TEXTO_SECUNDARIO]),
             ft.Container(
-                padding=ft.Padding.symmetric(horizontal=12, vertical=6),
+                padding=ft.Padding.all(12),
                 bgcolor=cores[SURFACE],
                 border=ft.Border.all(1, ft.Colors.with_opacity(0.16, ft.Colors.GREY_400)),
                 border_radius=10,
                 content=ft.Column(
-                    spacing=2,
+                    spacing=12,
                     controls=[
-                        preferencia_tema,
+                        preferencia_idioma,
                         ft.Text(
-                            "Escolha o tema visual usado na plataforma.",
+                            "Outros idiomas ainda não estão disponíveis.",
                             size=11,
                             color=cores[TEXTO_SECUNDARIO],
                         ),
+                        ft.Divider(height=1),
+                        ft.Row(
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            controls=[
+                                ft.Column(
+                                    spacing=2,
+                                    controls=[
+                                        ft.Text("Tema escuro", color=cores[TEXTO_PRINCIPAL], size=13),
+                                        ft.Text("Altera as cores da plataforma.", color=cores[TEXTO_SECUNDARIO], size=11),
+                                    ],
+                                ),
+                                preferencia_tema,
+                            ],
+                        ),
+                        ft.Text("EXIBIÇÃO", size=10, weight=ft.FontWeight.W_700, color=cores[TEXTO_SECUNDARIO]),
+                        preferencia_densidade,
                     ],
                 ),
             ),

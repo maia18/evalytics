@@ -9,6 +9,11 @@ def configurar_tema(
     """Configura o tema visual da aplicação e retorna a paleta de cores correspondente ao modo atual."""
 
     page.theme = get_app_theme(dark_mode)
+    page.theme.visual_density = (
+        ft.VisualDensity.COMPACT
+        if getattr(page, "preferencia_densidade_visual", "standard") == "compact"
+        else ft.VisualDensity.STANDARD
+    )
     page.theme_mode = (
         ft.ThemeMode.DARK
         if dark_mode
