@@ -11,6 +11,7 @@ def criar_topbar(
     # Recebe os callbacks (funções) para gerenciar o estado global: abrir o menu e trocar o tema
     toggle_sidebar: Callable[[], None],
     atualizar_tema: Callable[[], None],
+    mudar_tela: Callable[[str], None] | None = None,
 ) -> TopBar:
     """Padrão Factory: instancia o objeto TopBar repassando as dependências de forma limpa."""
     
@@ -22,4 +23,5 @@ def criar_topbar(
         dark_mode=dark_mode,
         toggle_sidebar=toggle_sidebar,
         atualizar_tema=atualizar_tema,
+        mudar_tela=mudar_tela,
     )

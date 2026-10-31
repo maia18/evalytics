@@ -1,7 +1,6 @@
 import flet as ft
 from typing import Callable, Optional
 from components.landing.palette import (
-    PAGE,
     SURFACE,
     SURFACE_ALT,
     BORDER,
@@ -19,9 +18,24 @@ from components.landing.palette import (
 def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], None]] = None) -> None:
     """Abre um modal interativo para o usuário simular o preenchimento de uma avaliação institucional."""
 
-    nota_selecionada = {"valor": 4}
+    etapa_atual = {"valor": 0}
+    respostas = [4, 4, 4]
+    perguntas = [
+        (
+            "Organização Didático-Pedagógica",
+            "Em que medida os objetivos e a estrutura do curso atendem às demandas de formação profissional?",
+        ),
+        (
+            "Corpo Docente e Tutorial",
+            "Como você avalia o acompanhamento e a contribuição dos docentes para a sua aprendizagem?",
+        ),
+        (
+            "Infraestrutura",
+            "Como você avalia os espaços, equipamentos e recursos disponíveis para as atividades do curso?",
+        ),
+    ]
 
-    # Opções de resposta com escala de 1 a 5 critérios
+    # Escala ilustrativa de 1 a 5. A prévia não envia nem salva respostas.
     opcoes_escala = [
         ("1", "1 — Crítico / Não atende aos critérios", ROSA),
         ("2", "2 — Insuficiente / Atende com restrições", LARANJA),
@@ -30,19 +44,32 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
         ("5", "5 — Excelente / Práticas inovadoras", VERDE),
     ]
 
-    cores_por_nota = {val: cor for val, _, cor in opcoes_escala}
+    cores_por_nota = {int(val): cor for val, _, cor in opcoes_escala}
 
     container_opcoes = ft.Column(spacing=6)
+    texto_eixo = ft.Text(size=10, weight=ft.FontWeight.W_700, color=ROXO_CLARO, font_family="monospace")
+    texto_pergunta = ft.Text(size=13, weight=ft.FontWeight.W_600, color=TEXT)
+    texto_progresso = ft.Text(size=10, color=MUTED, font_family="monospace")
+    barra_progresso = ft.ProgressBar(value=1 / len(perguntas), color=ROXO_CLARO, bgcolor=BORDER, height=4)
+
+    def _atualizar_pergunta():
+        indice = etapa_atual["valor"]
+        eixo, pergunta = perguntas[indice]
+        texto_eixo.value = f"EIXO {indice + 1} • {eixo.upper()}"
+        texto_pergunta.value = pergunta
+        texto_progresso.value = f"QUESTÃO {indice + 1} DE {len(perguntas)}"
+        barra_progresso.value = (indice + 1) / len(perguntas)
+        _renderizar_opcoes()
 
     def _renderizar_opcoes():
         container_opcoes.controls.clear()
         for valor_str, rotulo, cor in opcoes_escala:
             valor_int = int(valor_str)
-            selecionado = nota_selecionada["valor"] == valor_int
+            selecionado = respostas[etapa_atual["valor"]] == valor_int
 
             def _criar_click(val):
                 def _handle(e):
-                    nota_selecionada["valor"] = val
+                    respostas[etapa_atual["valor"]] = val
                     _renderizar_opcoes()
                     page.update()
                 return _handle
@@ -87,7 +114,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                             ],
                         ),
                         ft.Text(
-                            f"Critério {valor_int}/5",
+                            f"Nota {valor_int}/5",
                             size=11,
                             color=cor if selecionado else MUTED,
                             font_family="monospace",
@@ -98,21 +125,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
             )
             container_opcoes.controls.append(botao_opcao)
 
-    _renderizar_opcoes()
-
-    campo_comentario = ft.TextField(
-        hint_text="Escreva um comentário qualitativo ou sugestão de melhoria (opcional)...",
-        hint_style=ft.TextStyle(color=MUTED, size=12),
-        text_style=ft.TextStyle(color=TEXT, size=12),
-        bgcolor=SURFACE_ALT,
-        border_color=BORDER,
-        focused_border_color=ROXO_CLARO,
-        border_radius=8,
-        min_lines=2,
-        max_lines=3,
-        multiline=True,
-        cursor_color=ROXO_CLARO,
-    )
+    _atualizar_pergunta()
 
     def fechar_dialog(e=None):
         dialog.open = False
@@ -126,8 +139,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
     )
 
     def submeter_simulacao(e):
-        nota = nota_selecionada["valor"]
-        cor_nota = cores_por_nota.get(str(nota), ROXO_CLARO)
+        media = sum(respostas) / len(respostas)
 
         # Transição para o estado de Sucesso
         conteudo_modal.controls.clear()
@@ -159,45 +171,65 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                             text_align=ft.TextAlign.CENTER,
                         ),
                         ft.Container(
-                            padding=ft.Padding.symmetric(horizontal=14, vertical=10),
+                            padding=ft.Padding.symmetric(horizontal=14, vertical=12),
                             bgcolor=SURFACE_ALT,
                             border=ft.Border.all(1, BORDER),
                             border_radius=10,
-                            content=ft.Row(
-                                alignment=ft.MainAxisAlignment.SPACE_AROUND,
+                            content=ft.Column(
+                                spacing=10,
                                 controls=[
-                                    ft.Column(
-                                        spacing=2,
-                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    ft.Row(
+                                        alignment=ft.MainAxisAlignment.SPACE_AROUND,
                                         controls=[
-                                            ft.Text("Critério", size=10, color=MUTED),
-                                            ft.Text(f"{nota}.0 / 5.0", size=16, weight=ft.FontWeight.W_700, color=cor_nota),
+                                            ft.Column(
+                                                spacing=2,
+                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                                controls=[
+                                                    ft.Text("Média simulada", size=10, color=MUTED),
+                                                    ft.Text(
+                                                        f"{media:.1f} / 5.0",
+                                                        size=16,
+                                                        weight=ft.FontWeight.W_700,
+                                                        color=ROXO_CLARO,
+                                                    ),
+                                                ],
+                                            ),
+                                            ft.Column(
+                                                spacing=2,
+                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                                controls=[
+                                                    ft.Text("Eixos percorridos", size=10, color=MUTED),
+                                                    ft.Text(
+                                                        f"{len(perguntas)} eixos",
+                                                        size=12,
+                                                        weight=ft.FontWeight.W_600,
+                                                        color=TEXT,
+                                                    ),
+                                                ],
+                                            ),
                                         ],
                                     ),
-                                    ft.Container(width=1, height=24, bgcolor=BORDER),
-                                    ft.Column(
-                                        spacing=2,
-                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                                        controls=[
-                                            ft.Text("Eixo Avaliativo", size=10, color=MUTED),
-                                            ft.Text("Eixo 1 — Didático-Pedagógica", size=12, weight=ft.FontWeight.W_600, color=TEXT),
-                                        ],
-                                    ),
-                                    ft.Container(width=1, height=24, bgcolor=BORDER),
-                                    ft.Column(
-                                        spacing=2,
-                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                                        controls=[
-                                            ft.Text("Privacidade", size=10, color=MUTED),
-                                            ft.Text("100% Anônimo", size=12, weight=ft.FontWeight.W_600, color=CIANO),
-                                        ],
-                                    ),
+                                    ft.Divider(height=1, color=BORDER),
+                                    *[
+                                        ft.Row(
+                                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                            controls=[
+                                                ft.Text(eixo, size=11, color=MUTED),
+                                                ft.Text(
+                                                    f"{respostas[indice]} / 5",
+                                                    size=11,
+                                                    color=cores_por_nota[respostas[indice]],
+                                                    weight=ft.FontWeight.W_700,
+                                                ),
+                                            ],
+                                        )
+                                        for indice, (eixo, _) in enumerate(perguntas)
+                                    ],
                                 ],
                             ),
                         ),
                         ft.Text(
-                            "No Evalytics, cada resposta é processada em tempo real e alimenta os relatórios dos 3 eixos institucionais "
-                            "sem expor a identidade de quem respondeu.",
+                            "Esta prévia é ilustrativa. As respostas acima foram calculadas nesta tela e não foram enviadas nem salvas.",
                             size=12,
                             color=MUTED,
                             text_align=ft.TextAlign.CENTER,
@@ -238,7 +270,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
 
     # Monta a tela de preenchimento inicial
     conteudo_modal.controls.extend([
-        # Pergunta simulada
+        # Prévia ilustrativa, percorrida como um fluxo de avaliação.
         ft.Container(
             padding=14,
             bgcolor=SURFACE_ALT,
@@ -247,30 +279,20 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
             content=ft.Column(
                 spacing=6,
                 controls=[
-                    ft.Row(
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        controls=[
-                            ft.Container(
-                                padding=ft.Padding.symmetric(horizontal=8, vertical=3),
-                                bgcolor=ft.Colors.with_opacity(0.12, ROXO_CLARO),
-                                border_radius=10,
-                                content=ft.Text(
-                                    "EIXO 1 • ORGANIZAÇÃO DIDÁTICO-PEDAGÓGICA",
-                                    size=10,
-                                    weight=ft.FontWeight.W_700,
-                                    color=ROXO_CLARO,
-                                    font_family="monospace",
+                        ft.Row(
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            controls=[
+                                ft.Container(
+                                    padding=ft.Padding.symmetric(horizontal=8, vertical=3),
+                                    bgcolor=ft.Colors.with_opacity(0.12, ROXO_CLARO),
+                                    border_radius=10,
+                                    content=texto_eixo,
                                 ),
-                            ),
-                            ft.Text("Questão 01 de 01", size=10, color=MUTED, font_family="monospace"),
-                        ],
-                    ),
-                    ft.Text(
-                        "Em que medida os objetivos e a estrutura do curso atendem às demandas de formação profissional e do mercado de trabalho?",
-                        size=13,
-                        weight=ft.FontWeight.W_600,
-                        color=TEXT,
-                    ),
+                                texto_progresso,
+                            ],
+                        ),
+                        barra_progresso,
+                        texto_pergunta,
                 ],
             ),
         ),
@@ -284,8 +306,12 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
             ],
         ),
 
-        # Campo de observações
-        campo_comentario,
+        ft.Text(
+            "Conteúdo demonstrativo. Nenhuma resposta será transmitida ou registrada.",
+            size=10,
+            color=MUTED,
+            italic=True,
+        ),
 
         # Botão de envio
         ft.Row(
@@ -298,7 +324,7 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                     on_click=fechar_dialog,
                 ),
                 ft.ElevatedButton(
-                    "Enviar Resposta Simulada",
+                    "Próxima pergunta",
                     bgcolor=ROXO,
                     color="#ffffff",
                     height=38,
@@ -307,11 +333,45 @@ def abrir_modal_simulacao(page: ft.Page, mudar_tela: Optional[Callable[[str], No
                         padding=ft.Padding.symmetric(horizontal=16),
                         text_style=ft.TextStyle(size=12, weight=ft.FontWeight.W_600),
                     ),
-                    on_click=submeter_simulacao,
+                    on_click=lambda e: _avancar_ou_concluir(e),
                 ),
             ],
         ),
     ])
+
+    def _avancar_ou_concluir(e):
+        if etapa_atual["valor"] < len(perguntas) - 1:
+            etapa_atual["valor"] += 1
+            _atualizar_pergunta()
+            btn_enviar.content = (
+                "Próxima pergunta"
+                if etapa_atual["valor"] < len(perguntas) - 1
+                else "Finalizar"
+            )
+            btn_voltar.visible = etapa_atual["valor"] > 0
+            page.update()
+            return
+        submeter_simulacao(e)
+
+    def _voltar_pergunta(e):
+        if etapa_atual["valor"] > 0:
+            etapa_atual["valor"] -= 1
+            _atualizar_pergunta()
+            btn_enviar.content = "Próxima pergunta"
+            btn_voltar.visible = etapa_atual["valor"] > 0
+            page.update()
+
+    # Referências usadas para atualizar a navegação entre perguntas.
+    botoes_fluxo = conteudo_modal.controls[-1].controls
+    btn_voltar = ft.TextButton(
+        "Voltar",
+        visible=False,
+        style=ft.ButtonStyle(color=MUTED),
+        on_click=_voltar_pergunta,
+    )
+    btn_enviar = botoes_fluxo[-1]
+    btn_enviar.content = "Próxima pergunta"
+    botoes_fluxo.insert(1, btn_voltar)
 
     dialog = ft.AlertDialog(
         modal=True,

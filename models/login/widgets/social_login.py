@@ -1,7 +1,6 @@
 import flet as ft
-from components.core.constants.constants import COR_TEXTO_TITULO
 
-def criar_login_social(cor_texto_secundario: str, cor_borda: str) -> ft.Column:
+def criar_login_social(cor_texto_secundario: str, cor_borda: str, cor_texto_principal: str) -> ft.Column:
     """Seção de autenticação por terceiros: divisor 'OU CONTINUE COM' + botões sociais."""
     
     # Cria uma linha horizontal com texto no meio (padrão comum em formulários de login moderno)
@@ -27,12 +26,12 @@ def criar_login_social(cor_texto_secundario: str, cor_borda: str) -> ft.Column:
         spacing=10,  # Substitui os Containers manuais de espaçamento, mantendo o mesmo resultado visual
         controls=[
             # Botão G (Google)
-            ft.OutlinedButton(content=ft.Text("G", color=COR_TEXTO_TITULO, weight=ft.FontWeight.BOLD), style=estilo_botao_social, expand=True),
+            ft.OutlinedButton(content=ft.Text("G", color=cor_texto_principal, weight=ft.FontWeight.BOLD), style=estilo_botao_social, expand=True),
             # Botão Windows (Microsoft)
-            ft.OutlinedButton(content=ft.Icon(ft.Icons.WINDOW, color=COR_TEXTO_TITULO), style=estilo_botao_social, expand=True),
+            ft.OutlinedButton(content=ft.Icon(ft.Icons.WINDOW, color=cor_texto_principal), style=estilo_botao_social, expand=True),
             # Botão Apple
-            ft.OutlinedButton(content=ft.Icon(ft.Icons.APPLE, color=COR_TEXTO_TITULO), style=estilo_botao_social, expand=True),
+            ft.OutlinedButton(content=ft.Icon(ft.Icons.APPLE, color=cor_texto_principal), style=estilo_botao_social, expand=True),
         ],
     )
 
-    return ft.Column(spacing=20, controls=[ft.Container(height=10), divisor, botoes])
+    return ft.Column(spacing=14, controls=[ft.Container(height=8), divisor, botoes])

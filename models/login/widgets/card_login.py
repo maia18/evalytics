@@ -14,14 +14,16 @@ def criar_card_login(
     
     return ft.Container(
         bgcolor=cor_card, 
-        padding=24,
+        padding=20,
         border_radius=12,
+        border=ft.Border.all(1, "#3A3A3A"),
         shadow=ft.BoxShadow(
-            blur_radius=15, 
-            color=ft.Colors.BLACK12
+            blur_radius=18,
+            spread_radius=1,
+            color="#66000000",
         ),
         content=ft.Column(
-            spacing=20,
+            spacing=14,
             controls=[
                 cabecalho_abas, 
                 campo_nome, 

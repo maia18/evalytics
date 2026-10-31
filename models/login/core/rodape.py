@@ -15,26 +15,26 @@ def criar_rodape_termos(cor_texto_secundario: str, cor_primaria: str) -> ft.Cont
             # `spans` permite segmentar uma única string em múltiplos estilos aplicados.
             spans=[
                 ft.TextSpan(
-                    "By signing up, you agree to our ", 
+                    "Ao continuar, você concorda com nossos ",
                     ft.TextStyle(
                         color=cor_texto_secundario,
                     )
                 ),
                 ft.TextSpan(
-                    "Terms of Service", 
+                    "Termos de Serviço",
                     ft.TextStyle(
                         color=cor_primaria, # Aplica a cor de destaque (ex: Azul) no "Link"
                         weight=ft.FontWeight.W_500,
                     )
                 ),
                 ft.TextSpan(
-                    " and ", 
+                    " e ",
                     ft.TextStyle(
                         color=cor_texto_secundario,
                     )
                 ),
                 ft.TextSpan(
-                    "Privacy Policy", 
+                    "Política de Privacidade",
                     ft.TextStyle(
                         color=cor_primaria, 
                         weight=ft.FontWeight.W_500,

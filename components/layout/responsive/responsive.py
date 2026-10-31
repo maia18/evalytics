@@ -64,6 +64,7 @@ class ResponsiveLayout:
             dark_mode=self.controller.dark_mode,
             toggle_sidebar=self.controller.toggle_sidebar,
             atualizar_tema=self.controller.toggle_dark_mode,
+            mudar_tela=self.mudar_tela,
         )
 
         '''

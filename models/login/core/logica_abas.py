@@ -37,7 +37,7 @@ def obter_funcao_alternar(
         opcoes_extras.visible = not is_signup   # Oculta "Lembrar senha" no Cadastro
 
         '''3. Troca o rótulo do botão de ação primária'''
-        btn_login.text = "Create account" if is_signup else "Sign In"
+        btn_login.text = "Criar conta" if is_signup else "Entrar"
 
         '''4. Envia as modificações para serem renderizadas'''
         e.page.update()

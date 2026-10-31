@@ -1,5 +1,7 @@
 import flet as ft
 from typing import Callable
+from components.core.auth.auth_state import auth_state
+from components.core.router.rotas_cts import ROTA_CONFIGURACOES, ROTA_INICIAL
 from components.core.constants.constants import (
     TEXTO_PRINCIPAL, 
     SURFACE, 
@@ -17,6 +19,7 @@ def criar_topbar_content(
     cores: dict[str, str],
     menu_button: ft.IconButton,
     atualizar_tema: Callable[[], None],
+    mudar_tela: Callable[[str], None] | None = None,
     notificacoes_pendentes: int = 0,
 ) -> ft.ResponsiveRow:
     """Constrói a faixa de navegação superior (Cabeçalho da Página)."""
@@ -31,6 +34,41 @@ def criar_topbar_content(
         O "painel_notificacoes" é solto (não fica dentro da Row da Topbar), pois ele será colocado no `page.overlay` global.
     '''
     area_notificacoes, painel_notificacoes, badge_notificacoes, atualizar_lista = criar_componentes_notificacoes(page, cores)
+
+    usuario = auth_state.usuario or {}
+    email_usuario = usuario.get("email", "")
+    nome_usuario = usuario.get("displayName") or usuario.get("name") or ""
+    identificador = nome_usuario or email_usuario.partition("@")[0]
+    partes_nome = [parte for parte in identificador.replace(".", " ").replace("_", " ").split() if parte]
+    iniciais = "".join(parte[0] for parte in partes_nome[:2]).upper() or "U"
+
+    async def fazer_logout(e):
+        await auth_state.encerrar_sessao(page)
+        if mudar_tela:
+            mudar_tela(ROTA_INICIAL)
+
+    itens_conta = [
+        ft.PopupMenuItem(
+            content=ft.Column(
+                spacing=2,
+                controls=[
+                    ft.Text(nome_usuario or "Conta", size=12, weight=ft.FontWeight.W_600, color=cores[TEXTO_PRINCIPAL]),
+                    ft.Text(email_usuario or "Usuário autenticado", size=10, color=ft.Colors.GREY_500),
+                ],
+            ),
+            height=56,
+        ),
+        ft.PopupMenuItem(
+            content="Configurações",
+            icon=ft.Icons.SETTINGS_OUTLINED,
+            on_click=lambda e: mudar_tela(ROTA_CONFIGURACOES) if mudar_tela else None,
+        ),
+        ft.PopupMenuItem(
+            content="Sair",
+            icon=ft.Icons.LOGOUT,
+            on_click=fazer_logout,
+        ),
+    ]
 
     conteudo = ft.ResponsiveRow(
         spacing=8,
@@ -101,11 +139,19 @@ def criar_topbar_content(
                     # Ícone do sininho de notificações
                     area_notificacoes,
                     
-                    # Foto do Usuário (Placeholder)
-                    ft.CircleAvatar(
-                        radius=14,
-                        color=cores[TEXTO_PRINCIPAL],
-                        content=ft.Text("AC", size=10),
+                    # Menu de conta: identificação, configurações e encerramento de sessão.
+                    ft.PopupMenuButton(
+                        content=ft.CircleAvatar(
+                            radius=14,
+                            bgcolor=COR_PRIMARIA,
+                            color=ft.Colors.WHITE,
+                            content=ft.Text(iniciais, size=10, weight=ft.FontWeight.W_600),
+                        ),
+                        items=itens_conta,
+                        bgcolor=cores[SURFACE],
+                        menu_position=ft.PopupMenuPosition.UNDER,
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        tooltip="Menu da conta",
                     ),
                     ],
                 ),

@@ -16,6 +16,7 @@ class TopBar(ft.Container):
         dark_mode: bool,
         toggle_sidebar: Callable[[], None],
         atualizar_tema: Callable[[], None],
+        mudar_tela: Callable[[str], None] | None = None,
     ) -> None:
 
         super().__init__()
@@ -51,6 +52,7 @@ class TopBar(ft.Container):
             cores=self.cores,
             menu_button=self.menu_button,
             atualizar_tema=atualizar_tema,
+            mudar_tela=mudar_tela,
             notificacoes_pendentes=self.notificacoes_pendentes,
         )
 
