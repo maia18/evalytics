@@ -8,6 +8,7 @@ from components.landing.palette import (
     MAX_CONTENT_WIDTH,
 )
 from components.landing.recursos.card import criar_card_responsivo
+from components.landing.helpers.modal_simulacao import abrir_modal_simulacao
 
 def criar_secao_recursos(
     page: ft.Page = None,
@@ -15,9 +16,9 @@ def criar_secao_recursos(
     ir_para_sobre: Optional[Callable] = None,
 ) -> ft.Container:
     """
-    Constrói a seção de benefícios em grade de 3 colunas:
-    1. Avaliações por eixo (Roxo)
-    2. Indicadores institucionais (Ciano, com ação para abrir a página dedicada)
+    Constrói a seção de benefícios em grade com 3 cards de mesmo tamanho e botões de ação:
+    1. Avaliações por eixo (Roxo, com simulação interativa de avaliação)
+    2. Indicadores normativos (Ciano, com ação para abrir a página de indicadores)
     3. Sobre a plataforma (Rosa, com ação de rolagem até a seção Sobre)
     """
 
@@ -27,12 +28,14 @@ def criar_secao_recursos(
         spacing=16,
         run_spacing=16,
         controls=[
-            # Card 1: Avaliações
+            # Card 1: Avaliações (com ação de Simular Avaliação)
             criar_card_responsivo(
                 titulo="Avaliações por eixo",
                 descricao="Organize perguntas e respostas da avaliação institucional estruturadas por curso, semestre e eixo avaliativo.",
                 cor_destaque=ROXO_CLARO,
                 tag="AVALIAÇÕES",
+                acao_texto="Simular uma avaliação →",
+                on_acao=lambda e: abrir_modal_simulacao(page, mudar_tela) if page else None,
                 scroll_key="recursos-avaliacoes",
             ),
 
@@ -47,7 +50,7 @@ def criar_secao_recursos(
                 scroll_key="indicadores-card",
             ),
 
-            # Card 3: Sobre (Substitui Relatórios)
+            # Card 3: Sobre (Conhecer o projeto)
             criar_card_responsivo(
                 titulo="Sobre a plataforma",
                 descricao="Desenvolvido para transformar o processo de autoavaliação institucional em um ciclo transparente de melhoria contínua.",

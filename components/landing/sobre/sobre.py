@@ -16,7 +16,7 @@ from components.landing.palette import (
 def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
     """
     Constrói a seção institucional 'Sobre o Evalytics'.
-    Apresenta a proposta de valor, metodologia e os 3 pilares do ciclo de avaliação.
+    Apresenta a proposta de valor, metodologia e os 3 pilares do ciclo de avaliação com cards de mesmo tamanho.
     """
 
     def _pilar_card(numero: str, titulo: str, descricao: str, cor: str) -> ft.Container:
@@ -25,7 +25,8 @@ def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
             bgcolor=SURFACE,
             border=ft.Border.all(1, BORDER),
             border_radius=12,
-            padding=20,
+            height=180,
+            padding=ft.Padding.only(left=20, right=20, top=18, bottom=18),
             content=ft.Column(
                 spacing=8,
                 horizontal_alignment=ft.CrossAxisAlignment.START,
@@ -146,7 +147,7 @@ def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
                         ],
                     ),
 
-                    # Grade dos 3 Pilares
+                    # Grade dos 3 Pilares com alturas perfeitamente padronizadas
                     pilares,
                 ],
             ),

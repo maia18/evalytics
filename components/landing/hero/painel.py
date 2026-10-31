@@ -46,19 +46,26 @@ def criar_painel_hero(page: ft.Page = None) -> ft.Container:
 
     async def copiar_texto(e):
         if page:
-            await page.set_clipboard(texto_previa)
+            try:
+                if hasattr(page, "clipboard"):
+                    await page.clipboard.set(texto_previa)
+                elif hasattr(page, "set_clipboard"):
+                    await page.set_clipboard(texto_previa)
+            except Exception:
+                pass
+
             btn_copiar.content.controls[0].name = ft.Icons.CHECK_ROUNDED
             btn_copiar.content.controls[0].color = VERDE
             btn_copiar.content.controls[1].value = "Prévia copiada"
             btn_copiar.content.controls[1].color = VERDE
-            btn_copiar.update()
+            page.update()
 
             await asyncio.sleep(2)
             btn_copiar.content.controls[0].name = ft.Icons.COPY_ROUNDED
             btn_copiar.content.controls[0].color = MUTED
             btn_copiar.content.controls[1].value = "Copiar prévia"
             btn_copiar.content.controls[1].color = MUTED
-            btn_copiar.update()
+            page.update()
 
     btn_copiar.on_click = copiar_texto
 
