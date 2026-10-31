@@ -38,11 +38,6 @@ def _exibir_dialogo(page: ft.Page, titulo: str, conteudo: ft.Control, cores: dic
 
 def _fechar_dialogo(page: ft.Page, dialogo: ft.AlertDialog):
     dialogo.open = False
-    # Envia primeiro a mudança de estado para o cliente Flet, depois remove
-    # o controle do overlay. Removê-lo antes do update pode deixar o diálogo visível.
-    page.update()
-    if dialogo in page.overlay:
-        page.overlay.remove(dialogo)
     page.update()
 
 
@@ -202,7 +197,7 @@ async def abrir_perfil(
                 return
 
             await auth_state.atualizar_dados_usuario(dados)
-            _fechar_dialogo(page, dialogo_senha)
+            dialogo_senha.open = False
             _notificar(page, "Senha alterada com sucesso.", True)
 
         dialogo_senha = ft.AlertDialog(
@@ -273,7 +268,7 @@ async def abrir_perfil(
         ao_salvar(nome_salvo, email)
         nome_titulo.value = nome_salvo
         avatar_perfil.content.value = "".join(parte[0] for parte in nome_salvo.split()[:2]).upper() or "U"
-        _fechar_dialogo(page, dialogo)
+        dialogo.open = False
         _notificar(page, "Perfil atualizado.", True)
 
     dialogo = ft.AlertDialog(
