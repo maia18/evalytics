@@ -447,10 +447,17 @@ def abrir_configuracoes_conta(
         _fechar_dialogo(page, dialogo)
         page.run_task(abrir_perfil, None)
 
-    def alterar_aparencia(e):
+    async def aplicar_aparencia():
+        # Deixa o evento do Switch e a atualização do diálogo terminarem antes
+        # de o Navigator desmontar a view atual.
+        await asyncio.sleep(0.1)
         modo_escuro_atual = getattr(page, "is_dark_mode", False)
+        rota_atual = getattr(page, "rota_navegacao_atual", None) or page.route
+        toggle_dark_mode(page, modo_escuro_atual, mudar_tela, rota_atual)
+
+    def alterar_aparencia(e):
         _fechar_dialogo(page, dialogo)
-        toggle_dark_mode(page, modo_escuro_atual, mudar_tela, page.route)
+        page.run_task(aplicar_aparencia)
 
     preferencia_tema = ft.Switch(
         label="Tema escuro",
