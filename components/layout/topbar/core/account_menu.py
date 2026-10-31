@@ -6,6 +6,7 @@ from datetime import date, datetime
 
 from components.core.auth.auth_state import auth_state
 from components.core.constants.constants import TEXTO_PRINCIPAL, TEXTO_SECUNDARIO, SURFACE, COR_PRIMARIA
+from components.core.theme.darkmode_toggle import toggle_dark_mode
 from components.core.router.rotas_cts import (
     ROTA_AVALIACOES,
     ROTA_DASHBOARD_VISAO_GERAL,
@@ -437,6 +438,7 @@ def abrir_configuracoes_conta(
     nome: str,
     email: str,
     abrir_perfil: Callable,
+    mudar_tela: Callable[[str], None],
 ):
     """Mostra atalhos de configurações pessoais da conta, sem abrir as configurações institucionais."""
     dialogo = None
@@ -444,6 +446,18 @@ def abrir_configuracoes_conta(
     def ir_para_perfil(e):
         _fechar_dialogo(page, dialogo)
         page.run_task(abrir_perfil, None)
+
+    def alterar_aparencia(e):
+        modo_escuro_atual = getattr(page, "is_dark_mode", False)
+        _fechar_dialogo(page, dialogo)
+        toggle_dark_mode(page, modo_escuro_atual, mudar_tela, page.route)
+
+    preferencia_tema = ft.Switch(
+        label="Tema escuro",
+        value=getattr(page, "is_dark_mode", False),
+        on_change=alterar_aparencia,
+        active_color=COR_PRIMARIA,
+    )
 
     conteudo = ft.Column(
         tight=True,
@@ -472,6 +486,25 @@ def abrir_configuracoes_conta(
                 "A alteração do nome e da senha fica disponível na área do seu perfil.",
                 size=12,
                 color=cores[TEXTO_SECUNDARIO],
+            ),
+            ft.Divider(height=1),
+            ft.Text("PREFERÊNCIAS", size=10, weight=ft.FontWeight.W_700, color=cores[TEXTO_SECUNDARIO]),
+            ft.Container(
+                padding=ft.Padding.symmetric(horizontal=12, vertical=6),
+                bgcolor=cores[SURFACE],
+                border=ft.Border.all(1, ft.Colors.with_opacity(0.16, ft.Colors.GREY_400)),
+                border_radius=10,
+                content=ft.Column(
+                    spacing=2,
+                    controls=[
+                        preferencia_tema,
+                        ft.Text(
+                            "Escolha o tema visual usado na plataforma.",
+                            size=11,
+                            color=cores[TEXTO_SECUNDARIO],
+                        ),
+                    ],
+                ),
             ),
         ],
     )
@@ -701,6 +734,7 @@ def criar_menu_conta(
             estado["nome"],
             estado["email"],
             abrir_perfil_click,
+            mudar_tela,
         )
 
     menu = ft.PopupMenuButton(
