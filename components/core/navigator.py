@@ -35,6 +35,7 @@ class Navigator:
             "/",
             "/login",
             "/indicadores",
+            "/desenvolvedores",
         }
 
         if rota not in rotas_publicas and not auth_state.autenticado:

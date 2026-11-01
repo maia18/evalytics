@@ -1,0 +1,16 @@
+[
+  {
+    "nome": "Nelson Kaue Barroso Maia",
+    "funcao": "Front-end",
+    "github": "https://github.com/maia18",
+    "ordem": 1,
+    "ativo": true
+  },
+  {
+    "nome": "Denilson da Silva Pereira",
+    "funcao": "Back-end",
+    "github": "https://github.com/denilson011",
+    "ordem": 2,
+    "ativo": true
+  }
+]

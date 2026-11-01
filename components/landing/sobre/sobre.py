@@ -13,7 +13,7 @@ from components.landing.palette import (
     MAX_CONTENT_WIDTH,
 )
 
-def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
+def criar_secao_sobre(page: ft.Page = None, mudar_tela=None) -> ft.Container:
     """
     Constrói a seção institucional 'Sobre o Evalytics'.
     Apresenta a proposta de valor, metodologia e os 3 pilares do ciclo de avaliação com cards de mesmo tamanho.
@@ -149,6 +149,17 @@ def criar_secao_sobre(page: ft.Page = None) -> ft.Container:
 
                     # Grade dos 3 Pilares com alturas padronizadas
                     pilares,
+                    ft.OutlinedButton(
+                        "Conheça os desenvolvedores",
+                        icon=ft.Icons.GROUP_OUTLINED,
+                        on_click=lambda e: mudar_tela("/desenvolvedores") if mudar_tela else None,
+                        style=ft.ButtonStyle(
+                            color=TEXT,
+                            side=ft.BorderSide(1, BORDER),
+                            shape=ft.RoundedRectangleBorder(radius=8),
+                            padding=ft.Padding.symmetric(horizontal=18, vertical=10),
+                        ),
+                    ),
                 ],
             ),
         ),

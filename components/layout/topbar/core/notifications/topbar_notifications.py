@@ -8,6 +8,7 @@ from components.layout.topbar.core.notifications.notifications import (
     listar_notificacoes,
     contar_nao_lidas,
     marcar_todas_como_lidas,
+    limpar_notificacoes,
 )
 
 def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
@@ -33,7 +34,7 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
 
     # 2. O Painel Flutuante (Caixa onde a lista de notificações aparece)
     painel_notificacoes = ft.Container(
-        width=320, height=500, 
+        width=280, height=min(500, 140 + len(notificacoes) * 88) if notificacoes else 120,
         visible=False, # Nasce escondido
         top=66, right=66, # Fica ancorado próximo ao canto superior direito da tela
         bgcolor=cores[SURFACE], 
@@ -100,16 +101,133 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
         return itens
 
     lista_notificacoes = ft.Column(spacing=0, controls=criar_itens_notificacoes(notificacoes))
+    corpo_notificacoes = ft.Container(expand=True, alignment=ft.Alignment.CENTER)
+    acoes_notificacoes = ft.Container(
+        width=240,
+        height=40,
+        content=ft.Row(
+            expand=True,
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            controls=[
+                ft.Container(
+                    expand=True,
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.TextButton(
+                        "Marcar tudo como lida",
+                        on_click=lambda e: marcar_como_lidas(),
+                        style=ft.ButtonStyle(
+                            bgcolor=ft.Colors.TRANSPARENT,
+                            padding=ft.Padding.all(0),
+                            overlay_color=ft.Colors.TRANSPARENT,
+                            visual_density=ft.VisualDensity.COMPACT,
+                        ),
+                    ),
+                ),
+                ft.IconButton(
+                    icon=ft.Icons.DELETE_OUTLINE,
+                    width=24,
+                    height=24,
+                    icon_size=16,
+                    icon_color=ft.Colors.RED_400,
+                    on_click=lambda e: abrir_confirmacao_limpeza(),
+                    tooltip="Limpar notificações",
+                    style=ft.ButtonStyle(
+                        bgcolor=ft.Colors.TRANSPARENT,
+                        padding=ft.Padding.all(0),
+                        overlay_color=ft.Colors.TRANSPARENT,
+                        visual_density=ft.VisualDensity.COMPACT,
+                    ),
+                ),
+            ],
+        ),
+    )
+    rodape_notificacoes = ft.Container(
+        width=320,
+        height=40,
+        alignment=ft.Alignment.CENTER,
+        content=acoes_notificacoes,
+    )
+    divisor_rodape = ft.Divider(height=1, visible=bool(notificacoes))
 
     def atualizar_lista_notificacoes(novas_notificacoes: list[dict]) -> None:
-        """Permite que o sistema injete novas mensagens na UI em tempo real."""
+        """Atualiza lista, estado vazio, altura do painel e ações disponíveis."""
         lista_notificacoes.controls = criar_itens_notificacoes(novas_notificacoes)
+        tem_notificacoes = bool(novas_notificacoes)
+        painel_notificacoes.height = (
+            min(500, 140 + len(novas_notificacoes) * 88)
+            if tem_notificacoes
+            else 120
+        )
+        acoes_notificacoes.visible = tem_notificacoes
+        divisor_rodape.visible = tem_notificacoes
+        if tem_notificacoes:
+            corpo_notificacoes.alignment = ft.Alignment.TOP_CENTER
+            corpo_notificacoes.content = ft.ListView(
+                expand=True,
+                spacing=0,
+                controls=[lista_notificacoes],
+                scroll=ft.ScrollMode.AUTO,
+            )
+        else:
+            corpo_notificacoes.alignment = ft.Alignment.CENTER
+            corpo_notificacoes.content = ft.Text(
+                "Você não tem notificações.",
+                size=12,
+                color=ft.Colors.GREY,
+                text_align=ft.TextAlign.CENTER,
+            )
+
+    atualizar_lista_notificacoes(notificacoes)
 
     def marcar_como_lidas(e=None):
         marcar_todas_como_lidas()
         badge_notificacoes.visible = False
         badge_notificacoes.content = ft.Text("0", size=9, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE)
         fechar_painel()
+
+    def executar_limpeza(e=None):
+        confirmacao_limpeza.open = False
+        if limpar_notificacoes():
+            atualizar_lista_notificacoes([])
+            badge_notificacoes.visible = False
+            badge_notificacoes.content = ft.Text("0", size=9, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE)
+        else:
+            aviso = ft.SnackBar(
+                content=ft.Text("Não foi possível limpar as notificações. Tente novamente."),
+                bgcolor=ft.Colors.RED_700,
+            )
+            page.overlay.append(aviso)
+            aviso.open = True
+        page.update()
+
+    def abrir_confirmacao_limpeza(e=None):
+        if confirmacao_limpeza not in page.overlay:
+            page.overlay.append(confirmacao_limpeza)
+        confirmacao_limpeza.open = True
+        page.update()
+
+    def cancelar_limpeza(e=None):
+        confirmacao_limpeza.open = False
+        page.update()
+
+    confirmacao_limpeza = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Limpar notificações"),
+        content=ft.Text("Deseja excluir permanentemente todas as notificações da sua conta?"),
+        actions=[
+            ft.TextButton(
+                "Cancelar",
+                on_click=cancelar_limpeza,
+            ),
+            ft.ElevatedButton(
+                "Limpar",
+                bgcolor=ft.Colors.RED_700,
+                color=ft.Colors.WHITE,
+                on_click=executar_limpeza,
+            ),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
 
     # Preenche o esqueleto do painel criado no passo 2
     painel_notificacoes.content = ft.Column(
@@ -127,9 +245,9 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
                 )
             ),
             ft.Divider(height=1),
-            ft.ListView(expand=True, spacing=0, controls=[lista_notificacoes], scroll=ft.ScrollMode.AUTO), # Corpo rolável com as mensagens
-            ft.Divider(height=1),
-            ft.Container(padding=12, alignment=ft.Alignment.CENTER, content=ft.TextButton("Marcar como lidas", on_click=marcar_como_lidas)) # Rodapé com ação
+            corpo_notificacoes,
+            divisor_rodape,
+            rodape_notificacoes,
         ]
     )
 

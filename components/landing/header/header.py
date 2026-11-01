@@ -3,7 +3,14 @@ from typing import Callable, Optional
 from components.landing.header.logo import criar_logo
 from components.landing.header.desktop import criar_menu_desktop
 from components.landing.header.mobile import criar_menu_mobile
-from components.landing.palette import PAGE, BORDER, MAX_CONTENT_WIDTH
+from components.landing.palette import (
+    PAGE,
+    BORDER,
+    BORDER_STRONG,
+    SURFACE_ALT,
+    ACCENT,
+    MAX_CONTENT_WIDTH,
+)
 
 def criar_header(
     page: ft.Page,
@@ -31,11 +38,31 @@ def criar_header(
 
     # Layout desktop (telas a partir de md)
     header_desktop = ft.Row(
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        spacing=16,
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
             logo,
-            menu_desktop,
+            ft.Container(
+                expand=True,
+                alignment=ft.Alignment.CENTER,
+                content=menu_desktop,
+            ),
+            ft.Container(
+                width=32,
+                height=32,
+                border_radius=16,
+                bgcolor=SURFACE_ALT,
+                border=ft.Border.all(1, BORDER_STRONG),
+                alignment=ft.Alignment.CENTER,
+                tooltip="Login",
+                ink=True,
+                on_click=lambda e: mudar_tela("/login"),
+                content=ft.Icon(
+                    ft.Icons.PERSON_OUTLINE,
+                    size=18,
+                    color=ACCENT,
+                ),
+            ),
         ],
     )
 

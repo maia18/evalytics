@@ -1,12 +1,10 @@
+import asyncio
 import requests
 import flet as ft
 from typing import Callable
 from database.services.firebase_keys import FIREBASE_API_KEY
 from components.core.auth.auth_state import auth_state
-from models.login.core.logica_abas import obter_funcao_alternar
 from models.login.core.cabecalho_login import criar_cabecalho
-from models.login.core.tab_style import criar_estilo_aba
-from models.login.core.rodape import criar_rodape_termos
 from models.login.widgets.card_login import criar_card_login
 from models.login.widgets.social_login import criar_login_social
 from models.login.widgets.extras_login import criar_opcoes_extras
@@ -18,16 +16,18 @@ from models.login.widgets.campos_login import (
 from components.core.constants.constants import (
     COR_PRIMARIA,
 )
+from components.landing.palette import (
+    PAGE as LOGIN_FUNDO,
+    SURFACE as LOGIN_CARD,
+    BORDER as LOGIN_BORDA,
+    TEXT as LOGIN_TEXTO,
+    MUTED as LOGIN_TEXTO_SECUNDARIO,
+    ROXO_CLARO as LOGIN_DESTAQUE,
+    CIANO as LOGIN_CIANO,
+    ROSA as LOGIN_ROSA,
+)
 
 from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
-
-# Paleta escura alinhada ao restante da interface do Evalytics.
-LOGIN_FUNDO = "#1E1E1E"
-LOGIN_CARD = "#2A2A2A"
-LOGIN_CAMPO = "#252525"
-LOGIN_TEXTO = "#FFFFFF"
-LOGIN_TEXTO_SECUNDARIO = "#C2C2C8"
-LOGIN_BORDA = "#45454B"
 
 def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     """
@@ -45,7 +45,7 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     campo_email = criar_campo_email(LOGIN_TEXTO, LOGIN_TEXTO_SECUNDARIO, LOGIN_BORDA)
     campo_senha = criar_campo_senha(LOGIN_TEXTO, LOGIN_TEXTO_SECUNDARIO, LOGIN_BORDA)
     for campo in (campo_nome, campo_email, campo_senha):
-        campo.controls[1].bgcolor = LOGIN_CAMPO
+        campo.controls[1].bgcolor = LOGIN_FUNDO
         campo.controls[1].focused_border_color = COR_PRIMARIA
     
     # Desempacota as opções extras (Checkbox de Lembrar-me e Link de Esqueceu a Senha)
@@ -54,23 +54,21 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         COR_PRIMARIA,
     )
 
-    """
-    # =========================================================================
-    # 2. SISTEMA DE ABAS (ENTRAR / CADASTRAR)
-    # =========================================================================
-    """
-    
-    btn_aba_signin = ft.TextButton(
-        "Entrar", 
-        data="signin", # O 'data' é usado para identificar qual botão foi clicado
-        expand=True,   # Faz os dois botões dividirem o espaço 50/50
-        style=criar_estilo_aba(ativo=True, cor_primaria=COR_PRIMARIA, cor_texto_inativo=LOGIN_TEXTO),
+    modo_cadastro = {"ativo": False}
+    btn_cadastro = ft.TextButton(
+        "Cadastre-se",
+        data="signup",
+        style=ft.ButtonStyle(
+            color=COR_PRIMARIA,
+            padding=ft.Padding.symmetric(horizontal=4, vertical=2),
+            text_style=ft.TextStyle(size=12, weight=ft.FontWeight.W_600),
+        ),
     )
-    btn_aba_signup = ft.TextButton(
-        "Cadastrar-se", 
-        data="signup", 
-        expand=True,
-        style=criar_estilo_aba(ativo=False, cor_primaria=COR_PRIMARIA, cor_texto_inativo=LOGIN_TEXTO_SECUNDARIO),
+    texto_cadastro = ft.Text("Não possui uma conta?", size=12, color=LOGIN_TEXTO_SECUNDARIO)
+    rodape_cadastro = ft.Row(
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=4,
+        controls=[texto_cadastro, btn_cadastro],
     )
 
     """
@@ -94,8 +92,7 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
             page.update()
             return
 
-        # Verifica pela cor do botão se o usuário está na aba de Cadastro (Sign Up)
-        is_signup = btn_aba_signup.style.color == COR_PRIMARIA if hasattr(btn_aba_signup.style, 'color') else False
+        is_signup = modo_cadastro["ativo"]
         
         # Define o endpoint dinamicamente
         if is_signup:
@@ -177,6 +174,8 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     """
     
     cabecalho = criar_cabecalho(LOGIN_TEXTO, LOGIN_TEXTO_SECUNDARIO)
+    secao_social = criar_login_social(LOGIN_TEXTO_SECUNDARIO, LOGIN_BORDA, LOGIN_TEXTO)
+    secao_social.visible = True
 
     # O botão principal da ação (Sign In / Create Account)
     btn_login = ft.ElevatedButton(
@@ -186,42 +185,125 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         on_click=fazer_login,
     )
 
-    secao_social = criar_login_social(LOGIN_TEXTO_SECUNDARIO, LOGIN_BORDA, LOGIN_TEXTO)
-    rodape_termos = criar_rodape_termos(LOGIN_TEXTO_SECUNDARIO, COR_PRIMARIA)
+    def alternar_modo_cadastro(e: ft.ControlEvent) -> None:
+        modo_cadastro["ativo"] = not modo_cadastro["ativo"]
+        em_cadastro = modo_cadastro["ativo"]
+        campo_nome.visible = em_cadastro
+        opcoes_extras.visible = not em_cadastro
+        secao_social.visible = not em_cadastro
+        btn_login.content = "Criar conta" if em_cadastro else "Entrar"
+        cabecalho.controls[0].value = "Criar sua conta no Evalytics" if em_cadastro else "Fazer login em sua conta"
+        cabecalho.controls[1].value = (
+            "Preencha seus dados para criar uma conta."
+            if em_cadastro
+            else "Acesse o Evalytics para gerenciar as avaliações institucionais."
+        )
+        texto_cadastro.value = "Já possui uma conta?" if em_cadastro else "Não possui uma conta?"
+        btn_cadastro.content = "Fazer login" if em_cadastro else "Cadastre-se"
+        page.update()
 
-    # Injeta os componentes na fábrica de closure para gerenciar a troca de visualização
-    funcao_alternar = obter_funcao_alternar(
-        btn_aba_signin, btn_aba_signup, campo_nome, opcoes_extras, btn_login, LOGIN_TEXTO, COR_PRIMARIA
-    )
-    
-    # Ambas as abas chamam a mesma função; a lógica interna descobre quem chamou
-    btn_aba_signin.on_click = funcao_alternar
-    btn_aba_signup.on_click = funcao_alternar
+    btn_cadastro.on_click = alternar_modo_cadastro
 
-    cabecalho_abas = ft.Row(controls=[btn_aba_signin, btn_aba_signup], alignment=ft.MainAxisAlignment.CENTER, spacing=10)
-
-    # Agrupa todos os campos dentro da estrutura do Card branco
+    # Agrupa os campos e as ações na ordem da referência visual.
     card_login = criar_card_login(
-        cabecalho_abas, campo_nome, campo_email, campo_senha, opcoes_extras, btn_login, secao_social, LOGIN_CARD
+        campo_nome,
+        campo_email,
+        campo_senha,
+        opcoes_extras,
+        btn_login,
+        secao_social,
+        rodape_cadastro,
     )
 
-    # O card ocupa uma fração responsiva da tela: em celulares usa toda a
-    # largura disponível e, em telas maiores, mantém uma largura confortável.
-    card_responsivo = ft.ResponsiveRow(
+    formulario_responsivo = ft.ResponsiveRow(
         columns=12,
         alignment=ft.MainAxisAlignment.CENTER,
         controls=[
             ft.Container(
-                col={
-                    "xs": 12,
-                    "sm": 8,
-                    "md": 6,
-                    "lg": 5,
-                    "xl": 4,
-                    "xxl": 4,
-                },
+                col={"xs": 12, "sm": 10, "md": 9, "lg": 8},
                 content=card_login,
             ),
+        ],
+    )
+
+    coluna_login = ft.Container(
+        col={"xs": 12, "sm": 12, "md": 12, "lg": 6},
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=16,
+            controls=[cabecalho, formulario_responsivo],
+        ),
+    )
+
+    curso_preview = ft.Text("", size=12, color=LOGIN_TEXTO_SECUNDARIO, font_family="monospace")
+    semestre_preview = ft.Text("", size=12, color=LOGIN_TEXTO_SECUNDARIO, font_family="monospace")
+    painel_animado = ft.Container(
+        col={"xs": 12, "sm": 12, "md": 12, "lg": 6},
+        padding=30,
+        bgcolor=LOGIN_CARD,
+        border=ft.Border.all(1, LOGIN_BORDA),
+        border_radius=18,
+        content=ft.Column(
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.START,
+            spacing=20,
+            controls=[
+                ft.Text("Do feedback às decisões acadêmicas", size=26, weight=ft.FontWeight.W_700, color=LOGIN_TEXTO),
+                ft.Text(
+                    "Acompanhe avaliações, resultados por eixo e relatórios em um só lugar.",
+                    size=14,
+                    color=LOGIN_TEXTO_SECUNDARIO,
+                ),
+                ft.Container(
+                    padding=22,
+                    bgcolor=LOGIN_FUNDO,
+                    border=ft.Border.all(1, LOGIN_BORDA),
+                    border_radius=12,
+                    content=ft.Column(
+                        spacing=16,
+                        controls=[
+                            ft.Row(
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                controls=[
+                                    ft.Text("Avaliação semestral", size=12, weight=ft.FontWeight.W_600, color=LOGIN_TEXTO),
+                                    ft.Text("1 de 3 eixos", size=10, color=LOGIN_TEXTO_SECUNDARIO),
+                                ],
+                            ),
+                            ft.Text("Curso", size=10, color=LOGIN_TEXTO_SECUNDARIO),
+                            curso_preview,
+                            ft.Container(height=1, bgcolor=LOGIN_BORDA),
+                            ft.Text("Semestre", size=10, color=LOGIN_TEXTO_SECUNDARIO),
+                            semestre_preview,
+                        ],
+                    ),
+                ),
+                ft.Row(
+                    spacing=10,
+                    controls=[
+                        ft.Container(width=5, height=24, border_radius=3, bgcolor=LOGIN_CIANO),
+                        ft.Text("Respostas organizadas por eixo", size=12, color=LOGIN_TEXTO),
+                    ],
+                ),
+                ft.Row(
+                    spacing=10,
+                    controls=[
+                        ft.Container(width=5, height=24, border_radius=3, bgcolor=LOGIN_ROSA),
+                        ft.Text("Exportação em PDF ou CSV", size=12, color=LOGIN_TEXTO),
+                    ],
+                ),
+            ],
+        ),
+    )
+
+    layout_login = ft.ResponsiveRow(
+        columns=12,
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=24,
+        run_spacing=24,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        controls=[
+            coluna_login,
+            painel_animado,
         ],
     )
 
@@ -229,18 +311,57 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         expand=True,
         scroll=ft.ScrollMode.AUTO,
         alignment=ft.MainAxisAlignment.CENTER,
-        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         controls=[
-            ft.Column(
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=12,
-                controls=[cabecalho, card_responsivo, rodape_termos],
+            ft.Container(
+                expand=True,
+                padding=ft.Padding.symmetric(horizontal=24, vertical=20),
+                alignment=ft.Alignment.CENTER,
+                content=layout_login,
             ),
         ],
     )
 
-    # Retorna a página com rolagem vertical para telas baixas ou cadastro longo.
-    return ft.View(
+    token_animacao = object()
+    page._login_preview_token = token_animacao
+
+    def previa_ativa() -> bool:
+        return (
+            getattr(page, "_login_preview_token", None) is token_animacao
+            and getattr(page, "rota_navegacao_atual", "/login") == "/login"
+        )
+
+    async def animar_previa() -> None:
+        valores = (
+            (curso_preview, "Engenharia de Telecomunicações"),
+            (semestre_preview, "2026.1"),
+        )
+        await asyncio.sleep(0.5)
+        while previa_ativa():
+            for controle, valor in valores:
+                for indice in range(len(valor) + 1):
+                    if not previa_ativa():
+                        return
+                    controle.value = valor[:indice]
+                    try:
+                        controle.update()
+                    except (RuntimeError, AssertionError):
+                        return
+                    await asyncio.sleep(0.045)
+            await asyncio.sleep(1.5)
+            for controle, _ in reversed(valores):
+                valor_atual = controle.value or ""
+                for indice in range(len(valor_atual) - 1, -1, -1):
+                    if not previa_ativa():
+                        return
+                    controle.value = valor_atual[:indice]
+                    try:
+                        controle.update()
+                    except (RuntimeError, AssertionError):
+                        return
+                    await asyncio.sleep(0.02)
+            await asyncio.sleep(0.4)
+
+    view = ft.View(
         route="/login", 
         bgcolor=LOGIN_FUNDO,
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
@@ -248,3 +369,5 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         padding=ft.Padding.symmetric(horizontal=16, vertical=6),
         controls=[conteudo],
     )
+    page.run_task(animar_previa)
+    return view

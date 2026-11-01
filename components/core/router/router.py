@@ -20,6 +20,7 @@ from components.core.router.rotas_cts import (
     ROTA_RELATORIOS_DADOS,
     ROTA_CURSOS,
     ROTA_INDICADORES,
+    ROTA_DESENVOLVEDORES,
     ROTA_FORMULARIO,
     ROTA_CONFIGURACOES,
 )
@@ -27,6 +28,7 @@ from components.core.router.rotas_cts import (
 # Construtores de tela (Views)
 from components.landing.landing import ViewLanding
 from components.landing.indicadores.indicadores_view import ViewIndicadores
+from components.landing.desenvolvedores import ViewDesenvolvedores
 from models.login.login import ViewLogin
 from models.inicio.inicio import ViewInicio
 from models.cursos.cursos import ViewCursos
@@ -48,6 +50,7 @@ Tabela de Roteamento:
 ROTAS: dict[str, ViewBuilder] = {
     ROTA_INICIAL: ViewLanding,
     ROTA_INDICADORES: ViewIndicadores,
+    ROTA_DESENVOLVEDORES: ViewDesenvolvedores,
     ROTA_LOGIN: ViewLogin,
     ROTA_INICIO: ViewInicio,
     ROTA_DASHBOARD: ViewDashboard,

@@ -138,3 +138,33 @@ def marcar_todas_como_lidas(usuario_id: str) -> bool:
     except Exception:
         logger.exception("Erro ao marcar todas as notificações como lidas.")
         return False
+
+
+def excluir_todas_notificacoes(usuario_id: str) -> bool:
+    """Exclui em lotes somente as notificações pertencentes ao usuário informado."""
+    try:
+        docs = (
+            db.collection(COLECAO_NOTIFICACOES)
+            .where("usuario_id", "==", usuario_id)
+            .stream()
+        )
+
+        batch = db.batch()
+        quantidade = 0
+        for doc in docs:
+            batch.delete(doc.reference)
+            quantidade += 1
+
+            # O Firestore limita cada lote a 500 operações; mantemos margem.
+            if quantidade == 450:
+                batch.commit()
+                batch = db.batch()
+                quantidade = 0
+
+        if quantidade:
+            batch.commit()
+
+        return True
+    except Exception:
+        logger.exception("Erro ao excluir todas as notificações do usuário.")
+        return False

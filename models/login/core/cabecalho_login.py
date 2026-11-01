@@ -1,28 +1,21 @@
 import flet as ft
 
 def criar_cabecalho(cor_texto_titulo: str, cor_texto_secundario: str) -> ft.Column:
-    """Cria o cabeçalho superior fora do card da tela de login: logotipo e mensagens de boas-vindas."""
+    """Cria um cabeçalho compacto para o formulário de autenticação."""
     
     return ft.Column(
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=8,
         controls=[
-            ft.Container(
-                content=ft.Image(
-                    src="imgs/logo.png", 
-                    width=60, 
-                    height=60, 
-                    fit="CONTAIN"
-                )
-            ),
             ft.Text(
-                "Bem-vindo ao Evalytics", 
-                size=28, 
+                "Fazer login em sua conta",
+                size=24,
                 weight="bold", 
-                color=cor_texto_titulo
+                color=cor_texto_titulo,
+                text_align=ft.TextAlign.CENTER,
             ),
             ft.Text(
-                "Faça login para gerenciar as avaliações institucionais.", 
-                size=16, 
+                "Acesse o Evalytics para gerenciar as avaliações institucionais.",
+                size=13,
                 color=cor_texto_secundario, 
                 text_align=ft.TextAlign.CENTER
             ),

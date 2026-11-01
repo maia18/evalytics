@@ -4,6 +4,7 @@ from utils.services.notifications.notificacoes_service import (
     listar_notificacoes as listar_notificacoes_db,
     contar_notificacoes_nao_lidas,
     marcar_todas_como_lidas as marcar_todas_como_lidas_db,
+    excluir_todas_notificacoes as excluir_todas_notificacoes_db,
 )
 from .notificacoes_formatadores import (
     obter_icone, 
@@ -60,3 +61,13 @@ def marcar_todas_como_lidas() -> None:
         return
 
     marcar_todas_como_lidas_db(usuario_id)
+
+
+def limpar_notificacoes() -> bool:
+    """Exclui as notificações da conta autenticada."""
+    usuario_id = _obter_usuario_id()
+
+    if not usuario_id:
+        return False
+
+    return excluir_todas_notificacoes_db(usuario_id)

@@ -18,7 +18,7 @@ def criar_hero(
         ir_para_recursos=ir_para_recursos,
     )
 
-    terminal_demo = criar_painel_hero(page=page)
+    terminal_demo = criar_painel_hero(page=page, ir_para_recursos=ir_para_recursos)
 
     return ft.Container(
         key=ft.ScrollKey("inicio"),

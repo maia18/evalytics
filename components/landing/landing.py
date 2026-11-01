@@ -70,6 +70,7 @@ def ViewLanding(
 
     sobre = criar_secao_sobre(
         page=page,
+        mudar_tela=mudar_tela,
     )
 
     cta = criar_cta(
@@ -79,6 +80,9 @@ def ViewLanding(
 
     rodape = criar_rodape(
         ir_para_inicio=ir_para_inicio,
+        ir_para_recursos=ir_para_recursos,
+        ir_para_sobre=ir_para_sobre,
+        mudar_tela=mudar_tela,
     )
 
     # =========================================================
