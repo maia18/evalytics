@@ -492,7 +492,10 @@ def abrir_configuracoes_conta(
     def alterar_aparencia(e):
         preferencias_pendentes["tema_escuro"] = bool(e.control.value)
 
-    def fechar_configuracoes(e):
+    def voltar_configuracoes(e):
+        _fechar_dialogo(page, dialogo)
+
+    def aplicar_configuracoes(e):
         _fechar_dialogo(page, dialogo)
         modo_escuro_atual = getattr(page, "is_dark_mode", False)
         densidade_atual = getattr(page, "preferencia_densidade_visual", "standard")
@@ -558,6 +561,9 @@ def abrir_configuracoes_conta(
                         ft.Text(email or "E-mail indisponível", size=12, color=cores[TEXTO_SECUNDARIO]),
                     ],
                 ),
+                on_click=ir_para_perfil,
+                ink=True,
+                tooltip="Abrir meu perfil",
             ),
             ft.Text(
                 "A alteração do nome e da senha fica disponível na área do seu perfil.",
@@ -652,12 +658,12 @@ def abrir_configuracoes_conta(
             content=conteudo,
         ),
         actions=[
-            ft.TextButton("Fechar", on_click=fechar_configuracoes),
+            ft.TextButton("Voltar", on_click=voltar_configuracoes),
             ft.ElevatedButton(
-                "Abrir meu perfil",
+                "Aplicar alterações",
                 bgcolor=COR_PRIMARIA,
                 color=ft.Colors.WHITE,
-                on_click=ir_para_perfil,
+                on_click=aplicar_configuracoes,
             ),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
