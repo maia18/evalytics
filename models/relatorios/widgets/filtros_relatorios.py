@@ -139,7 +139,7 @@ def criar_secao_filtros(
     # LIMPAR FILTROS
     # ======================================================
 
-    def limpar_filtros(e):
+    def limpar_filtros(e=None):
         dropdown_semestre.value = "TODOS"
         dropdown_curso.value = "TODOS"
         dropdown_eixo.value = "TODOS"
