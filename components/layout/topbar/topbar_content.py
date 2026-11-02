@@ -64,6 +64,8 @@ def criar_topbar_content(
 
     def fechar_dialogo_localidade(dialogo: ft.AlertDialog) -> None:
         dialogo.open = False
+        if dialogo in page.overlay:
+            page.overlay.remove(dialogo)
         page.update()
 
     async def salvar_localidade(valor: str, dialogo: ft.AlertDialog) -> None:
