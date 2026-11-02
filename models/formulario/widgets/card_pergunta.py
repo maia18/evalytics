@@ -5,6 +5,7 @@ from pathlib import Path
 from components.core.constants.constants import (
     COR_PRIMARIA,
     TEXTO_PRINCIPAL,
+    TEXTO_SECUNDARIO,
     BORDA,
     CARD,
 )
@@ -180,9 +181,12 @@ def criar_card_pergunta(
     )
 
     mensagem_anexos = ft.Text(
-        "Nenhum arquivo anexado.",
+        f"{len(anexos)} de {QUANTIDADE_MAXIMA_ARQUIVOS} arquivos anexados"
+        if anexos
+        else "",
         size=12,
         color=cores[TEXTO_PRINCIPAL],
+        visible=bool(anexos),
     )
 
     def atualizar_lista_anexos(
@@ -250,8 +254,9 @@ def criar_card_pergunta(
             f"{len(anexos)} de {QUANTIDADE_MAXIMA_ARQUIVOS} "
             "arquivos anexados"
             if anexos
-            else "Nenhum arquivo anexado."
+            else ""
         )
+        mensagem_anexos.visible = bool(anexos)
 
         if atualizar_pagina:
             page.update()
@@ -282,6 +287,7 @@ def criar_card_pergunta(
         mensagem_anexos.value = (
             "O seletor de arquivos não foi inicializado."
         )
+        mensagem_anexos.visible = True
 
     async def abrir_seletor(e):
         seletor_arquivos = getattr(
@@ -295,6 +301,7 @@ def criar_card_pergunta(
             mensagem_anexos.value = (
                 "O seletor de arquivos não está disponível."
             )
+            mensagem_anexos.visible = True
             page.update()
             return
 
@@ -392,6 +399,7 @@ def criar_card_pergunta(
             mensagem_anexos.value = (
                 "Não foi possível selecionar os arquivos."
             )
+            mensagem_anexos.visible = True
             page.update()
         
     botao_anexar_evidencias = ft.OutlinedButton(
@@ -406,6 +414,7 @@ def criar_card_pergunta(
         on_click=abrir_seletor,
         style=ft.ButtonStyle(
             color=cores[TEXTO_PRINCIPAL],
+            padding=ft.Padding.symmetric(horizontal=10, vertical=0),
             side=ft.BorderSide(
                 1,
                 cores[BORDA],
@@ -418,8 +427,10 @@ def criar_card_pergunta(
     # ==========================================================
 
     campo_justificativa = ft.TextField(
-        label="Justificativa (Opcional)",
+        label="Justificativa",
+        hint_text="Escreva um contexto para esta resposta (opcional).",
         value=justificativa_inicial,
+        visible=True,
         multiline=True,
         min_lines=1,
         max_lines=2,
@@ -430,6 +441,17 @@ def criar_card_pergunta(
             indicador_id,
             e.control.value,
         ),
+    )
+    acoes_evidencia_justificativa = ft.Row(
+        spacing=8,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        controls=[
+            botao_anexar_evidencias,
+            ft.Container(
+                expand=True,
+                content=campo_justificativa,
+            ),
+        ],
     )
 
     # ==========================================================
@@ -496,10 +518,20 @@ def criar_card_pergunta(
                     height=1,
                     color=cores[BORDA],
                 ),
-                botao_anexar_evidencias,
+                ft.Column(
+                    spacing=6,
+                    controls=[
+                        ft.Text(
+                            "Complementos da resposta",
+                            size=11,
+                            color=cores[TEXTO_SECUNDARIO],
+                            weight=ft.FontWeight.W_600,
+                        ),
+                        acoes_evidencia_justificativa,
+                    ],
+                ),
                 mensagem_anexos,
                 lista_anexos,
-                campo_justificativa,
                 ft.Container(
                     padding=ft.Padding.only(top=3),
                     content=rodape,

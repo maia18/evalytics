@@ -279,6 +279,7 @@ def _criar_indicador(
     valor: str,
     icone: str,
     coluna: dict[str, int],
+    contexto: str = "",
 ) -> ft.Container:
     cores = layout.cores
     return ft.Container(
@@ -306,6 +307,14 @@ def _criar_indicador(
                     size=26,
                     weight=ft.FontWeight.W_700,
                     color=cores[TEXTO_PRINCIPAL],
+                ),
+                ft.Text(
+                    contexto,
+                    size=10,
+                    color=cores[TEXTO_SECUNDARIO],
+                    max_lines=1,
+                    overflow=ft.TextOverflow.ELLIPSIS,
+                    visible=bool(contexto),
                 ),
             ],
         ),
@@ -602,7 +611,6 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     )
 
     cursos = obter_cursos_db()
-    cursos_ativos = sum(1 for curso in cursos if curso_esta_ativo(curso))
     avaliacoes = listar_avaliacoes()
     cursos_existentes = {
         str(curso.get("nome") or "").strip().casefold()
@@ -615,17 +623,68 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         if str(avaliacao.get("curso_nome") or "").strip().casefold()
         in cursos_existentes
     ]
-    total_respostas = sum(
-        len(avaliacao.get("respostas", {}))
-        for avaliacao in avaliacoes
-        if isinstance(avaliacao.get("respostas", {}), dict)
-    )
-    # Mantém os painéis no tamanho visual original quando há espaço e reduz
-    # somente o necessário em janelas baixas.
-    altura_paineis = max(300, min(460, int(page.height or 768) - 240))
+    total_respostas = 0
+    notas_validas: list[float] = []
+    for avaliacao in avaliacoes:
+        respostas = avaliacao.get("respostas", {})
+        if not isinstance(respostas, dict):
+            continue
+        total_respostas += len(respostas)
+        notas_validas.extend(
+            nota
+            for resposta in respostas.values()
+            if (nota := normalizar_nota(resposta)) is not None
+        )
+    # Reserva espaço para o cabeçalho e a faixa de cards, ajustando os painéis
+    # à altura da janela para evitar rolagem desnecessária em tela cheia.
+    altura_paineis = max(300, min(460, int((page.height or 768) * 0.56)))
     avaliacoes.sort(
         key=lambda item: _chave_data(item.get("data_avaliacao")),
         reverse=True,
+    )
+
+    cursos_ativos_lista = [curso for curso in cursos if curso_esta_ativo(curso)]
+    cursos_ativos_nomes = {
+        str(curso.get("nome") or "").strip().casefold()
+        for curso in cursos_ativos_lista
+        if str(curso.get("nome") or "").strip()
+    }
+    cursos_ativos_avaliados = {
+        str(avaliacao.get("curso_nome") or "").strip().casefold()
+        for avaliacao in avaliacoes
+        if str(avaliacao.get("curso_nome") or "").strip().casefold()
+        in cursos_ativos_nomes
+    }
+    cobertura_cursos = (
+        f"{round(len(cursos_ativos_avaliados) / len(cursos_ativos_nomes) * 100)}%"
+        if cursos_ativos_nomes
+        else "—"
+    )
+    cobertura_contexto = (
+        f"{len(cursos_ativos_avaliados)} de {len(cursos_ativos_nomes)} cursos ativos"
+        if cursos_ativos_nomes
+        else "Nenhum curso ativo cadastrado"
+    )
+    media_geral = (
+        f"{sum(notas_validas) / len(notas_validas):.1f} / 5.0"
+        if notas_validas
+        else "—"
+    )
+    respostas_por_avaliacao = (
+        f"{total_respostas / len(avaliacoes):.1f}"
+        if avaliacoes
+        else "—"
+    ).replace(".", ",")
+    ultima_avaliacao = avaliacoes[0] if avaliacoes else None
+    ultima_data = (
+        _formatar_data(ultima_avaliacao.get("data_avaliacao"))
+        if ultima_avaliacao
+        else "—"
+    )
+    ultima_data_contexto = (
+        str(ultima_avaliacao.get("curso_nome") or "Curso não informado")
+        if ultima_avaliacao
+        else "Nenhuma avaliação registrada"
     )
 
     descricao_boas_vindas = "Acompanhe avaliações e atividade dos cursos."
@@ -647,31 +706,42 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         ],
     )
 
-    colunas_kpi = {"xs": 12, "sm": 6, "md": 4, "lg": 4}
+    colunas_kpi = {"xs": 12, "sm": 6, "md": 3, "lg": 3}
     indicadores = ft.ResponsiveRow(
-        spacing=16,
+        spacing=12,
         run_spacing=12,
         controls=[
             _criar_indicador(
                 layout,
-                "Avaliações realizadas",
-                str(len(avaliacoes)),
-                ft.Icons.ASSIGNMENT_OUTLINED,
+                "Média geral",
+                media_geral,
+                ft.Icons.STAR_OUTLINE,
                 colunas_kpi,
+                "Média das respostas válidas",
             ),
             _criar_indicador(
                 layout,
-                "Cursos ativos",
-                str(cursos_ativos),
-                ft.Icons.SCHOOL_OUTLINED,
-                colunas_kpi,
-            ),
-            _criar_indicador(
-                layout,
-                "Respostas registradas",
-                f"{total_respostas:,}".replace(",", "."),
+                "Respostas por avaliação",
+                respostas_por_avaliacao,
                 ft.Icons.FORMAT_LIST_BULLETED,
                 colunas_kpi,
+                "Média de respostas em cada registro",
+            ),
+            _criar_indicador(
+                layout,
+                "Cobertura dos cursos",
+                cobertura_cursos,
+                ft.Icons.SCHOOL_OUTLINED,
+                colunas_kpi,
+                cobertura_contexto,
+            ),
+            _criar_indicador(
+                layout,
+                "Última avaliação",
+                ultima_data,
+                ft.Icons.EVENT_AVAILABLE_OUTLINED,
+                colunas_kpi,
+                ultima_data_contexto,
             ),
         ],
     )
@@ -695,9 +765,6 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
 
     conteudo = ft.Column(
         expand=True,
-        # A tela já tem respiro dentro dos cards; reduzir apenas os intervalos
-        # entre seções evita overflow vertical em tela cheia sem alterar o
-        # tamanho dos gráficos ou dos painéis.
         spacing=8,
         scroll=ft.ScrollMode.AUTO,
         controls=[
@@ -713,7 +780,7 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
 
     def ajustar_inicio_ao_redimensionar(e=None) -> None:
         ajustar_layout_original(e)
-        altura = max(300, min(460, int(page.height or 768) - 240))
+        altura = max(300, min(460, int((page.height or 768) * 0.56)))
         painel_tendencia.height = altura
         painel_cursos.height = altura
 

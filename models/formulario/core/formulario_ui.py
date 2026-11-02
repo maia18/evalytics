@@ -14,7 +14,7 @@ def criar_dropdown_cursos(cursos: list[dict], cores: dict) -> ft.Dropdown:
     
     return ft.Dropdown(
         label="Curso",
-        hint_text="Selecione o curso que será avaliado",
+        hint_text="Escolha um curso",
         options=[
             ft.DropdownOption(
                 key=curso["id"],
@@ -56,16 +56,10 @@ def criar_card_selecao_curso(
             controls=[
                 ft.Icon(ft.Icons.SCHOOL_OUTLINED, size=60, color=cores[COR_PRIMARIA]),
                 ft.Text("Iniciar Avaliação", size=24, weight="bold", color=cores[TEXTO_PRINCIPAL]),
-                ft.Text(
-                    "Selecione o curso que será avaliado.",
-                    size=14,
-                    color=cores[TEXTO_SECUNDARIO],
-                    text_align=ft.TextAlign.CENTER,
-                ),
                 ft.Container(height=5),
                 dropdown_curso,
                 ft.ElevatedButton(
-                    "Iniciar avaliação",
+                    "Abrir avaliação",
                     icon=ft.Icons.ARROW_FORWARD,
                     on_click=on_iniciar_click,
                 ),
