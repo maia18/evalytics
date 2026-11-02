@@ -1,7 +1,7 @@
 import flet as ft
 from typing import Callable
 from datetime import datetime
-from components.core.constants.constants import COR_PRIMARIA
+from components.core.constants.constants import COR_PRIMARIA, TEXTO_SECUNDARIO
 from components.widgets.card.card_base import criar_card_base
 from database.services.avaliacoes.firestore_avaliacoes import obter_respostas_tabela
 from models.avaliacoes.core.csv.export_csv import exportar_csv
@@ -93,7 +93,7 @@ def criar_card_controle_ciclo(
             ft.Text(
                 f"{total_respostas} respostas coletadas até o momento.",
                 size=14,
-                color=ft.Colors.BLACK87,
+                color=layout.cores[TEXTO_SECUNDARIO],
             ),
         ],
     )

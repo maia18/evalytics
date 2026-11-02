@@ -1,5 +1,5 @@
 import flet as ft
-from components.core.constants.constants import CARD
+from components.core.constants.constants import CARD, TEXTO_SECUNDARIO
 from utils.services.relatorio.relatorio_service import (
     listar_semestres_disponiveis,
 )
@@ -132,6 +132,8 @@ def criar_secao_filtros(
             curso_filtro,
             eixo_filtro,
         )
+        atualizar_resumo_filtros()
+        page.update()
 
     # ======================================================
     # LIMPAR FILTROS
@@ -148,6 +150,7 @@ def criar_secao_filtros(
             None,
         )
 
+        atualizar_resumo_filtros()
         page.update()
 
     # ======================================================
@@ -167,6 +170,30 @@ def criar_secao_filtros(
         icon=ft.Icons.CLEAR,
         on_click=limpar_filtros,
     )
+
+    resumo_filtros = ft.Text(
+        "Todos os cursos · Todos os semestres · Todos os eixos",
+        size=12,
+        color=layout.cores[TEXTO_SECUNDARIO],
+    )
+
+    def atualizar_resumo_filtros():
+        def rotulo_opcao(dropdown, padrao):
+            selecionada = dropdown.value
+            if selecionada in (None, "", "TODOS"):
+                return padrao
+            for opcao in dropdown.options:
+                if str(opcao.key) == str(selecionada):
+                    return opcao.text
+            return str(selecionada)
+
+        resumo_filtros.value = " · ".join(
+            [
+                rotulo_opcao(dropdown_curso, "Todos os cursos"),
+                rotulo_opcao(dropdown_semestre, "Todos os semestres"),
+                rotulo_opcao(dropdown_eixo, "Todos os eixos"),
+            ]
+        )
 
     # ======================================================
     # LAYOUT
@@ -196,7 +223,7 @@ def criar_secao_filtros(
         )
         page.update()
 
-    return ft.Container(
+    secao_filtros = ft.Container(
         bgcolor=layout.cores[CARD],
         padding=ft.Padding.symmetric(horizontal=16, vertical=8),
         border_radius=8,
@@ -221,6 +248,9 @@ def criar_secao_filtros(
                     ),
                 ),
                 linha_controles,
+                resumo_filtros,
             ],
         ),
     )
+    secao_filtros.limpar_filtros = lambda: limpar_filtros()
+    return secao_filtros

@@ -34,7 +34,7 @@ def _criar_filtros(
     dados: dict,
     aplicar,
     limpar,
-) -> tuple[ft.Container, ft.Dropdown, ft.Dropdown]:
+) -> tuple[ft.Container, ft.Dropdown, ft.Dropdown, ft.Dropdown]:
     dropdown_semestre = ft.Dropdown(
         label="Semestre",
         value="TODOS",
@@ -65,23 +65,44 @@ def _criar_filtros(
             ],
         ],
     )
+    dropdown_departamento = ft.Dropdown(
+        label="Departamento",
+        value="TODOS",
+        expand=1,
+        text_size=12,
+        label_style=ft.TextStyle(size=10),
+        dense=True,
+        options=[
+            ft.dropdown.Option(key="TODOS", text="Todos"),
+            *[
+                ft.dropdown.Option(key=departamento, text=departamento)
+                for departamento in dados["departamentos_disponiveis"]
+            ],
+        ],
+    )
     botao_aplicar = ft.ElevatedButton(
         "Aplicar",
         icon=ft.Icons.FILTER_ALT,
         bgcolor=ft.Colors.BLUE_700,
         color=ft.Colors.WHITE,
         on_click=aplicar,
-        expand=1,
+        width=112,
+        height=40,
     )
     botao_limpar = ft.OutlinedButton(
         "Limpar",
         icon=ft.Icons.CLEAR,
         on_click=limpar,
-        expand=1,
+        width=112,
+        height=40,
     )
 
-    colunas_campos = {"xs": 12, "sm": 12, "md": 6, "lg": 3, "xl": 3, "xxl": 3}
-    colunas_botoes = {"xs": 12, "sm": 6, "md": 6, "lg": 3, "xl": 3, "xxl": 3}
+    colunas_campos = {
+        "xs": 12, "sm": 6, "md": 4, "lg": 3, "xl": 3, "xxl": 3
+    }
+    colunas_botoes = {
+        "xs": 12, "sm": 12, "md": 12, "lg": 3, "xl": 3, "xxl": 3
+    }
     conteudo_filtros = ft.ResponsiveRow(
         spacing=8,
         run_spacing=8,
@@ -95,12 +116,16 @@ def _criar_filtros(
                 content=ft.Row(controls=[dropdown_curso]),
             ),
             ft.Container(
-                col=colunas_botoes,
-                content=ft.Row(controls=[botao_aplicar]),
+                col=colunas_campos,
+                content=ft.Row(controls=[dropdown_departamento]),
             ),
             ft.Container(
                 col=colunas_botoes,
-                content=ft.Row(controls=[botao_limpar]),
+                content=ft.Row(
+                    alignment=ft.MainAxisAlignment.END,
+                    spacing=8,
+                    controls=[botao_aplicar, botao_limpar],
+                ),
             ),
         ],
     )
@@ -111,7 +136,7 @@ def _criar_filtros(
         border_radius=8,
         content=conteudo_filtros,
     )
-    return container, dropdown_semestre, dropdown_curso
+    return container, dropdown_semestre, dropdown_curso, dropdown_departamento
 
 
 def _criar_kpis(layout, dados: dict) -> list[ft.Control]:
@@ -170,7 +195,7 @@ def _criar_layout(
         dados_iniciais = obter_dados_dashboard()
         seletores = {}
         texto_contexto = ft.Text(
-            "Todos os cursos · Todos os semestres",
+            "Todos os cursos · Todos os semestres · Todos os departamentos",
             size=12,
             color=layout.cores[TEXTO_SECUNDARIO],
         )
@@ -203,6 +228,7 @@ def _criar_layout(
         def aplicar_filtros(e=None) -> None:
             semestre_selecionado = seletores["semestre"].value
             curso_selecionado = seletores["curso"].value
+            departamento_selecionado = seletores["departamento"].value
             dados = obter_dados_dashboard(
                 semestre=(
                     semestre_selecionado
@@ -212,6 +238,11 @@ def _criar_layout(
                 curso_nome=(
                     curso_selecionado
                     if curso_selecionado not in (None, "", "TODOS")
+                    else None
+                ),
+                departamento=(
+                    departamento_selecionado
+                    if departamento_selecionado not in (None, "", "TODOS")
                     else None
                 ),
             )
@@ -233,19 +264,25 @@ def _criar_layout(
             texto_contexto.value = (
                 f"{curso_selecionado if curso_selecionado not in (None, '', 'TODOS') else 'Todos os cursos'}"
                 f" · {semestre_selecionado if semestre_selecionado not in (None, '', 'TODOS') else 'Todos os semestres'}"
+                f" · {departamento_selecionado if departamento_selecionado not in (None, '', 'TODOS') else 'Todos os departamentos'}"
             )
             page.update()
 
         def limpar_filtros(e=None) -> None:
             seletores["semestre"].value = "TODOS"
             seletores["curso"].value = "TODOS"
+            seletores["departamento"].value = "TODOS"
             aplicar_filtros()
 
-        filtros, dropdown_semestre, dropdown_curso = _criar_filtros(
-            dados_iniciais, aplicar_filtros, limpar_filtros
-        )
+        (
+            filtros,
+            dropdown_semestre,
+            dropdown_curso,
+            dropdown_departamento,
+        ) = _criar_filtros(dados_iniciais, aplicar_filtros, limpar_filtros)
         seletores["semestre"] = dropdown_semestre
         seletores["curso"] = dropdown_curso
+        seletores["departamento"] = dropdown_departamento
 
         conteudo = ft.Column(
             expand=True,

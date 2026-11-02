@@ -600,7 +600,7 @@ def abrir_configuracoes_conta(
     dicas_por_rota = {
         "/inicio": ("Início", "Use os atalhos para iniciar uma avaliação ou acessar cursos, dashboard e relatórios."),
         "/dashboard": ("Dashboard", "Abra a Visão Geral para conferir os indicadores ou Acompanhamento para consultar avaliações."),
-        "/dashboard/visao-geral": ("Visão Geral", "Selecione semestre e curso, depois aplique os filtros para atualizar os indicadores."),
+        "/dashboard/visao-geral": ("Indicadores", "Selecione semestre, curso e departamento, depois aplique os filtros para atualizar os indicadores."),
         "/dashboard/avaliacoes": ("Acompanhamento", "Use os filtros para localizar avaliações e acompanhar seus registros."),
         "/avaliacoes": ("Avaliações", "Consulte as avaliações cadastradas ou inicie uma nova pelo menu lateral."),
         "/cursos": ("Cursos", "Pesquise pelo nome ou código; selecione departamento e status e aplique os filtros."),

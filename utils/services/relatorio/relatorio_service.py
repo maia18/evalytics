@@ -61,6 +61,19 @@ def calcular_medias_eixos(
     curso_nome: str | None = None,
 ) -> dict[int, float | None]:
     """Calcula as médias das avaliações por eixo, buscando diretamente no banco."""
+    resumo = obter_resumo_eixos(semestre, curso_nome, eixo)
+    return {
+        eixo_id: dados["media"]
+        for eixo_id, dados in resumo["eixos"].items()
+    }
+
+
+def obter_resumo_eixos(
+    semestre: str | None = None,
+    curso_nome: str | None = None,
+    eixo: int | None = None,
+) -> dict:
+    """Retorna médias e contagens válidas no mesmo conjunto filtrado."""
     try:
         mapa_eixo = _obter_mapa_eixos()
         cursos_cadastrados = obter_cursos_db()
@@ -68,6 +81,7 @@ def calcular_medias_eixos(
         avaliacoes = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
 
         acumulador: dict[int, list[float]] = {eixo_id: [] for eixo_id in EIXOS_PADRAO}
+        avaliacoes_com_respostas = 0
 
         for avaliacao in avaliacoes:
             dados = avaliacao.to_dict() or {}
@@ -87,6 +101,7 @@ def calcular_medias_eixos(
             if not isinstance(respostas, dict):
                 continue
 
+            respostas_avaliacao = 0
             for indicador_id, nota in respostas.items():
                 eixo_id = mapa_eixo.get(indicador_id)
 
@@ -97,18 +112,43 @@ def calcular_medias_eixos(
                     continue
 
                 try:
-                    acumulador[eixo_id].append(float(nota))
+                    nota_numerica = float(nota)
+                    if not 1 <= nota_numerica <= 5:
+                        continue
+                    acumulador[eixo_id].append(nota_numerica)
+                    respostas_avaliacao += 1
                 except (TypeError, ValueError):
                     continue
 
+            if respostas_avaliacao:
+                avaliacoes_com_respostas += 1
+
+        total_respostas = sum(len(notas) for notas in acumulador.values())
+        todas_notas = [nota for notas in acumulador.values() for nota in notas]
         return {
-            eixo_id: (sum(notas) / len(notas) if notas else None)
-            for eixo_id, notas in acumulador.items()
+            "avaliacoes": avaliacoes_com_respostas,
+            "respostas": total_respostas,
+            "media_geral": sum(todas_notas) / len(todas_notas) if todas_notas else None,
+            "eixos": {
+                eixo_id: {
+                    "media": sum(notas) / len(notas) if notas else None,
+                    "respostas": len(notas),
+                }
+                for eixo_id, notas in acumulador.items()
+            },
         }
 
     except Exception:
-        logger.exception("Erro ao calcular médias dos eixos.")
-        return {eixo_id: None for eixo_id in EIXOS_PADRAO}
+        logger.exception("Erro ao calcular resumo dos eixos.")
+        return {
+            "avaliacoes": 0,
+            "respostas": 0,
+            "media_geral": None,
+            "eixos": {
+                eixo_id: {"media": None, "respostas": 0}
+                for eixo_id in EIXOS_PADRAO
+            },
+        }
 
 def listar_resultados_consolidados(
     semestre: str | None = None,

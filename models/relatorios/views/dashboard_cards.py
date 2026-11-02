@@ -17,7 +17,9 @@ def obter_cor_desempenho(nota: float) -> str:
         return ft.Colors.ORANGE
     return ft.Colors.RED
 
-def criar_card_eixo(eixo_id: int, nota: float | None) -> ft.Card:
+def criar_card_eixo(
+    eixo_id: int, nota: float | None, respostas: int = 0
+) -> ft.Card:
     """Constrói o card visual exibindo o desempenho de um eixo específico."""
     
     # ------------------------------------------------------
@@ -41,11 +43,7 @@ def criar_card_eixo(eixo_id: int, nota: float | None) -> ft.Card:
                             size=14,
                             color=ft.Colors.GREY_600,
                         ),
-                        ft.Text(
-                            "Não existem respostas para este eixo nos filtros selecionados.",
-                            size=12,
-                            color=ft.Colors.GREY_500,
-                        ),
+                        ft.Text("0 respostas válidas", size=12, color=ft.Colors.GREY_500),
                     ],
                 ),
             ),
@@ -85,6 +83,14 @@ def criar_card_eixo(eixo_id: int, nota: float | None) -> ft.Card:
                         color=cor_barra,
                         height=10,
                         border_radius=5,
+                    ),
+                    ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[
+                            ft.Text("1,0", size=10, color=ft.Colors.GREY_500),
+                            ft.Text(f"{respostas} respostas válidas", size=11, color=ft.Colors.GREY_500),
+                            ft.Text("5,0", size=10, color=ft.Colors.GREY_500),
+                        ],
                     ),
                 ],
             ),

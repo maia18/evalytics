@@ -95,7 +95,7 @@ def criar_menu_dashboard(
         visible=expandido,
         controls=[
             criar_subtela(
-                "Visão Geral",
+                "Indicadores",
                 ROTA_DASHBOARD_VISAO_GERAL,
                 ft.Icons.GRID_VIEW_ROUNDED,
             ),

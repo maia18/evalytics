@@ -1,5 +1,5 @@
 import flet as ft
-from utils.services.relatorio.relatorio_service import calcular_medias_eixos
+from utils.services.relatorio.relatorio_service import obter_resumo_eixos
 
 # Importação dos componentes visuais isolados
 from .dashboard_cards import criar_card_eixo
@@ -13,6 +13,8 @@ def TelaResultados(page: ft.Page) -> ft.Container:
     cards_resultados = ft.Column(
         spacing=15,
     )
+    contexto_resultados = ft.Text(size=12, color=ft.Colors.GREY_500)
+    indicadores_resumo = ft.Row(wrap=True, spacing=12, run_spacing=10)
 
     # ======================================================
     # ATUALIZA DASHBOARD (CONTROLLER LOGIC)
@@ -22,20 +24,75 @@ def TelaResultados(page: ft.Page) -> ft.Container:
         curso_nome: str | None = None,
         eixo: int | None = None,
     ) -> None:
-        medias = calcular_medias_eixos(
+        resumo = obter_resumo_eixos(
             semestre=semestre,
-            eixo=eixo,
             curso_nome=curso_nome,
+            eixo=eixo,
         )
+        rotulo_curso = curso_nome or "Todos os cursos"
+        rotulo_semestre = semestre or "Todos os semestres"
+        rotulo_eixo = (
+            {1: "Organização Didático-Pedagógica", 2: "Corpo Docente e Tutorial", 3: "Infraestrutura"}.get(eixo, "Eixos")
+            if eixo is not None
+            else "Todos os eixos"
+        )
+        contexto_resultados.value = f"{rotulo_curso} · {rotulo_semestre} · {rotulo_eixo}"
+        media_geral = resumo["media_geral"]
+        valores_resumo = [
+            ("Avaliações", str(resumo["avaliacoes"])),
+            ("Respostas válidas", str(resumo["respostas"])),
+            ("Média geral", f"{media_geral:.1f} / 5,0" if media_geral is not None else "—"),
+        ]
+        indicadores_resumo.controls = [
+            ft.Container(
+                expand=True,
+                padding=12,
+                border_radius=8,
+                bgcolor=ft.Colors.with_opacity(0.06, ft.Colors.ON_SURFACE),
+                content=ft.Column(
+                    spacing=4,
+                    controls=[
+                        ft.Text(rotulo, size=11, color=ft.Colors.GREY_500),
+                        ft.Text(valor, size=18, weight=ft.FontWeight.BOLD),
+                    ],
+                ),
+            )
+            for rotulo, valor in valores_resumo
+        ]
         cards_resultados.controls.clear()
 
-        # Renderiza apenas o eixo selecionado ou todos se não houver filtro
-        if eixo is not None:
-            cards_resultados.controls.append(criar_card_eixo(eixo, medias.get(eixo)))
+        if resumo["avaliacoes"] == 0:
+            cards_resultados.controls.append(
+                ft.Container(
+                    padding=24,
+                    border_radius=10,
+                    bgcolor=ft.Colors.with_opacity(0.04, ft.Colors.ON_SURFACE),
+                    content=ft.Column(
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=8,
+                        controls=[
+                            ft.Icon(ft.Icons.FILTER_ALT_OFF, size=28, color=ft.Colors.GREY_500),
+                            ft.Text("Nenhuma avaliação encontrada", size=16, weight=ft.FontWeight.BOLD),
+                            ft.Text("Ajuste os filtros ou limpe a seleção para ver os resultados.", color=ft.Colors.GREY_500),
+                            ft.OutlinedButton(
+                                "Limpar filtros",
+                                icon=ft.Icons.CLEAR,
+                                on_click=lambda e: getattr(dashboard, "limpar_filtros", lambda: None)(),
+                            ),
+                        ],
+                    ),
+                )
+            )
         else:
-            for eixo_id in (1, 2, 3):
+            eixos_exibidos = (eixo,) if eixo is not None else (1, 2, 3)
+            for eixo_id in eixos_exibidos:
+                dados_eixo = resumo["eixos"].get(eixo_id, {})
                 cards_resultados.controls.append(
-                    criar_card_eixo(eixo_id, medias.get(eixo_id))
+                    criar_card_eixo(
+                        eixo_id,
+                        dados_eixo.get("media"),
+                        dados_eixo.get("respostas", 0),
+                    )
                 )
 
         page.update()
@@ -64,6 +121,8 @@ def TelaResultados(page: ft.Page) -> ft.Container:
             controls=[
                 cabecalho,
                 ft.Divider(height=20, color=ft.Colors.TRANSPARENT),
+                contexto_resultados,
+                indicadores_resumo,
                 cards_resultados,
             ],
         ),

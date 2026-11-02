@@ -68,7 +68,7 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         value="TODOS",
         width=260,
         dense=True,
-        options=[ft.dropdown.Option(key="TODOS", text="Todos os departamentos")],
+        options=[ft.dropdown.Option(key="TODOS", text="Todos")],
     )
 
     def aplicar_filtros(e=None) -> None:
@@ -102,7 +102,7 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         departamentos = listar_departamentos_unicos(estado["cursos"])
         selecionado = filtro_departamento.value
         filtro_departamento.options = [
-            ft.dropdown.Option(key="TODOS", text="Todos os departamentos"),
+            ft.dropdown.Option(key="TODOS", text="Todos"),
             *[
                 ft.dropdown.Option(key=departamento, text=departamento)
                 for departamento in departamentos
@@ -154,18 +154,6 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         spacing=18,
         scroll=ft.ScrollMode.AUTO,
         controls=[
-            ft.Row(
-                alignment=ft.MainAxisAlignment.END,
-                controls=[
-                    ft.ElevatedButton(
-                        "Novo curso",
-                        icon=ft.Icons.ADD,
-                        bgcolor=COR_PRIMARIA,
-                        color=ft.Colors.WHITE,
-                        on_click=abrir_modal_add,
-                    )
-                ],
-            ),
             linha_stats,
             ft.Container(
                 bgcolor=layout.cores[CARD],
@@ -173,13 +161,27 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
                 border_radius=8,
                 content=ft.Column(
                     horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
-                    spacing=14,
+                    spacing=22,
                     controls=[
-                        ft.Text(
-                            "Lista de Cursos",
-                            size=16,
-                            weight=ft.FontWeight.BOLD,
-                            color=layout.cores[TEXTO_PRINCIPAL],
+                        ft.Row(
+                            wrap=True,
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            controls=[
+                                ft.Text(
+                                    "Lista de Cursos",
+                                    size=16,
+                                    weight=ft.FontWeight.BOLD,
+                                    color=layout.cores[TEXTO_PRINCIPAL],
+                                ),
+                                ft.ElevatedButton(
+                                    "Adicionar curso",
+                                    icon=ft.Icons.ADD,
+                                    bgcolor=COR_PRIMARIA,
+                                    color=ft.Colors.WHITE,
+                                    on_click=abrir_modal_add,
+                                ),
+                            ],
                         ),
                         ft.Row(
                             wrap=True,
@@ -189,11 +191,11 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
                             controls=[
                                 busca,
                                 filtro_departamento,
-                                ft.ElevatedButton(
+                                ft.OutlinedButton(
                                     "Aplicar filtros",
                                     icon=ft.Icons.FILTER_ALT,
-                                    bgcolor=COR_PRIMARIA,
-                                    color=ft.Colors.WHITE,
+                                    icon_color=COR_PRIMARIA,
+                                    style=ft.ButtonStyle(color=COR_PRIMARIA),
                                     on_click=aplicar_filtros,
                                 ),
                             ],

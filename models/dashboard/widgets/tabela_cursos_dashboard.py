@@ -12,48 +12,114 @@ from components.core.theme.border_utils import criar_borda_uniforme
 
 def criar_tabela_cursos_dashboard(layout, dados_por_curso: list[dict]) -> ft.Container:
     """Resume avaliações, respostas e média para cada curso selecionado."""
+
+    def criar_celula(
+        texto: str,
+        proporcao: int,
+        *,
+        alinhamento: ft.Alignment = ft.Alignment.CENTER_LEFT,
+        cor: str = TEXTO_PRINCIPAL,
+        negrito: bool = False,
+        numerico: bool = False,
+    ) -> ft.Container:
+        return ft.Container(
+            expand=proporcao,
+            padding=ft.Padding.symmetric(horizontal=14, vertical=8),
+            alignment=alinhamento,
+            content=ft.Text(
+                texto,
+                size=10,
+                color=layout.cores[cor],
+                weight=ft.FontWeight.BOLD if negrito else None,
+                text_align=ft.TextAlign.RIGHT if numerico else ft.TextAlign.LEFT,
+                max_lines=2,
+            ),
+        )
+
     if not dados_por_curso:
-        tabela = ft.Text(
+        conteudo_tabela: ft.Control = ft.Text(
             "Nenhum curso possui dados para os filtros selecionados.",
             color=layout.cores[TEXTO_SECUNDARIO],
         )
     else:
-        tabela = ft.DataTable(
-            expand=True,
-            column_spacing=8,
-            heading_row_color=layout.cores[CARD_SECUNDARIO],
-            columns=[
-                ft.DataColumn(ft.Text("Curso", size=10, weight="bold")),
-                ft.DataColumn(ft.Text("Avaliações", size=10, weight="bold"), numeric=True),
-                ft.DataColumn(ft.Text("Respostas", size=10, weight="bold"), numeric=True),
-                ft.DataColumn(ft.Text("Média (1–5)", size=10, weight="bold"), numeric=True),
-            ],
-            rows=[
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(
-                            ft.Text(
-                                item["curso"],
-                                size=10,
-                                max_lines=2,
-                                color=layout.cores[TEXTO_PRINCIPAL],
-                            )
+        cabecalho = ft.Container(
+            bgcolor=layout.cores[CARD_SECUNDARIO],
+            content=ft.Row(
+                expand=True,
+                spacing=0,
+                controls=[
+                    criar_celula(
+                        "Curso", 6, cor=TEXTO_SECUNDARIO, negrito=True
+                    ),
+                    criar_celula(
+                        "Avaliações",
+                        2,
+                        alinhamento=ft.Alignment.CENTER_RIGHT,
+                        cor=TEXTO_SECUNDARIO,
+                        negrito=True,
+                        numerico=True,
+                    ),
+                    criar_celula(
+                        "Respostas",
+                        2,
+                        alinhamento=ft.Alignment.CENTER_RIGHT,
+                        cor=TEXTO_SECUNDARIO,
+                        negrito=True,
+                        numerico=True,
+                    ),
+                    criar_celula(
+                        "Média (1–5)",
+                        2,
+                        alinhamento=ft.Alignment.CENTER_RIGHT,
+                        cor=TEXTO_SECUNDARIO,
+                        negrito=True,
+                        numerico=True,
+                    ),
+                ],
+            ),
+        )
+        linhas: list[ft.Control] = [cabecalho]
+        for indice, item in enumerate(dados_por_curso):
+            media = (
+                f"{item['media_geral']:.1f}"
+                if item["media_geral"] is not None
+                else "—"
+            )
+            linhas.append(
+                ft.Row(
+                    expand=True,
+                    spacing=0,
+                    controls=[
+                        criar_celula(str(item["curso"]), 6),
+                        criar_celula(
+                            str(item["avaliacoes"]),
+                            2,
+                            alinhamento=ft.Alignment.CENTER_RIGHT,
+                            numerico=True,
                         ),
-                        ft.DataCell(ft.Text(str(item["avaliacoes"]), size=10)),
-                        ft.DataCell(ft.Text(str(item["respostas"]), size=10)),
-                        ft.DataCell(
-                            ft.Text(
-                                f"{item['media_geral']:.1f}"
-                                if item["media_geral"] is not None
-                                else "—",
-                                weight="bold",
-                                size=10,
-                            )
+                        criar_celula(
+                            str(item["respostas"]),
+                            2,
+                            alinhamento=ft.Alignment.CENTER_RIGHT,
+                            numerico=True,
                         ),
-                    ]
+                        criar_celula(
+                            media,
+                            2,
+                            alinhamento=ft.Alignment.CENTER_RIGHT,
+                            negrito=True,
+                            numerico=True,
+                        ),
+                    ],
                 )
-                for item in dados_por_curso
-            ],
+            )
+            if indice < len(dados_por_curso) - 1:
+                linhas.append(ft.Divider(height=1, color=layout.cores[BORDA]))
+
+        conteudo_tabela = ft.Column(
+            spacing=0,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+            controls=linhas,
         )
 
     return ft.Container(
@@ -62,6 +128,7 @@ def criar_tabela_cursos_dashboard(layout, dados_por_curso: list[dict]) -> ft.Con
         border_radius=8,
         border=criar_borda_uniforme(layout.cores[BORDA]),
         content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             spacing=12,
             controls=[
                 ft.Column(
@@ -80,10 +147,7 @@ def criar_tabela_cursos_dashboard(layout, dados_por_curso: list[dict]) -> ft.Con
                         ),
                     ],
                 ),
-                ft.Row(
-                    scroll=ft.ScrollMode.AUTO,
-                    controls=[tabela],
-                ),
+                conteudo_tabela,
             ],
         ),
     )

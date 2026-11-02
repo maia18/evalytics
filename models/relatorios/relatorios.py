@@ -91,6 +91,8 @@ def _criar_view_relatorios(
         exportar_pdf_atual,
         resultados=resultados_originais,
     )
+    if dashboard_visual is not None:
+        dashboard_visual.limpar_filtros = secao_filtros.limpar_filtros
 
     if dashboard_visual is not None:
         conteudo_principal = dashboard_visual

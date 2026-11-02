@@ -5,7 +5,9 @@ from database.services.firebase_config import db
 from database.services.institutions.institutions_service import listar_documentos_da_instituicao
 from utils.services.cursos.curso_utils import (
     chave_curso,
+    chave_departamento,
     criar_indice_cursos_atuais,
+    listar_departamentos_unicos,
     listar_nomes_cursos_filtraveis,
     resolver_curso_avaliacao,
 )
@@ -21,6 +23,7 @@ EIXOS_PADRAO = (1, 2, 3)
 def obter_dados_dashboard(
     semestre: str | None = None,
     curso_nome: str | None = None,
+    departamento: str | None = None,
 ) -> dict:
     """Agrega KPIs, eixos e cursos das avaliações, com filtros opcionais."""
     resultado_vazio = {
@@ -35,6 +38,7 @@ def obter_dados_dashboard(
         "evolucao_semestres": [],
         "semestres_disponiveis": [],
         "cursos_disponiveis": [],
+        "departamentos_disponiveis": [],
     }
 
     try:
@@ -66,6 +70,9 @@ def obter_dados_dashboard(
                 {
                     "semestre": semestre_avaliacao,
                     "curso": nome_curso,
+                    "departamento": str(
+                        curso_atual.get("departamento", "")
+                    ).strip(),
                     "respostas": respostas,
                 }
             )
@@ -78,11 +85,20 @@ def obter_dados_dashboard(
                 not curso_nome
                 or chave_curso(registro["curso"]) == chave_curso(curso_nome)
             )
+            and (
+                not departamento
+                or chave_departamento(registro["departamento"])
+                == chave_departamento(departamento)
+            )
         ]
 
         notas_por_semestre: dict[str, list[float]] = {}
         for registro in registros:
             if curso_nome and chave_curso(registro["curso"]) != chave_curso(curso_nome):
+                continue
+            if departamento and chave_departamento(
+                registro["departamento"]
+            ) != chave_departamento(departamento):
                 continue
             semestre_registro = registro["semestre"]
             if not semestre_registro:
@@ -136,6 +152,10 @@ def obter_dados_dashboard(
             if not nome_cadastrado:
                 continue
             if curso_nome and chave_curso(nome_cadastrado) != chave_curso(curso_nome):
+                continue
+            if departamento and chave_departamento(
+                curso_cadastrado.get("departamento")
+            ) != chave_departamento(departamento):
                 continue
             estatisticas_cursos.setdefault(
                 nome_cadastrado,
@@ -202,6 +222,9 @@ def obter_dados_dashboard(
             # Os filtros exibem apenas cursos atualmente cadastrados.
             "cursos_disponiveis": listar_nomes_cursos_filtraveis(
                 [], cursos_cadastrados
+            ),
+            "departamentos_disponiveis": listar_departamentos_unicos(
+                cursos_cadastrados
             ),
         }
 
