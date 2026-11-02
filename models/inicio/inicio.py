@@ -294,7 +294,7 @@ def _criar_painel_cursos(
                             color=cores[TEXTO_PRINCIPAL],
                         ),
                         ft.Text(
-                            "Avaliações e respostas registradas nos cursos cadastrados.",
+                            f"{len(dados)} cursos · ordenados por avaliações e respostas.",
                             size=11,
                             color=cores[TEXTO_SECUNDARIO],
                         ),
