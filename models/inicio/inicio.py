@@ -11,6 +11,7 @@ from components.core.constants.constants import (
     COR_PRIMARIA,
 )
 from components.core.constants.texts import (
+    NOMES_EIXOS,
     TXTS_INICIO,
 )
 from components.core.router.rotas_cts import (
@@ -22,6 +23,7 @@ from database.services.cursos.firestore_courses import (
     obter_cursos_db,
     curso_esta_ativo,
 )
+from database.services.dashboard.dashboard_utils import obter_mapa_eixos, normalizar_nota
 from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
 from utils.services.relatorio.relatorio_utils import obter_semestre
 
@@ -73,67 +75,199 @@ def _mes_da_data(data) -> tuple[int, int] | None:
 def _criar_painel_tendencia(
     layout: ResponsiveLayout,
     avaliacoes: list[dict],
+    altura_painel: int,
 ) -> ft.Container:
-    """Mostra a quantidade real de avaliações em cada um dos últimos seis meses."""
-    agora = datetime.now()
-    meses = []
-    nomes_meses = ("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
-    for distancia in range(5, -1, -1):
-        indice = agora.year * 12 + agora.month - 1 - distancia
-        ano, mes_zero = divmod(indice, 12)
-        meses.append((ano, mes_zero + 1))
+    """Exibe em colunas os resultados por eixo do mês mais recente com dados."""
+    nomes_meses = (
+        "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+    )
+    mapa_eixos_atual = obter_mapa_eixos()
+    dados_por_mes: dict[tuple[int, int], dict] = {}
 
-    contagens = {mes: 0 for mes in meses}
     for avaliacao in avaliacoes:
         mes = _mes_da_data(avaliacao.get("data_avaliacao"))
-        if mes in contagens:
-            contagens[mes] += 1
+        if mes is None:
+            continue
+        respostas = avaliacao.get("respostas", {})
+        if not isinstance(respostas, dict):
+            respostas = {}
 
-    maior_contagem = max(contagens.values(), default=0)
-    barras = []
-    for ano, mes in meses:
-        quantidade = contagens[(ano, mes)]
-        altura = max(4, round(104 * quantidade / maior_contagem)) if maior_contagem else 4
-        barras.append(
-            ft.Column(
-                expand=True,
-                alignment=ft.MainAxisAlignment.END,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=7,
-                controls=[
-                    ft.Text(str(quantidade), size=10, color=layout.cores[TEXTO_SECUNDARIO]),
-                    ft.Container(
-                        height=116,
-                        alignment=ft.Alignment.BOTTOM_CENTER,
-                        content=ft.Container(
-                            width=24,
-                            height=altura,
-                            bgcolor=COR_PRIMARIA if quantidade else layout.cores[CARD_SECUNDARIO],
-                            border_radius=5,
-                        ),
-                    ),
-                    ft.Text(nomes_meses[mes - 1], size=10, color=layout.cores[TEXTO_SECUNDARIO]),
-                ],
-            )
+        dados_mes = dados_por_mes.setdefault(
+            mes,
+            {
+                "avaliacoes": 0,
+                "respostas": 0,
+                "eixos": {1: [], 2: [], 3: []},
+            },
+        )
+        dados_mes["avaliacoes"] += 1
+        dados_mes["respostas"] += len(respostas)
+
+        # Prefere o eixo salvo junto à avaliação; avaliações antigas usam o catálogo atual.
+        mapa_eixos_avaliacao = dict(mapa_eixos_atual)
+        perguntas = avaliacao.get("perguntas", [])
+        if isinstance(perguntas, list):
+            for pergunta in perguntas:
+                if not isinstance(pergunta, dict) or not pergunta.get("id"):
+                    continue
+                try:
+                    mapa_eixos_avaliacao[str(pergunta["id"])] = int(pergunta.get("eixo"))
+                except (TypeError, ValueError):
+                    continue
+
+        for indicador_id, resposta in respostas.items():
+            nota = normalizar_nota(resposta)
+            if nota is None:
+                continue
+            try:
+                eixo_id = int(mapa_eixos_avaliacao.get(str(indicador_id)))
+            except (TypeError, ValueError):
+                continue
+            if eixo_id in dados_mes["eixos"]:
+                dados_mes["eixos"][eixo_id].append(nota)
+
+    if dados_por_mes:
+        ano, mes = max(dados_por_mes)
+        dados_mais_recentes = dados_por_mes[(ano, mes)]
+        cores_eixos = (COR_PRIMARIA, "#34D399", "#F87171")
+        colunas = []
+        detalhe_hover = ft.Text(
+            size=10,
+            weight=ft.FontWeight.W_600,
+            color=layout.cores[TEXTO_SECUNDARIO],
         )
 
+        for eixo_id, nome_eixo in NOMES_EIXOS.items():
+            notas = dados_mais_recentes["eixos"].get(eixo_id, [])
+            media = sum(notas) / len(notas) if notas else None
+            altura_maxima_barra = max(80, altura_painel - 202)
+            altura_barra = max(4, round(altura_maxima_barra * media / 5)) if media is not None else 3
+            rotulo_media = f"{media:.1f} / 5,0" if media is not None else "Sem respostas"
+            cor_eixo = cores_eixos[eixo_id - 1]
+            barra = ft.Container(
+                width=44,
+                height=altura_barra,
+                data=(media / 5) if media is not None else None,
+                bgcolor=cor_eixo if media is not None else layout.cores[CARD_SECUNDARIO],
+                border_radius=6,
+                animate=ft.Animation(180, ft.AnimationCurve.EASE_OUT),
+            )
+            coluna = ft.Container(
+                expand=True,
+                padding=6,
+                border_radius=10,
+                border=ft.Border.all(1, "#00000000"),
+                animate=ft.Animation(180, ft.AnimationCurve.EASE_OUT),
+                animate_scale=ft.Animation(180, ft.AnimationCurve.EASE_OUT),
+                on_hover=lambda e, nome=nome_eixo, valor=media, total=len(notas), cor=cor_eixo, barra_ref=barra, altura_ref=altura_barra: destacar_coluna(
+                    e, nome, valor, total, cor, barra_ref, altura_ref
+                ),
+                content=ft.Column(
+                    expand=True,
+                    alignment=ft.MainAxisAlignment.START,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=7,
+                    controls=[
+                        ft.Text(
+                            rotulo_media,
+                            size=10,
+                            weight=ft.FontWeight.W_600,
+                            color=layout.cores[TEXTO_PRINCIPAL],
+                        ),
+                        ft.Container(
+                            height=max(100, altura_painel - 190),
+                            alignment=ft.Alignment.BOTTOM_CENTER,
+                            content=barra,
+                        ),
+                        ft.Container(
+                            height=28,
+                            alignment=ft.Alignment.CENTER,
+                            content=ft.Text(
+                                nome_eixo,
+                                size=10,
+                                color=layout.cores[TEXTO_PRINCIPAL],
+                                text_align=ft.TextAlign.CENTER,
+                                max_lines=2,
+                                overflow=ft.TextOverflow.ELLIPSIS,
+                            ),
+                        ),
+                    ],
+                ),
+            )
+            colunas.append(coluna)
+
+        def destacar_coluna(
+            e,
+            nome: str,
+            media: float | None,
+            total: int,
+            cor: str,
+            barra: ft.Container,
+            altura_barra: int,
+        ) -> None:
+            ativa = bool(e.data)
+            e.control.bgcolor = ft.Colors.with_opacity(0.10, cor) if ativa else None
+            e.control.border = ft.Border.all(
+                1,
+                ft.Colors.with_opacity(0.30, cor) if ativa else "#00000000",
+            )
+            e.control.scale = 1.05 if ativa else 1.0
+            barra.width = 50 if ativa else 44
+            if media is not None:
+                barra.height = altura_barra + 10 if ativa else altura_barra
+            detalhe_hover.value = (
+                f"{nome} · média {media:.1f}/5,0 · {total} respostas"
+                if ativa and media is not None
+                else f"{nome} · sem respostas válidas"
+                if ativa
+                else ""
+            )
+            layout.page.update()
+
+        contexto = (
+            f"{nomes_meses[mes - 1]} / {ano} · {dados_mais_recentes['avaliacoes']} avaliações · "
+            f"{dados_mais_recentes['respostas']} respostas registradas"
+        )
+        conteudo_grafico: ft.Control = ft.Row(
+            expand=True,
+            spacing=14,
+            vertical_alignment=ft.CrossAxisAlignment.STRETCH,
+            controls=colunas,
+        )
+        detalhe_grafico: ft.Control = detalhe_hover
+    else:
+        contexto = "Os resultados por eixo aparecerão após as primeiras avaliações."
+        conteudo_grafico = ft.Container(
+            expand=True,
+            alignment=ft.Alignment.CENTER,
+            content=ft.Text(
+                "Ainda não há dados para exibir.",
+                size=12,
+                color=layout.cores[TEXTO_SECUNDARIO],
+                text_align=ft.TextAlign.CENTER,
+            ),
+        )
+        detalhe_grafico = ft.Container(height=18)
+
     return ft.Container(
-        height=340,
+        height=altura_painel,
         bgcolor=layout.cores[CARD],
         padding=18,
         border_radius=12,
         border=ft.Border.all(1, layout.cores[BORDA]),
         content=ft.Column(
-            spacing=14,
+            spacing=8,
             controls=[
                 ft.Column(
                     spacing=4,
                     controls=[
-                        ft.Text("Avaliações por mês", size=16, weight=ft.FontWeight.W_700, color=layout.cores[TEXTO_PRINCIPAL]),
-                        ft.Text("Registros realizados nos últimos seis meses.", size=11, color=layout.cores[TEXTO_SECUNDARIO]),
+                        ft.Text("Desempenho do mês mais recente", size=16, weight=ft.FontWeight.W_700, color=layout.cores[TEXTO_PRINCIPAL]),
+                        ft.Text(contexto, size=10, color=layout.cores[TEXTO_SECUNDARIO]),
                     ],
                 ),
-                ft.Container(height=224, content=ft.Row(expand=True, spacing=12, controls=barras)),
+                ft.Container(height=max(180, altura_painel - 120), content=conteudo_grafico),
+                detalhe_grafico,
             ],
         ),
     )
@@ -182,6 +316,7 @@ def _criar_painel_cursos(
     layout: ResponsiveLayout,
     avaliacoes: list[dict],
     cursos: list[dict],
+    altura_painel: int,
 ) -> ft.Container:
     """Exibe avaliações e respostas agrupadas pelos cursos atuais."""
     por_curso: dict[str, dict] = {}
@@ -269,14 +404,14 @@ def _criar_painel_cursos(
         ]
 
     lista_cursos = ft.Column(
-        height=236,
+        height=max(180, altura_painel - 100),
         spacing=14,
         scroll=ft.ScrollMode.AUTO,
         controls=controles,
     )
 
     return ft.Container(
-        height=340,
+        height=altura_painel,
         bgcolor=cores[CARD],
         padding=18,
         border_radius=12,
@@ -485,6 +620,9 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         for avaliacao in avaliacoes
         if isinstance(avaliacao.get("respostas", {}), dict)
     )
+    # Mantém os painéis no tamanho visual original quando há espaço e reduz
+    # somente o necessário em janelas baixas.
+    altura_paineis = max(300, min(460, int(page.height or 768) - 240))
     avaliacoes.sort(
         key=lambda item: _chave_data(item.get("data_avaliacao")),
         reverse=True,
@@ -538,17 +676,19 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         ],
     )
 
+    painel_tendencia = _criar_painel_tendencia(layout, avaliacoes, altura_paineis)
+    painel_cursos = _criar_painel_cursos(layout, avaliacoes, cursos, altura_paineis)
     paineis_resumo = ft.ResponsiveRow(
         spacing=16,
         run_spacing=16,
         controls=[
             ft.Container(
                 col={"xs": 12, "sm": 12, "md": 6, "lg": 6},
-                content=_criar_painel_tendencia(layout, avaliacoes),
+                content=painel_tendencia,
             ),
             ft.Container(
                 col={"xs": 12, "sm": 12, "md": 6, "lg": 6},
-                content=_criar_painel_cursos(layout, avaliacoes, cursos),
+                content=painel_cursos,
             ),
         ],
     )
@@ -565,4 +705,34 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     )
 
     layout.add_content(conteudo)
-    return layout.criar_view("/inicio")
+    view = layout.criar_view("/inicio")
+    ajustar_layout_original = layout.controller.ajustar_responsividade
+
+    def ajustar_inicio_ao_redimensionar(e=None) -> None:
+        ajustar_layout_original(e)
+        altura = max(300, min(460, int(page.height or 768) - 240))
+        painel_tendencia.height = altura
+        painel_cursos.height = altura
+
+        # Redimensiona a área do gráfico e suas barras, mantendo as três
+        # colunas proporcionais ao espaço vertical disponível.
+        controles_grafico = painel_tendencia.content.controls
+        area_grafico = controles_grafico[1]
+        area_grafico.height = max(180, altura - 120)
+        grafico = area_grafico.content
+        if isinstance(grafico, ft.Row):
+            altura_maxima_barra = max(80, altura - 202)
+            for coluna in grafico.controls:
+                area_barra = coluna.content.controls[1]
+                area_barra.height = max(100, altura - 190)
+                barra = area_barra.content
+                proporcao = barra.data
+                if proporcao is not None:
+                    barra.height = max(4, round(altura_maxima_barra * proporcao))
+
+        lista_cursos = painel_cursos.content.controls[1]
+        lista_cursos.height = max(180, altura - 100)
+        page.update()
+
+    page.on_resize = ajustar_inicio_ao_redimensionar
+    return view
