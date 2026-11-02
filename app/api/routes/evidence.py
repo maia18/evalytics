@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..auth import get_user_id, require_user
+from ..auth import get_institution_id, get_user_id, require_user
 from ..config import bucket, logger
 from ..dependencies import get_owned_evaluation
 
@@ -17,7 +17,11 @@ def list_evidence(
     user: dict = Depends(require_user),
 ):
     uid = get_user_id(user)
-    _, dados = get_owned_evaluation(evaluation_id, uid)
+    _, dados = get_owned_evaluation(
+        evaluation_id,
+        uid,
+        get_institution_id(user),
+    )
     return {"evidencias": dados.get("evidencias", [])}
 
 
@@ -28,7 +32,11 @@ def get_evidence_url(
     user: dict = Depends(require_user),
 ):
     uid = get_user_id(user)
-    _, dados = get_owned_evaluation(evaluation_id, uid)
+    _, dados = get_owned_evaluation(
+        evaluation_id,
+        uid,
+        get_institution_id(user),
+    )
     evidencia = next(
         (
             item
@@ -80,7 +88,11 @@ def delete_evidence(
     user: dict = Depends(require_user),
 ):
     uid = get_user_id(user)
-    evaluation_ref, dados = get_owned_evaluation(evaluation_id, uid)
+    evaluation_ref, dados = get_owned_evaluation(
+        evaluation_id,
+        uid,
+        get_institution_id(user),
+    )
     evidence_list = dados.get("evidencias", [])
     evidencia = next(
         (item for item in evidence_list if item.get("id") == evidence_id),

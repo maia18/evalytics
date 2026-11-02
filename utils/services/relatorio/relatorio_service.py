@@ -1,6 +1,7 @@
 import logging
 from database.services.firebase_config import db
 from database.services.cursos.firestore_courses import obter_cursos_db
+from database.services.institutions.institutions_service import listar_documentos_da_instituicao
 from utils.services.indicadores.indicadores_repository import listar_indicadores
 from utils.services.cursos.curso_utils import (
     chave_curso,
@@ -35,7 +36,7 @@ def listar_semestres_disponiveis() -> list[str]:
     """Retorna os semestres encontrados nas avaliações reais no Firestore."""
     try:
         indice_cursos = criar_indice_cursos_atuais(obter_cursos_db())
-        documentos = db.collection(COLECAO_AVALIACOES).stream()
+        documentos = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
         semestres = set()
 
         for documento in documentos:
@@ -64,7 +65,7 @@ def calcular_medias_eixos(
         mapa_eixo = _obter_mapa_eixos()
         cursos_cadastrados = obter_cursos_db()
         indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
-        avaliacoes = db.collection(COLECAO_AVALIACOES).stream()
+        avaliacoes = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
 
         acumulador: dict[int, list[float]] = {eixo_id: [] for eixo_id in EIXOS_PADRAO}
 
@@ -124,7 +125,7 @@ def listar_resultados_consolidados(
             if curso.get("nome") and str(curso.get("nome")).strip()
         ]
         indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
-        documentos = db.collection(COLECAO_AVALIACOES).stream()
+        documentos = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
         resultados: list[dict] = []
 
         for documento in documentos:

@@ -25,6 +25,7 @@ if not PROJECT_ID or not BUCKET_NAME:
 MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE_MB", "10")) * 1024 * 1024
 MAX_FILES_PER_EVALUATION = int(os.getenv("MAX_FILES_PER_EVALUATION", "100"))
 MAX_FILES_PER_INDICATOR = int(os.getenv("MAX_FILES_PER_INDICATOR", "20"))
+INSTITUICAO_PADRAO_ID = os.getenv("EVALYTICS_INSTITUICAO_ID", "ufc").strip() or "ufc"
 
 if min(MAX_FILE_SIZE, MAX_FILES_PER_EVALUATION, MAX_FILES_PER_INDICATOR) <= 0:
     raise RuntimeError("Os limites de arquivos devem ser maiores que zero.")

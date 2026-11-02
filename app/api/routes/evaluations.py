@@ -8,11 +8,12 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import ValidationError
 
-from ..auth import get_user_id, require_user
+from ..auth import get_institution_id, get_user_id, require_user
 from ..config import (
     MAX_FILE_SIZE,
     bucket,
     db,
+    INSTITUICAO_PADRAO_ID,
     logger,
 )
 from ..dependencies import cleanup_partial_evaluation
@@ -38,14 +39,25 @@ def list_evaluations(user: dict = Depends(require_user)):
     uid = get_user_id(user)
     logger.info("UID autenticado obtido.")
 
-    documentos = (
-        db.collection("avaliacoes")
-        .where("usuario_id", "==", uid)
-        .stream()
-    )
+    instituicao_id = get_institution_id(user)
+    colecao = db.collection("avaliacoes")
+    documentos_por_id = {
+        documento.id: documento
+        for documento in (
+            colecao.where("usuario_id", "==", uid)
+            .where("instituicao_id", "==", instituicao_id)
+            .stream()
+        )
+    }
+    if instituicao_id == INSTITUICAO_PADRAO_ID:
+        for documento in colecao.where("usuario_id", "==", uid).stream():
+            documentos_por_id.setdefault(documento.id, documento)
+
     avaliacoes = []
-    for documento in documentos:
+    for documento in documentos_por_id.values():
         dados = documento.to_dict() or {}
+        if dados.get("instituicao_id", INSTITUICAO_PADRAO_ID) != instituicao_id:
+            continue
         dados["id"] = documento.id
         avaliacoes.append(dados)
 
@@ -89,6 +101,7 @@ async def create_evaluation(
         evaluation_ref.set({
             "curso_id": payload.curso_id,
             "curso_nome": payload.curso_nome,
+            "instituicao_id": get_institution_id(user),
             "data_avaliacao": now,
             "respostas": payload.respostas,
             "justificativas": payload.justificativas,

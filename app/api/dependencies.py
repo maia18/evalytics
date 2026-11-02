@@ -2,10 +2,14 @@
 
 from fastapi import HTTPException
 
-from .config import bucket, db, logger
+from .config import INSTITUICAO_PADRAO_ID, bucket, db, logger
 
 
-def get_owned_evaluation(evaluation_id: str, uid: str):
+def get_owned_evaluation(
+    evaluation_id: str,
+    uid: str,
+    instituicao_id: str = INSTITUICAO_PADRAO_ID,
+):
     referencia = db.collection("avaliacoes").document(evaluation_id)
     snapshot = referencia.get()
 
@@ -18,6 +22,8 @@ def get_owned_evaluation(evaluation_id: str, uid: str):
             status_code=403,
             detail="Você não tem acesso a esta avaliação.",
         )
+    if dados.get("instituicao_id", INSTITUICAO_PADRAO_ID) != instituicao_id:
+        raise HTTPException(status_code=404, detail="Avaliação não encontrada.")
     return referencia, dados
 
 

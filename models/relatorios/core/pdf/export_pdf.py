@@ -4,6 +4,7 @@ import flet as ft
 from typing import Optional
 from datetime import datetime
 from database.services.firebase_config import db
+from database.services.institutions.institutions_service import listar_documentos_da_instituicao
 from database.services.cursos.firestore_courses import obter_cursos_db
 from models.avaliacoes.core.feedback import mostrar_feedback
 from models.relatorios.core.grafico_radar import salvar_grafico_radar
@@ -38,7 +39,7 @@ def carregar_avaliacoes_detalhadas(
     ]
     indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
     avaliacoes = []
-    for documento in db.collection(COLECAO_AVALIACOES).stream():
+    for documento in listar_documentos_da_instituicao(COLECAO_AVALIACOES):
         if documento.id not in ids:
             continue
 

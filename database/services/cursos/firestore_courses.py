@@ -3,6 +3,11 @@ import re
 from typing import Optional
 from firebase_admin import firestore
 from database.services.firebase_config import db
+from database.services.institutions.institutions_service import (
+    documento_pertence_a_instituicao,
+    listar_documentos_da_instituicao,
+    obter_instituicao_id_atual,
+)
 from .curso_notificacoes import criar_notificacao_curso
 
 logger = logging.getLogger(__name__)
@@ -65,6 +70,7 @@ def adicionar_curso_db(
             "departamento": depto,
             "coordenador": coord,
             "ativo": ativo,
+            "instituicao_id": obter_instituicao_id_atual(),
             "timestamp": firestore.SERVER_TIMESTAMP,
         }
 
@@ -87,11 +93,13 @@ def obter_cursos_db() -> list[dict]:
     Retorna a lista de cursos cadastrados, cada um incluindo seu ID de documento.
     """
     try:
-        docs = db.collection(COLECAO_CURSOS).stream()
+        docs = listar_documentos_da_instituicao(COLECAO_CURSOS)
         lista_cursos = []
 
         for doc in docs:
-            dado = doc.to_dict()
+            dado = doc.to_dict() or {}
+            if not documento_pertence_a_instituicao(dado):
+                continue
             dado["id"] = doc.id
             lista_cursos.append(dado)
 
@@ -116,6 +124,8 @@ def atualizar_curso_db(
         curso_ref = db.collection(COLECAO_CURSOS).document(doc_id)
         snapshot = curso_ref.get()
         dados_atuais = snapshot.to_dict() or {}
+        if not snapshot.exists or not documento_pertence_a_instituicao(dados_atuais):
+            return False
         status_anterior = curso_esta_ativo(dados_atuais)
         status_alterado = ativo != status_anterior
 
@@ -151,6 +161,8 @@ def atualizar_status_curso_db(doc_id: str, ativo: bool) -> bool:
         curso_ref = db.collection(COLECAO_CURSOS).document(doc_id)
         snapshot = curso_ref.get()
         dados_atuais = snapshot.to_dict() or {}
+        if not snapshot.exists or not documento_pertence_a_instituicao(dados_atuais):
+            return False
         status_anterior = curso_esta_ativo(dados_atuais)
 
         curso_ref.update({"ativo": ativo})
@@ -180,6 +192,9 @@ def excluir_curso_db(doc_id: str) -> bool:
             return False
 
         dados_curso = curso.to_dict() or {}
+        if not documento_pertence_a_instituicao(dados_curso):
+            logger.warning("Curso '%s' pertence a outra instituição.", doc_id)
+            return False
         nome_curso = dados_curso.get("nome", doc_id)
 
         curso_ref.delete()

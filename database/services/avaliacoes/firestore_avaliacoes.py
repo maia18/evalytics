@@ -1,5 +1,6 @@
 import logging
 from database.services.firebase_config import db
+from database.services.institutions.institutions_service import listar_documentos_da_instituicao
 from database.services.cursos.firestore_courses import obter_cursos_db
 from utils.services.indicadores.indicadores_repository import listar_indicadores
 from utils.services.cursos.curso_utils import (
@@ -21,7 +22,7 @@ def obter_respostas_tabela() -> list[dict]:
         Uma avaliação pode gerar várias linhas, pois cada indicador respondido representa uma resposta individual.
     """
     try:
-        documentos = db.collection(COLECAO_AVALIACOES).stream()
+        documentos = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
         indicadores = listar_indicadores()
 
         mapa_indicadores = {

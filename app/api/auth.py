@@ -3,7 +3,7 @@
 from fastapi import Header, HTTPException
 from firebase_admin import auth
 
-from .config import logger
+from .config import INSTITUICAO_PADRAO_ID, db, logger
 
 
 def require_user(
@@ -44,3 +44,19 @@ def get_user_id(user: dict) -> str:
             detail="Não foi possível identificar o usuário.",
         )
     return str(uid)
+
+
+def get_institution_id(user: dict) -> str:
+    """Lê a instituição do claim confiável ou do perfil Firestore do usuário."""
+    instituicao_id = user.get("instituicao_id")
+    if instituicao_id:
+        return str(instituicao_id)
+    try:
+        perfil = db.collection("usuarios").document(get_user_id(user)).get()
+        dados = perfil.to_dict() or {}
+        instituicao_id = dados.get("instituicao_id")
+        if instituicao_id:
+            return str(instituicao_id)
+    except Exception:
+        logger.exception("Falha ao resolver instituição do usuário autenticado.")
+    return INSTITUICAO_PADRAO_ID

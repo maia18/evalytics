@@ -6,6 +6,11 @@ from datetime import datetime
 import requests
 
 from database.services.firebase_config import db
+from database.services.institutions.institutions_service import (
+    documento_pertence_a_instituicao,
+    listar_documentos_da_instituicao,
+    obter_instituicao_id_atual,
+)
 from database.services.cursos.firestore_courses import obter_cursos_db
 from utils.services.cursos.curso_utils import (
     criar_indice_cursos_atuais,
@@ -146,6 +151,7 @@ def salvar_avaliacao(
         dados_avaliacao = {
             "curso_id": curso_id,
             "curso_nome": curso_nome,
+            "instituicao_id": obter_instituicao_id_atual(),
             "data_avaliacao": datetime.now(),
             "respostas": respostas,
             "justificativas": justificativas or {},
@@ -184,11 +190,13 @@ def listar_avaliacoes() -> list[dict]:
     """Lista apenas avaliações vinculadas a cursos ainda cadastrados."""
     try:
         indice_cursos = criar_indice_cursos_atuais(obter_cursos_db())
-        docs = db.collection(COLECAO_AVALIACOES).stream()
+        docs = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
         lista = []
         
         for doc in docs:
             dados = doc.to_dict() or {}
+            if not documento_pertence_a_instituicao(dados):
+                continue
             curso_atual = resolver_curso_avaliacao(dados, indice_cursos)
             if not curso_atual:
                 continue

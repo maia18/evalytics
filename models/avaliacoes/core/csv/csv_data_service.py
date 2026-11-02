@@ -1,6 +1,7 @@
 import logging
 
 from database.services.firebase_config import db
+from database.services.institutions.institutions_service import listar_documentos_da_instituicao
 from database.services.cursos.firestore_courses import obter_cursos_db
 from utils.services.indicadores.indicadores_repository import listar_indicadores
 from utils.services.cursos.curso_utils import (
@@ -195,7 +196,7 @@ def preparar_dados_csv(resultados: list[dict]) -> list[list[str]]:
         ids_selecionados = set(ids_avaliacoes)
         documentos = {
             documento.id: (documento.to_dict() or {})
-            for documento in db.collection(COLECAO_AVALIACOES).stream()
+            for documento in listar_documentos_da_instituicao(COLECAO_AVALIACOES)
             if documento.id in ids_selecionados
         }
 

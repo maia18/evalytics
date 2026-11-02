@@ -1,5 +1,9 @@
 import logging
 from database.services.firebase_config import db
+from database.services.institutions.institutions_service import (
+    listar_documentos_da_instituicao,
+    obter_instituicao_id_atual,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +18,7 @@ def listar_cursos() -> list[dict]:
     """Busca todos os cursos cadastrados na coleção 'cursos' do Firestore."""
     
     try:
-        docs = db.collection(COLECAO_CURSOS).stream()
+        docs = listar_documentos_da_instituicao(COLECAO_CURSOS)
         return [{"id": doc.id, **doc.to_dict()} for doc in docs]
 
     except Exception:
@@ -29,6 +33,7 @@ def criar_curso(nome: str, modalidade: str) -> None:
             "nome": nome,
             "modalidade": modalidade,
             "ativo": True,  # Soft delete: Permite ocultar o curso futuramente sem perder o histórico do banco.
+            "instituicao_id": obter_instituicao_id_atual(),
         }
         db.collection(COLECAO_CURSOS).add(novo_curso)
 

@@ -2,6 +2,7 @@ import logging
 
 from database.services.cursos.firestore_courses import obter_cursos_db
 from database.services.firebase_config import db
+from database.services.institutions.institutions_service import listar_documentos_da_instituicao
 from utils.services.cursos.curso_utils import (
     chave_curso,
     criar_indice_cursos_atuais,
@@ -44,7 +45,7 @@ def obter_dados_dashboard(
         registros = []
         semestres_disponiveis = set()
 
-        for documento in db.collection(COLECAO_AVALIACOES).stream():
+        for documento in listar_documentos_da_instituicao(COLECAO_AVALIACOES):
             dados = documento.to_dict() or {}
             semestre_avaliacao = dados.get("semestre") or obter_semestre(
                 dados.get("data_avaliacao")
