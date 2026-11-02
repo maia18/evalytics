@@ -47,7 +47,7 @@ def abrir_modal_filtros_exportacao(
         label="Curso",
         value="TODOS",
         options=[
-            ft.dropdown.Option(key="TODOS", text="Todos os cursos"),
+            ft.dropdown.Option(key="TODOS", text="Todos"),
             *[
                 ft.dropdown.Option(key=curso, text=curso)
                 for curso in cursos_disponiveis
@@ -59,7 +59,7 @@ def abrir_modal_filtros_exportacao(
         label="Semestre",
         value="TODOS",
         options=[
-            ft.dropdown.Option(key="TODOS", text="Todos os semestres"),
+            ft.dropdown.Option(key="TODOS", text="Todos"),
             *[
                 ft.dropdown.Option(key=semestre, text=semestre)
                 for semestre in semestres_disponiveis
@@ -70,7 +70,7 @@ def abrir_modal_filtros_exportacao(
         label="Eixo avaliativo",
         value="TODOS",
         options=[
-            ft.dropdown.Option(key="TODOS", text="Todos os eixos"),
+            ft.dropdown.Option(key="TODOS", text="Todos"),
             *[
                 ft.dropdown.Option(key=str(eixo_id), text=nome)
                 for eixo_id, nome in NOMES_EIXOS.items()

@@ -605,7 +605,7 @@ def abrir_configuracoes_conta(
         "/avaliacoes": ("Avaliações", "Consulte as avaliações cadastradas ou inicie uma nova pelo menu lateral."),
         "/cursos": ("Cursos", "Pesquise pelo nome ou código; selecione departamento e status e aplique os filtros."),
         "/relatorios": ("Relatórios", "Escolha uma subtela na navegação de Relatórios para abrir o dashboard ou os dados para exportação."),
-        "/relatorios/dashboard": ("Dashboard Executivo", "Selecione semestre, curso e eixo e aplique os filtros para atualizar a análise."),
+        "/dashboard/resultados": ("Resultados por eixo", "Selecione semestre, curso e eixo e aplique os filtros para atualizar a análise."),
         "/relatorios/dados": ("Dados e Exportação", "Defina os filtros antes de gerar o arquivo PDF ou CSV."),
         "/configuracoes": ("Configurações", "Escolha um eixo para consultar e editar os indicadores e seus critérios."),
         "/formulario": ("Avaliação", "Responda aos critérios de cada eixo; revise as respostas antes de finalizar."),

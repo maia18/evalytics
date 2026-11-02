@@ -2,16 +2,22 @@ import flet as ft
 from typing import Callable
 
 from components.core.constants.constants import (
+    BORDA,
     COR_PRIMARIA,
     TEXTO_SECUNDARIO,
 )
 from components.core.router.rotas_cts import (
     ROTA_DASHBOARD_VISAO_GERAL,
     ROTA_DASHBOARD_AVALIACOES,
+    ROTA_DASHBOARD_RESULTADOS,
 )
 from components.layout.responsive.responsive import ResponsiveLayout
+from components.core.theme.border_utils import criar_borda_uniforme
 from database.services.dashboard.firestore_dashboard import obter_dados_dashboard
 from models.avaliacoes.avaliacoes import criar_conteudo_avaliacoes
+from models.dashboard.views.resultados_view import TelaResultados
+from models.relatorios.widgets.filtros_relatorios import criar_secao_filtros
+from utils.services.relatorio.relatorio_service import listar_resultados_avaliacoes
 from models.dashboard.widgets.graphics.grafico_eixos import criar_grafico_eixos
 from models.dashboard.widgets.kpi_cards import criar_kpi_card
 from models.dashboard.widgets.grafico_evolucao_semestres import (
@@ -319,3 +325,37 @@ def ViewDashboardAvaliacoes(
     return _criar_layout(
         page, mudar_tela, ROTA_DASHBOARD_AVALIACOES, exibir_visao_geral=False
     )
+
+
+def ViewDashboardResultados(
+    page: ft.Page, mudar_tela: Callable[[str], None]
+) -> ft.View:
+    """Dashboard analítico com médias e respostas por eixo avaliativo."""
+    layout = ResponsiveLayout(
+        page,
+        titulo_pagina="Resultados por eixo",
+        subtitulo="Analise as médias e respostas válidas por eixo avaliativo.",
+        mudar_tela=mudar_tela,
+    )
+    resultados = listar_resultados_avaliacoes()
+    painel_resultados = TelaResultados(page)
+
+    def aplicar_filtros(semestre, curso_nome, eixo) -> None:
+        painel_resultados.atualizar(semestre, curso_nome, eixo)
+
+    filtros = criar_secao_filtros(
+        layout,
+        criar_borda_uniforme(layout.cores[BORDA]),
+        page,
+        aplicar_filtros,
+        resultados=resultados,
+    )
+    painel_resultados.limpar_filtros = filtros.limpar_filtros
+    layout.add_content(
+        ft.Column(
+            expand=True,
+            spacing=8,
+            controls=[filtros, ft.Container(expand=True, content=painel_resultados)],
+        )
+    )
+    return layout.criar_view(ROTA_DASHBOARD_RESULTADOS)

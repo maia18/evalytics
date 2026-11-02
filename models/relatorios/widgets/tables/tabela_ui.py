@@ -81,6 +81,10 @@ def criar_estrutura_tabela(page: ft.Page, resultados: list[dict]) -> ft.Control:
     linhas = [criar_linha_resultado(item) for item in resultados]
 
     return ft.DataTable(
+        # Usa melhor a largura do painel; em telas estreitas, o contêiner externo
+        # permite rolagem horizontal sem comprimir as colunas.
+        column_spacing=112,
+        horizontal_margin=24,
         heading_row_color=(
             ft.Colors.BLUE_GREY_900 if page.theme_mode == ft.ThemeMode.DARK else ft.Colors.BLUE_50
         ),

@@ -50,8 +50,8 @@ async def main(page: ft.Page) -> None:
         # NAVEGAÇÃO INICIAL
         # ======================================================
         
-        from components.core.router.rotas_cts import ROTA_INICIAL
         from components.core.navigator import Navigator
+        from components.core.router.rotas_cts import ROTA_INICIAL
         
         if sessao_restaurada:
             logger.info(

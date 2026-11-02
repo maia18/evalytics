@@ -14,6 +14,7 @@ from components.core.router.rotas_cts import (
     ROTA_DASHBOARD,
     ROTA_DASHBOARD_VISAO_GERAL,
     ROTA_DASHBOARD_AVALIACOES,
+    ROTA_DASHBOARD_RESULTADOS,
     ROTA_AVALIACOES,
     ROTA_RELATORIOS,
     ROTA_RELATORIOS_DASHBOARD,
@@ -33,7 +34,11 @@ from components.landing.desenvolvedores import ViewDesenvolvedores
 from models.login.login import ViewLogin
 from models.inicio.inicio import ViewInicio
 from models.cursos.cursos import ViewCursos
-from models.dashboard.dashboard import ViewDashboard, ViewDashboardAvaliacoes
+from models.dashboard.dashboard import (
+    ViewDashboard,
+    ViewDashboardAvaliacoes,
+    ViewDashboardResultados,
+)
 from models.avaliacoes.avaliacoes import ViewAvaliacoes
 from models.relatorios.relatorios import ViewRelatorios, ViewRelatoriosDados
 from models.formulario.formulario import ViewFormulario
@@ -58,9 +63,10 @@ ROTAS: dict[str, ViewBuilder] = {
     ROTA_DASHBOARD: ViewDashboard,
     ROTA_DASHBOARD_VISAO_GERAL: ViewDashboard,
     ROTA_DASHBOARD_AVALIACOES: ViewDashboardAvaliacoes,
+    ROTA_DASHBOARD_RESULTADOS: ViewDashboardResultados,
     ROTA_AVALIACOES: ViewAvaliacoes,
     ROTA_RELATORIOS: ViewRelatorios,
-    ROTA_RELATORIOS_DASHBOARD: ViewRelatorios,
+    ROTA_RELATORIOS_DASHBOARD: ViewDashboardResultados,
     ROTA_RELATORIOS_DADOS: ViewRelatoriosDados,
     ROTA_CURSOS: ViewCursos,
     ROTA_FORMULARIO: ViewFormulario,

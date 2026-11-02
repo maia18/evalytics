@@ -5,6 +5,7 @@ from components.core.router.rotas_cts import (
     ROTA_DASHBOARD,
     ROTA_DASHBOARD_VISAO_GERAL,
     ROTA_DASHBOARD_AVALIACOES,
+    ROTA_DASHBOARD_RESULTADOS,
 )
 from components.widgets.menu.menu_button_base import criar_botao_menu_base
 from components.widgets.menu.menu_item import criar_item_menu
@@ -103,6 +104,11 @@ def criar_menu_dashboard(
                 "Acompanhamento",
                 ROTA_DASHBOARD_AVALIACOES,
                 ft.Icons.TABLE_ROWS_ROUNDED,
+            ),
+            criar_subtela(
+                "Resultados por eixo",
+                ROTA_DASHBOARD_RESULTADOS,
+                ft.Icons.INSERT_CHART_OUTLINED,
             ),
         ],
     )

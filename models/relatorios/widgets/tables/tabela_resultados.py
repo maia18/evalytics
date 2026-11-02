@@ -11,13 +11,19 @@ def criar_tabela_resultados(
     borda_container: ft.Border,
     ao_exportar_csv,
     ao_exportar_pdf,
+    secao_filtros: ft.Control | None = None,
 ) -> ft.Container:
     """Cria a tabela de resultados consolidados e orquestra a lógica de estado/filtros."""
 
     resultados_iniciais = listar_resultados_consolidados()
 
     conteudo_tabela = ft.Container(
-        content=criar_estrutura_tabela(page, resultados_iniciais),
+        expand=True,
+        content=ft.Row(
+            expand=True,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[criar_estrutura_tabela(page, resultados_iniciais)],
+        ),
     )
 
     def atualizar_tabela(
@@ -31,7 +37,11 @@ def criar_tabela_resultados(
             eixo=eixo,
             curso_nome=curso_nome,
         )
-        conteudo_tabela.content = criar_estrutura_tabela(page, resultados_filtrados)
+        conteudo_tabela.content = ft.Row(
+            expand=True,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[criar_estrutura_tabela(page, resultados_filtrados)],
+        )
         page.update()
 
     conteudo_tabela.atualizar = atualizar_tabela
@@ -91,7 +101,9 @@ def criar_tabela_resultados(
             scroll=ft.ScrollMode.AUTO,
             controls=[
                 cabecalho,
-                ft.Container(height=15),
+                ft.Container(height=10),
+                secao_filtros if secao_filtros is not None else ft.Container(),
+                ft.Container(height=14),
                 conteudo_tabela,
             ],
         ),

@@ -20,6 +20,7 @@ def criar_secao_filtros(
     ao_exportar_csv=None,
     ao_exportar_pdf=None,
     resultados: list[dict] | None = None,
+    embutido: bool = False,
 ) -> ft.Container:
     """
     Cria a seção de filtros dos relatórios.
@@ -35,7 +36,7 @@ def criar_secao_filtros(
     opcoes_semestre = [
         ft.dropdown.Option(
             key="TODOS",
-            text="Todos os semestres",
+            text="Todos",
         )
     ]
 
@@ -62,7 +63,7 @@ def criar_secao_filtros(
     dropdown_curso = ft.Dropdown(
         label="Curso",
         options=[
-            ft.dropdown.Option(key="TODOS", text="Todos os cursos"),
+            ft.dropdown.Option(key="TODOS", text="Todos"),
             *[
                 ft.dropdown.Option(key=curso, text=curso)
                 for curso in cursos
@@ -80,7 +81,7 @@ def criar_secao_filtros(
     opcoes_eixo = [
         ft.dropdown.Option(
             key="TODOS",
-            text="Todos os eixos",
+            text="Todos",
         )
     ]
 
@@ -172,28 +173,35 @@ def criar_secao_filtros(
     )
 
     resumo_filtros = ft.Text(
-        "Todos os cursos · Todos os semestres · Todos os eixos",
+        "",
+        visible=False,
         size=12,
         color=layout.cores[TEXTO_SECUNDARIO],
     )
 
     def atualizar_resumo_filtros():
-        def rotulo_opcao(dropdown, padrao):
+        filtros_ativos = []
+
+        def rotulo_opcao(dropdown, nome_filtro):
             selecionada = dropdown.value
             if selecionada in (None, "", "TODOS"):
-                return padrao
+                return None
             for opcao in dropdown.options:
                 if str(opcao.key) == str(selecionada):
-                    return opcao.text
-            return str(selecionada)
+                    return f"{nome_filtro}: {opcao.text}"
+            return f"{nome_filtro}: {selecionada}"
 
-        resumo_filtros.value = " · ".join(
-            [
-                rotulo_opcao(dropdown_curso, "Todos os cursos"),
-                rotulo_opcao(dropdown_semestre, "Todos os semestres"),
-                rotulo_opcao(dropdown_eixo, "Todos os eixos"),
-            ]
-        )
+        for dropdown, nome in (
+            (dropdown_curso, "Curso"),
+            (dropdown_semestre, "Semestre"),
+            (dropdown_eixo, "Eixo"),
+        ):
+            rotulo = rotulo_opcao(dropdown, nome)
+            if rotulo:
+                filtros_ativos.append(rotulo)
+
+        resumo_filtros.value = " · ".join(filtros_ativos)
+        resumo_filtros.visible = bool(filtros_ativos) and not linha_controles.visible
 
     # ======================================================
     # LAYOUT
@@ -216,6 +224,7 @@ def criar_secao_filtros(
 
     def alternar_filtros(e=None):
         linha_controles.visible = not linha_controles.visible
+        atualizar_resumo_filtros()
         icone_filtros.name = (
             ft.Icons.KEYBOARD_ARROW_DOWN
             if linha_controles.visible
@@ -224,10 +233,10 @@ def criar_secao_filtros(
         page.update()
 
     secao_filtros = ft.Container(
-        bgcolor=layout.cores[CARD],
-        padding=ft.Padding.symmetric(horizontal=16, vertical=8),
-        border_radius=8,
-        border=borda_container,
+        bgcolor=None if embutido else layout.cores[CARD],
+        padding=0 if embutido else ft.Padding.symmetric(horizontal=16, vertical=8),
+        border_radius=0 if embutido else 8,
+        border=None if embutido else borda_container,
         content=ft.Column(
             spacing=15,
             controls=[
