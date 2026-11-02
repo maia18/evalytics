@@ -31,12 +31,23 @@ def criar_topbar_content(
         O "painel_notificacoes" é solto (não fica dentro da Row da Topbar), pois ele será colocado no `page.overlay` global.
     '''
     area_notificacoes, painel_notificacoes, badge_notificacoes, atualizar_lista = criar_componentes_notificacoes(page, cores)
-
-    menu_conta = criar_menu_conta(page, cores, mudar_tela) if mudar_tela else ft.CircleAvatar(
-        radius=14,
-        bgcolor=COR_PRIMARIA,
-        color=ft.Colors.WHITE,
-        content=ft.Text("U", size=10, weight=ft.FontWeight.W_600),
+    badge_notificacoes.visible = (
+        badge_notificacoes.visible
+        and getattr(page, "contador_notificacoes_ativo", True)
+    )
+    menu_conta = (
+        criar_menu_conta(page, cores, mudar_tela)
+        if mudar_tela
+        else ft.CircleAvatar(
+            radius=14,
+            bgcolor=COR_PRIMARIA,
+            color=ft.Colors.WHITE,
+            content=ft.Text("U", size=10, weight=ft.FontWeight.W_600),
+        )
+    )
+    notificacoes_visiveis = ft.Container(
+        visible=getattr(page, "notificacoes_ativas", True),
+        content=area_notificacoes,
     )
 
     conteudo = ft.ResponsiveRow(
@@ -100,9 +111,7 @@ def criar_topbar_content(
                     ),
                     
                     # Ícone do sininho de notificações
-                    area_notificacoes,
-                    
-                    # Menu de conta: perfil, ajuda, informações, configurações e logout.
+                    notificacoes_visiveis,
                     menu_conta,
                     ],
                 ),
@@ -119,5 +128,6 @@ def criar_topbar_content(
     conteudo.badge_notificacoes = badge_notificacoes
     conteudo.painel_notificacoes = painel_notificacoes
     conteudo.atualizar_lista_notificacoes = atualizar_lista
+    conteudo.area_notificacoes = notificacoes_visiveis
 
     return conteudo

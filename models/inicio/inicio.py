@@ -2,9 +2,9 @@ import flet as ft
 from datetime import datetime
 from typing import Callable
 
-from components.core.auth.auth_state import auth_state
 from components.core.constants.constants import (
     CARD,
+    CARD_SECUNDARIO,
     BORDA,
     TEXTO_PRINCIPAL,
     TEXTO_SECUNDARIO,
@@ -12,19 +12,16 @@ from components.core.constants.constants import (
 )
 from components.core.constants.texts import (
     TXTS_INICIO,
-    TXTS_DASHBOARD,
-    TXTS_CURSOS,
-    TXTS_RELATORIOS,
-    TXTS_CONFIGS,
 )
-from components.core.router.rotas_cts import ROTA_DASHBOARD_AVALIACOES
+from components.core.router.rotas_cts import (
+    ROTA_DASHBOARD_AVALIACOES,
+    ROTA_FORMULARIO,
+)
 from components.layout.responsive.responsive import ResponsiveLayout
 from database.services.cursos.firestore_courses import (
     obter_cursos_db,
     curso_esta_ativo,
 )
-from models.dashboard.widgets.kpi_cards import criar_kpi_card
-from models.inicio.widgets.card_inicio import criar_card
 from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
 from utils.services.relatorio.relatorio_utils import obter_semestre
 
@@ -55,6 +52,258 @@ def _formatar_data(data) -> str:
         except (TypeError, ValueError):
             return data[:10]
     return "Data não informada"
+
+
+def _mes_da_data(data) -> tuple[int, int] | None:
+    """Extrai ano e mês de valores datetime do Firestore ou texto ISO."""
+    if hasattr(data, "year") and hasattr(data, "month"):
+        try:
+            return int(data.year), int(data.month)
+        except (TypeError, ValueError):
+            pass
+    if isinstance(data, str) and data.strip():
+        try:
+            valor = datetime.fromisoformat(data.strip().replace("Z", "+00:00"))
+            return valor.year, valor.month
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
+def _criar_painel_tendencia(
+    layout: ResponsiveLayout,
+    avaliacoes: list[dict],
+) -> ft.Container:
+    """Mostra a quantidade real de avaliações em cada um dos últimos seis meses."""
+    agora = datetime.now()
+    meses = []
+    nomes_meses = ("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+    for distancia in range(5, -1, -1):
+        indice = agora.year * 12 + agora.month - 1 - distancia
+        ano, mes_zero = divmod(indice, 12)
+        meses.append((ano, mes_zero + 1))
+
+    contagens = {mes: 0 for mes in meses}
+    for avaliacao in avaliacoes:
+        mes = _mes_da_data(avaliacao.get("data_avaliacao"))
+        if mes in contagens:
+            contagens[mes] += 1
+
+    maior_contagem = max(contagens.values(), default=0)
+    barras = []
+    for ano, mes in meses:
+        quantidade = contagens[(ano, mes)]
+        altura = max(4, round(104 * quantidade / maior_contagem)) if maior_contagem else 4
+        barras.append(
+            ft.Column(
+                expand=True,
+                alignment=ft.MainAxisAlignment.END,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=7,
+                controls=[
+                    ft.Text(str(quantidade), size=10, color=layout.cores[TEXTO_SECUNDARIO]),
+                    ft.Container(
+                        height=116,
+                        alignment=ft.Alignment.BOTTOM_CENTER,
+                        content=ft.Container(
+                            width=24,
+                            height=altura,
+                            bgcolor=COR_PRIMARIA if quantidade else layout.cores[CARD_SECUNDARIO],
+                            border_radius=5,
+                        ),
+                    ),
+                    ft.Text(nomes_meses[mes - 1], size=10, color=layout.cores[TEXTO_SECUNDARIO]),
+                ],
+            )
+        )
+
+    return ft.Container(
+        height=340,
+        bgcolor=layout.cores[CARD],
+        padding=18,
+        border_radius=12,
+        border=ft.Border.all(1, layout.cores[BORDA]),
+        content=ft.Column(
+            spacing=14,
+            controls=[
+                ft.Column(
+                    spacing=4,
+                    controls=[
+                        ft.Text("Avaliações por mês", size=16, weight=ft.FontWeight.W_700, color=layout.cores[TEXTO_PRINCIPAL]),
+                        ft.Text("Registros realizados nos últimos seis meses.", size=11, color=layout.cores[TEXTO_SECUNDARIO]),
+                    ],
+                ),
+                ft.Container(height=224, content=ft.Row(expand=True, spacing=12, controls=barras)),
+            ],
+        ),
+    )
+
+
+def _criar_indicador(
+    layout: ResponsiveLayout,
+    titulo: str,
+    valor: str,
+    icone: str,
+    coluna: dict[str, int],
+) -> ft.Container:
+    cores = layout.cores
+    return ft.Container(
+        col=coluna,
+        bgcolor=cores[CARD],
+        padding=16,
+        border_radius=12,
+        border=ft.Border.all(1, cores[BORDA]),
+        content=ft.Column(
+            spacing=12,
+            controls=[
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    controls=[
+                        ft.Text(
+                            titulo,
+                            size=12,
+                            color=cores[TEXTO_SECUNDARIO],
+                        ),
+                        ft.Icon(icone, size=18, color=COR_PRIMARIA),
+                    ],
+                ),
+                ft.Text(
+                    valor,
+                    size=26,
+                    weight=ft.FontWeight.W_700,
+                    color=cores[TEXTO_PRINCIPAL],
+                ),
+            ],
+        ),
+    )
+
+
+def _criar_painel_cursos(
+    layout: ResponsiveLayout,
+    avaliacoes: list[dict],
+    cursos: list[dict],
+) -> ft.Container:
+    """Exibe avaliações e respostas agrupadas pelos cursos atuais."""
+    por_curso: dict[str, dict] = {}
+
+    for curso in cursos:
+        nome = str(curso.get("nome") or "").strip()
+        if nome:
+            por_curso[nome.casefold()] = {
+                "nome": nome,
+                "avaliacoes": 0,
+                "respostas": 0,
+            }
+
+    for avaliacao in avaliacoes:
+        nome = str(avaliacao.get("curso_nome") or "Curso sem nome").strip()
+        chave = nome.casefold()
+        if chave not in por_curso:
+            # Avaliações órfãs (curso removido do cadastro) não entram nos dados válidos.
+            continue
+        respostas = avaliacao.get("respostas", {})
+        por_curso[chave]["avaliacoes"] += 1
+        por_curso[chave]["respostas"] += len(respostas) if isinstance(respostas, dict) else 0
+
+    dados = sorted(
+        por_curso.values(),
+        key=lambda item: (
+            -item["avaliacoes"],
+            -item["respostas"],
+            item["nome"].casefold(),
+        ),
+    )
+    maior_total = max((item["avaliacoes"] for item in dados), default=0)
+    cores = layout.cores
+
+    if dados:
+        controles: list[ft.Control] = []
+        for item in dados:
+            proporcao = item["avaliacoes"] / maior_total if maior_total else 0
+            controles.append(
+                ft.Column(
+                    spacing=6,
+                    controls=[
+                        ft.Row(
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            spacing=8,
+                            controls=[
+                                ft.Text(
+                                    item["nome"],
+                                    size=12,
+                                    weight=ft.FontWeight.W_600,
+                                    color=cores[TEXTO_PRINCIPAL],
+                                    max_lines=1,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
+                                    expand=True,
+                                ),
+                                ft.Text(
+                                    f"{item['avaliacoes']} avaliações",
+                                    size=11,
+                                    color=cores[TEXTO_SECUNDARIO],
+                                ),
+                            ],
+                        ),
+                        ft.ProgressBar(
+                            value=proporcao,
+                            color=COR_PRIMARIA,
+                            bgcolor=cores[CARD_SECUNDARIO],
+                            height=7,
+                            border_radius=5,
+                        ),
+                        ft.Text(
+                            f"{item['respostas']} respostas registradas",
+                            size=10,
+                            color=cores[TEXTO_SECUNDARIO],
+                        ),
+                    ],
+                )
+            )
+    else:
+        controles = [
+            ft.Text(
+                "Cadastre cursos e registre avaliações para ver a atividade por curso.",
+                size=12,
+                color=cores[TEXTO_SECUNDARIO],
+            )
+        ]
+
+    lista_cursos = ft.Column(
+        height=236,
+        spacing=14,
+        scroll=ft.ScrollMode.AUTO,
+        controls=controles,
+    )
+
+    return ft.Container(
+        height=340,
+        bgcolor=cores[CARD],
+        padding=18,
+        border_radius=12,
+        border=ft.Border.all(1, cores[BORDA]),
+        content=ft.Column(
+            spacing=14,
+            controls=[
+                ft.Column(
+                    spacing=4,
+                    controls=[
+                        ft.Text(
+                            "Atividade por curso",
+                            size=16,
+                            weight=ft.FontWeight.W_700,
+                            color=cores[TEXTO_PRINCIPAL],
+                        ),
+                        ft.Text(
+                            "Avaliações e respostas registradas nos cursos cadastrados.",
+                            size=11,
+                            color=cores[TEXTO_SECUNDARIO],
+                        ),
+                    ],
+                ),
+                lista_cursos,
+            ],
+        ),
+    )
 
 
 def _criar_secao_avaliacoes(
@@ -217,8 +466,20 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         mudar_tela=mudar_tela,
     )
 
-    cursos_ativos = sum(1 for curso in obter_cursos_db() if curso_esta_ativo(curso))
+    cursos = obter_cursos_db()
+    cursos_ativos = sum(1 for curso in cursos if curso_esta_ativo(curso))
     avaliacoes = listar_avaliacoes()
+    cursos_existentes = {
+        str(curso.get("nome") or "").strip().casefold()
+        for curso in cursos
+        if str(curso.get("nome") or "").strip()
+    }
+    avaliacoes = [
+        avaliacao
+        for avaliacao in avaliacoes
+        if str(avaliacao.get("curso_nome") or "").strip().casefold()
+        in cursos_existentes
+    ]
     total_respostas = sum(
         len(avaliacao.get("respostas", {}))
         for avaliacao in avaliacoes
@@ -229,126 +490,77 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         reverse=True,
     )
 
-    usuario = auth_state.usuario or {}
-    nome_usuario = str(usuario.get("displayName") or usuario.get("name") or "").strip()
-    primeiro_nome = nome_usuario.split()[0] if nome_usuario else ""
-    titulo_boas_vindas = f"Olá, {primeiro_nome}!" if primeiro_nome else "Bem-vindo ao Evalytics"
+    descricao_boas_vindas = "Acompanhe avaliações e atividade dos cursos."
 
-    hero = ft.Container(
-        bgcolor=layout.cores[CARD],
-        padding=28,
-        border_radius=14,
-        border=ft.Border.all(1, layout.cores[BORDA]),
-        shadow=ft.BoxShadow(
-            spread_radius=0,
-            blur_radius=20,
-            color=ft.Colors.with_opacity(0.10, COR_PRIMARIA),
-            offset=ft.Offset(0, 8),
-        ),
-        content=ft.Row(
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            wrap=True,
-            spacing=20,
-            run_spacing=16,
-            controls=[
-                ft.Column(
-                    spacing=8,
-                    tight=True,
-                    controls=[
-                        ft.Text(
-                            titulo_boas_vindas,
-                            weight=ft.FontWeight.W_700,
-                            size=22,
-                            color=layout.cores[TEXTO_PRINCIPAL],
-                        ),
-                        ft.Text(
-                            "Crie e acompanhe avaliações para entender os resultados da instituição.",
-                            size=13,
-                            color=layout.cores[TEXTO_SECUNDARIO],
-                        ),
-                        ft.Container(height=6),
-                        ft.ElevatedButton(
-                            TXTS_INICIO[3],
-                            icon=ft.Icons.ADD_ROUNDED,
-                            bgcolor=COR_PRIMARIA,
-                            color=ft.Colors.WHITE,
-                            height=44,
-                            style=ft.ButtonStyle(
-                                shape=ft.RoundedRectangleBorder(radius=10),
-                                elevation=0,
-                            ),
-                            on_click=lambda e: mudar_tela("/formulario"),
-                        ),
-                    ],
-                ),
-            ],
-        ),
-    )
-
-    colunas_kpi = {"xs": 12, "sm": 4, "md": 4, "lg": 4}
-    indicadores = ft.ResponsiveRow(
-        spacing=16,
-        run_spacing=12,
+    cabecalho_conteudo = ft.Column(
+        spacing=4,
         controls=[
-            criar_kpi_card(
-                layout,
-                "Avaliações realizadas",
-                str(len(avaliacoes)),
-                ft.Icons.ASSIGNMENT_OUTLINED,
-                COR_PRIMARIA,
-                col=colunas_kpi,
+            ft.Text(
+                "Visão geral",
+                weight=ft.FontWeight.W_700,
+                size=24,
+                color=layout.cores[TEXTO_PRINCIPAL],
             ),
-            criar_kpi_card(
-                layout,
-                "Cursos ativos",
-                str(cursos_ativos),
-                ft.Icons.SCHOOL_OUTLINED,
-                COR_PRIMARIA,
-                col=colunas_kpi,
-            ),
-            criar_kpi_card(
-                layout,
-                "Respostas registradas",
-                f"{total_respostas:,}".replace(",", "."),
-                ft.Icons.FORMAT_LIST_BULLETED,
-                COR_PRIMARIA,
-                col=colunas_kpi,
+            ft.Text(
+                descricao_boas_vindas,
+                size=12,
+                color=layout.cores[TEXTO_SECUNDARIO],
             ),
         ],
     )
 
-    atalhos = ft.Column(
-        spacing=12,
+    colunas_kpi = {"xs": 12, "sm": 6, "md": 4, "lg": 4}
+    indicadores = ft.ResponsiveRow(
+        spacing=16,
+        run_spacing=12,
         controls=[
-            ft.Text(
-                "Acessos rápidos",
-                size=17,
-                weight=ft.FontWeight.W_700,
-                color=layout.cores[TEXTO_PRINCIPAL],
+            _criar_indicador(
+                layout,
+                "Avaliações realizadas",
+                str(len(avaliacoes)),
+                ft.Icons.ASSIGNMENT_OUTLINED,
+                colunas_kpi,
             ),
-            ft.ResponsiveRow(
-                spacing=20,
-                run_spacing=20,
-                controls=[
-                    ft.Container(col={"xs": 12, "sm": 6, "md": 4, "lg": 3}, content=criar_card(layout, TXTS_DASHBOARD[0], TXTS_DASHBOARD[1], ft.Icons.GRID_VIEW, "/dashboard", mudar_tela)),
-                    ft.Container(col={"xs": 12, "sm": 6, "md": 4, "lg": 3}, content=criar_card(layout, TXTS_CURSOS[0], TXTS_CURSOS[1], ft.Icons.MENU_BOOK, "/cursos", mudar_tela)),
-                    ft.Container(col={"xs": 12, "sm": 6, "md": 4, "lg": 3}, content=criar_card(layout, TXTS_RELATORIOS[0], TXTS_RELATORIOS[1], ft.Icons.PIE_CHART, "/relatorios", mudar_tela)),
-                    ft.Container(col={"xs": 12, "sm": 6, "md": 4, "lg": 3}, content=criar_card(layout, TXTS_CONFIGS[0], TXTS_CONFIGS[1], ft.Icons.VIEW_COMFY, "/configuracoes", mudar_tela)),
-                ],
+            _criar_indicador(
+                layout,
+                "Cursos ativos",
+                str(cursos_ativos),
+                ft.Icons.SCHOOL_OUTLINED,
+                colunas_kpi,
+            ),
+            _criar_indicador(
+                layout,
+                "Respostas registradas",
+                f"{total_respostas:,}".replace(",", "."),
+                ft.Icons.FORMAT_LIST_BULLETED,
+                colunas_kpi,
+            ),
+        ],
+    )
+
+    paineis_resumo = ft.ResponsiveRow(
+        spacing=16,
+        run_spacing=16,
+        controls=[
+            ft.Container(
+                col={"xs": 12, "sm": 12, "md": 6, "lg": 6},
+                content=_criar_painel_tendencia(layout, avaliacoes),
+            ),
+            ft.Container(
+                col={"xs": 12, "sm": 12, "md": 6, "lg": 6},
+                content=_criar_painel_cursos(layout, avaliacoes, cursos),
             ),
         ],
     )
 
     conteudo = ft.Column(
         expand=True,
-        spacing=20,
+        spacing=18,
         scroll=ft.ScrollMode.AUTO,
         controls=[
-            hero,
+            cabecalho_conteudo,
             indicadores,
-            _criar_secao_avaliacoes(layout, avaliacoes, mudar_tela),
-            atalhos,
+            paineis_resumo,
         ],
     )
 

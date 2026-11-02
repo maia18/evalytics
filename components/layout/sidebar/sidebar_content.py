@@ -6,6 +6,7 @@ from components.layout.sidebar.sidebar_reports import criar_menu_relatorios
 from components.layout.sidebar.sidebar_dashboard import criar_menu_dashboard
 from components.widgets.menu.menu import MENU_ITEMS
 from components.widgets.menu.menu_item import criar_item_menu
+from components.layout.sidebar.sidebar_footer import criar_rodape_sidebar
 from components.core.router.rotas_cts import (
     ROTA_DASHBOARD,
     ROTA_RELATORIOS,
@@ -17,14 +18,26 @@ def criar_sidebar_content(
     dark_mode: bool,
     mudar_tela: Callable[[str], None],
     cores: dict[str, str],
+    alternar_recolhimento: Callable | None = None,
 ) -> ft.Column:
     """Constrói a visualização padrão (expandida) da barra lateral do sistema."""
 
     # 1. Estrutura base da Sidebar
     controles: list[ft.Control] = [
         # Logo completo
-        criar_logo(
-            cores,
+        ft.Row(
+            spacing=0,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.Container(expand=True, content=criar_logo(cores)),
+                ft.IconButton(
+                    icon=ft.Icons.FIRST_PAGE,
+                    icon_size=18,
+                    tooltip="Recolher menu lateral",
+                    on_click=alternar_recolhimento,
+                    visible=alternar_recolhimento is not None,
+                ),
+            ],
         ),
 
         # Separador
@@ -49,18 +62,7 @@ def criar_sidebar_content(
                 )
             )
         elif rota == ROTA_CONFIGURACOES:
-            controles.append(ft.Divider(height=12))
-            controles.append(
-                criar_item_menu(
-                    icone,
-                    texto,
-                    rota,
-                    dark_mode,
-                    cores[TEXTO_PRINCIPAL],
-                    mudar_tela,
-                    ativo=rota_atual == rota,
-                )
-            )
+            continue
         else:
             controles.append(
                 criar_item_menu(
@@ -81,6 +83,7 @@ def criar_sidebar_content(
     return ft.Column(
         controls=[
             area_menu,
+            criar_rodape_sidebar(page, dark_mode, cores, mudar_tela),
         ],
         spacing=0,
         expand=True,

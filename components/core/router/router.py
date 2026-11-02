@@ -23,6 +23,7 @@ from components.core.router.rotas_cts import (
     ROTA_DESENVOLVEDORES,
     ROTA_FORMULARIO,
     ROTA_CONFIGURACOES,
+    ROTA_CONTA,
 )
 
 # Construtores de tela (Views)
@@ -37,6 +38,7 @@ from models.avaliacoes.avaliacoes import ViewAvaliacoes
 from models.relatorios.relatorios import ViewRelatorios, ViewRelatoriosDados
 from models.formulario.formulario import ViewFormulario
 from models.configuracoes.configuracoes import ViewConfiguracoes
+from models.conta.conta import ViewConta
 
 logger = lg.getLogger(__name__)
 
@@ -63,6 +65,7 @@ ROTAS: dict[str, ViewBuilder] = {
     ROTA_CURSOS: ViewCursos,
     ROTA_FORMULARIO: ViewFormulario,
     ROTA_CONFIGURACOES: ViewConfiguracoes,
+    ROTA_CONTA: ViewConta,
 }
 
 def obter_view(rota: str) -> ViewBuilder:

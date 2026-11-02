@@ -19,7 +19,7 @@ LARGURA_BREAKPOINT_DESKTOP = 1100  # Define o limite para telas grandes (monitor
 # COMPONENTES (SIDEBAR)
 # =====================================================================
 
-LARGURA_SIDEBAR_EXPANDIDA = 224 # Sidebar desktop compacta, com espaço suficiente para os rótulos e subtelas.
+LARGURA_SIDEBAR_EXPANDIDA = 200 # Largura reduzida para liberar área útil sem cortar rótulos do menu.
 LARGURA_SIDEBAR_COLAPSADA = 72 # Define a largura (em pixels) da barra lateral quando ela está recolhida (mini-sidebar). 72px é o tamanho exato para mostrar apenas os ícones centralizados, liberando o máximo de espaço útil na tela para o conteúdo principal, ideal para telas médias (tablets) ou quando o usuário prefere focar no dashboard.
 LARGURA_SIDEBAR_MOBILE = 250 # Define a largura exata do menu mobile quando ele está aberto. 250px garante espaço suficiente para os textos sem ocupar a tela inteira do celular.
 POSICAO_SIDEBAR_MOBILE_FECHADA = -270  # Define a posição (eixo X) da gaveta quando ela está recolhida. O valor é -270px (Largura de 250px + 20px de margem de segurança extra). Essa margem garante que a sombra projetada pela barra lateral (shadow) não fique "vazando" ou visível no canto esquerdo da tela enquanto o menu estiver fechado.

@@ -34,7 +34,7 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
 
     # 2. O Painel Flutuante (Caixa onde a lista de notificações aparece)
     painel_notificacoes = ft.Container(
-        width=280, height=min(500, 140 + len(notificacoes) * 88) if notificacoes else 120,
+        width=280, height=min(500, 140 + len(notificacoes) * 88) if notificacoes else 150,
         visible=False, # Nasce escondido
         top=66, right=66, # Fica ancorado próximo ao canto superior direito da tela
         bgcolor=cores[SURFACE], 
@@ -156,9 +156,10 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
         painel_notificacoes.height = (
             min(500, 140 + len(novas_notificacoes) * 88)
             if tem_notificacoes
-            else 120
+            else 150
         )
         acoes_notificacoes.visible = tem_notificacoes
+        rodape_notificacoes.visible = tem_notificacoes
         divisor_rodape.visible = tem_notificacoes
         if tem_notificacoes:
             corpo_notificacoes.alignment = ft.Alignment.TOP_CENTER

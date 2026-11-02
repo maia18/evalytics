@@ -64,5 +64,6 @@ def criar_sidebar_mobile(
             dark_mode=dark_mode,
             mudar_tela=mudar_tela,
             collapsed=False,
+            allow_collapse=False,
         ),
     )

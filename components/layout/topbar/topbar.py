@@ -75,10 +75,29 @@ class TopBar(ft.Container):
         if self.badge_notificacoes is None:
             return
 
-        self.badge_notificacoes.visible = self.notificacoes_pendentes > 0
+        self.badge_notificacoes.visible = (
+            self.notificacoes_pendentes > 0
+            and getattr(self._page, "contador_notificacoes_ativo", True)
+        )
         self.badge_notificacoes.content = ft.Text(
             str(self.notificacoes_pendentes),
             size=9,
             weight=ft.FontWeight.BOLD,
             color=ft.Colors.WHITE,
         )
+
+    def aplicar_preferencias_notificacoes(self) -> None:
+        """Aplica as preferências visuais da área de notificações na topbar atual."""
+        if self.content is None:
+            return
+        area_notificacoes = getattr(self.content, "area_notificacoes", None)
+        if area_notificacoes is not None:
+            area_notificacoes.visible = getattr(self._page, "notificacoes_ativas", True)
+        if self.badge_notificacoes is not None:
+            self.badge_notificacoes.visible = (
+                getattr(self._page, "notificacoes_ativas", True)
+                and getattr(self._page, "contador_notificacoes_ativo", True)
+                and self.notificacoes_pendentes > 0
+            )
+        if not getattr(self._page, "notificacoes_ativas", True) and self.painel_notificacoes is not None:
+            self.painel_notificacoes.visible = False

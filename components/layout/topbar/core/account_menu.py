@@ -10,8 +10,8 @@ from components.core.theme.darkmode_toggle import toggle_dark_mode
 from components.core.theme.theme_config import configurar_tema
 from components.core.router.rotas_cts import (
     ROTA_AVALIACOES,
+    ROTA_CONTA,
     ROTA_DASHBOARD_VISAO_GERAL,
-    ROTA_INICIAL,
     ROTA_RELATORIOS,
 )
 from database.services.firebase_keys import FIREBASE_API_KEY
@@ -51,6 +51,159 @@ def _notificar(page: ft.Page, mensagem: str, sucesso: bool):
     )
     page.overlay.append(snackbar)
     snackbar.open = True
+    page.update()
+
+
+async def salvar_nome_perfil(page: ft.Page, nome: str) -> dict | None:
+    """Atualiza o nome de exibição no Firebase e no estado local."""
+    nome = (nome or "").strip()
+    token = auth_state.id_token
+    if not nome:
+        _notificar(page, "Informe um nome para exibição.", False)
+        return None
+    if not token or not FIREBASE_API_KEY:
+        _notificar(page, "Não foi possível validar sua sessão para atualizar o perfil.", False)
+        return None
+    try:
+        resposta = await asyncio.to_thread(
+            requests.post,
+            f"https://identitytoolkit.googleapis.com/v1/accounts:update?key={FIREBASE_API_KEY}",
+            json={"idToken": token, "displayName": nome, "returnSecureToken": True},
+            timeout=15,
+        )
+        dados = resposta.json()
+    except (requests.RequestException, ValueError):
+        _notificar(page, "Falha de conexão ao atualizar o perfil. Tente novamente.", False)
+        return None
+    if resposta.status_code != 200:
+        mensagem = dados.get("error", {}).get("message", "Não foi possível salvar o perfil.")
+        if mensagem == "TOKEN_EXPIRED":
+            mensagem = "Sua sessão expirou. Entre novamente para atualizar o perfil."
+        _notificar(page, mensagem, False)
+        return None
+
+    await auth_state.atualizar_dados_usuario(dados)
+    _notificar(page, "Perfil atualizado.", True)
+    return dados
+
+
+async def consultar_dados_perfil() -> dict | None:
+    """Busca os dados atuais do usuário autenticado no Firebase."""
+    token = auth_state.id_token
+    if not token or not FIREBASE_API_KEY:
+        return None
+    try:
+        resposta = await asyncio.to_thread(
+            requests.post,
+            f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}",
+            json={"idToken": token},
+            timeout=10,
+        )
+        if resposta.status_code != 200:
+            return None
+        usuarios = resposta.json().get("users", [])
+        if not usuarios:
+            return None
+        dados = usuarios[0]
+        await auth_state.atualizar_dados_usuario(dados)
+        return dados
+    except (requests.RequestException, ValueError):
+        return None
+
+
+def abrir_dialogo_alterar_senha(page: ft.Page, cores: dict[str, str], email: str) -> None:
+    campo_atual = ft.TextField(label="Senha atual", password=True, can_reveal_password=True)
+    campo_nova = ft.TextField(label="Nova senha", password=True, can_reveal_password=True)
+    campo_confirmacao = ft.TextField(label="Confirme a nova senha", password=True, can_reveal_password=True)
+    dialogo = None
+
+    async def salvar(e):
+        senha_atual = campo_atual.value or ""
+        senha_nova = campo_nova.value or ""
+        if not email:
+            _notificar(page, "Não foi possível obter o e-mail da conta para validar a senha atual.", False)
+            return
+        if not senha_atual:
+            _notificar(page, "Informe a senha atual.", False)
+            return
+        if len(senha_nova) < 6:
+            _notificar(page, "A nova senha deve ter pelo menos 6 caracteres.", False)
+            return
+        if senha_nova != (campo_confirmacao.value or ""):
+            _notificar(page, "A confirmação da nova senha não corresponde.", False)
+            return
+        try:
+            autenticacao = await asyncio.to_thread(
+                requests.post,
+                f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}",
+                json={"email": email, "password": senha_atual, "returnSecureToken": True},
+                timeout=15,
+            )
+            dados_autenticacao = autenticacao.json()
+        except (requests.RequestException, ValueError):
+            _notificar(page, "Falha de conexão ao validar a senha atual.", False)
+            return
+        if autenticacao.status_code != 200:
+            erro = dados_autenticacao.get("error", {}).get("message", "")
+            mensagem = "A senha atual está incorreta." if erro in {
+                "INVALID_LOGIN_CREDENTIALS", "INVALID_PASSWORD"
+            } else "Não foi possível validar a senha atual."
+            _notificar(page, mensagem, False)
+            return
+        try:
+            resposta = await asyncio.to_thread(
+                requests.post,
+                f"https://identitytoolkit.googleapis.com/v1/accounts:update?key={FIREBASE_API_KEY}",
+                json={
+                    "idToken": dados_autenticacao["idToken"],
+                    "password": senha_nova,
+                    "returnSecureToken": True,
+                },
+                timeout=15,
+            )
+            dados = resposta.json()
+        except (requests.RequestException, ValueError, KeyError):
+            _notificar(page, "Falha de conexão ao atualizar a senha. Tente novamente.", False)
+            return
+        if resposta.status_code != 200:
+            erro = dados.get("error", {}).get("message", "")
+            mensagem = (
+                "Sua sessão expirou. Entre novamente e tente alterar a senha."
+                if erro == "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"
+                else "Não foi possível alterar a senha. Verifique a sessão e tente novamente."
+            )
+            _notificar(page, mensagem, False)
+            return
+        await auth_state.atualizar_dados_usuario(dados)
+        dialogo.open = False
+        _notificar(page, "Senha alterada com sucesso.", True)
+
+    dialogo = ft.AlertDialog(
+        modal=True,
+        bgcolor=cores[SURFACE],
+        shape=ft.RoundedRectangleBorder(radius=14),
+        title=ft.Text("Alterar senha", color=cores[TEXTO_PRINCIPAL], weight=ft.FontWeight.W_700),
+        content=ft.Container(
+            width=400,
+            content=ft.Column(
+                tight=True,
+                spacing=12,
+                controls=[
+                    ft.Text("Confirme sua senha atual para proteger a conta.", size=12, color=cores[TEXTO_SECUNDARIO]),
+                    campo_atual,
+                    campo_nova,
+                    campo_confirmacao,
+                ],
+            ),
+        ),
+        actions=[
+            ft.TextButton("Cancelar", on_click=lambda e: _fechar_dialogo(page, dialogo)),
+            ft.ElevatedButton("Atualizar senha", bgcolor=COR_PRIMARIA, color=ft.Colors.WHITE, on_click=salvar),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+    page.overlay.append(dialogo)
+    dialogo.open = True
     page.update()
 
 
@@ -794,138 +947,16 @@ def criar_menu_conta(
     page: ft.Page,
     cores: dict[str, str],
     mudar_tela: Callable[[str], None],
-) -> ft.PopupMenuButton:
-    usuario = auth_state.usuario or {}
-    email_inicial = usuario.get("email", "")
-    nome_inicial = usuario.get("displayName") or usuario.get("name") or ""
-    nome_email = email_inicial.partition("@")[0]
-    estado = {
-        "nome": nome_inicial or nome_email or "Carregando conta...",
-        "email": email_inicial,
-    }
-    consulta_perfil = {"em_andamento": False, "concluida": bool(email_inicial)}
-
-    def obter_iniciais(nome: str) -> str:
-        partes = [parte for parte in nome.replace(".", " ").replace("_", " ").split() if parte]
-        return "".join(parte[0] for parte in partes[:2]).upper() or "U"
-
-    nome_avatar = estado["nome"]
-    texto_inicial = "…" if nome_avatar == "Carregando conta..." else obter_iniciais(nome_avatar)
-    avatar_texto = ft.Text(texto_inicial, size=10, weight=ft.FontWeight.W_600, color=ft.Colors.WHITE)
-    nome_texto = ft.Text(estado["nome"], size=12, weight=ft.FontWeight.W_600, color=cores[TEXTO_PRINCIPAL])
-    email_texto = ft.Text(
-        estado["email"] or "Buscando dados da conta...",
-        size=10,
-        color=ft.Colors.GREY_500,
-    )
-
-    def atualizar_identificacao(nome: str, email: str):
-        estado["email"] = email or ""
-        estado["nome"] = nome or estado["email"].partition("@")[0] or "Conta"
-        identificador_avatar = estado["nome"]
-        avatar_texto.value = obter_iniciais(identificador_avatar)
-        nome_texto.value = estado["nome"]
-        email_texto.value = estado["email"] or "E-mail indisponível"
-        page.update()
-
-    async def carregar_identificacao(e=None):
-        if consulta_perfil["em_andamento"] or consulta_perfil["concluida"]:
-            return
-        token = auth_state.id_token
-        if not token or not FIREBASE_API_KEY:
-            consulta_perfil["concluida"] = True
-            atualizar_identificacao("Conta", "")
-            return
-
-        consulta_perfil["em_andamento"] = True
-        try:
-            resposta = await asyncio.to_thread(
-                requests.post,
-                f"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key={FIREBASE_API_KEY}",
-                json={"idToken": token},
-                timeout=8,
-            )
-            usuarios = resposta.json().get("users", []) if resposta.status_code == 200 else []
-            if usuarios:
-                dados = usuarios[0]
-                await auth_state.atualizar_dados_usuario(dados)
-                email = dados.get("email", "")
-                nome = dados.get("displayName") or dados.get("name") or email.partition("@")[0]
-                atualizar_identificacao(nome or "Conta", email)
-            else:
-                atualizar_identificacao("Conta", "")
-        except (requests.RequestException, ValueError):
-            atualizar_identificacao("Conta", "")
-        finally:
-            consulta_perfil["em_andamento"] = False
-            consulta_perfil["concluida"] = True
-
-    async def fazer_logout(e):
-        await auth_state.encerrar_sessao(page)
-        mudar_tela(ROTA_INICIAL)
-
-    async def abrir_perfil_click(e):
-        await abrir_perfil(page, cores, atualizar_identificacao)
-
-    async def abrir_atividade_click(e):
-        await abrir_atividade_recente(page, cores, mudar_tela)
-
-    async def abrir_configuracoes_conta_click(e):
-        abrir_configuracoes_conta(
-            page,
-            cores,
-            estado["nome"],
-            estado["email"],
-            abrir_perfil_click,
-            mudar_tela,
-        )
-
-    menu = ft.PopupMenuButton(
-        content=ft.CircleAvatar(
-            radius=14,
-            bgcolor=COR_PRIMARIA,
-            color=ft.Colors.WHITE,
-            content=avatar_texto,
-        ),
-        items=[
-            ft.PopupMenuItem(
-                content=ft.Column(spacing=2, controls=[nome_texto, email_texto]),
-                height=56,
-            ),
-            ft.PopupMenuItem(
-                content="Meu perfil",
-                icon=ft.Icons.PERSON_OUTLINE,
-                on_click=abrir_perfil_click,
-            ),
-            ft.PopupMenuItem(
-                content="Atividade recente",
-                icon=ft.Icons.HISTORY,
-                on_click=abrir_atividade_click,
-            ),
-            ft.PopupMenuItem(
-                content="Ajuda e suporte",
-                icon=ft.Icons.HELP_OUTLINE,
-                on_click=lambda e: abrir_ajuda(page, cores, mudar_tela),
-            ),
-            ft.PopupMenuItem(
-                content="Configurações da conta",
-                icon=ft.Icons.SETTINGS_OUTLINED,
-                on_click=abrir_configuracoes_conta_click,
-            ),
-            ft.PopupMenuItem(
-                content="Sobre o Evalytics",
-                icon=ft.Icons.INFO_OUTLINE,
-                on_click=lambda e: abrir_sobre(page, cores),
-            ),
-            ft.PopupMenuItem(content=ft.Divider(height=1), height=12),
-            ft.PopupMenuItem(content="Sair", icon=ft.Icons.LOGOUT, on_click=fazer_logout),
-        ],
+) -> ft.Container:
+    return ft.Container(
+        width=34,
+        height=34,
+        alignment=ft.Alignment.CENTER,
+        tooltip="Minha conta",
+        ink=True,
+        border_radius=17,
         bgcolor=cores[SURFACE],
-        menu_position=ft.PopupMenuPosition.UNDER,
-        shape=ft.RoundedRectangleBorder(radius=10),
-        tooltip="Menu da conta",
-        on_open=carregar_identificacao,
+        border=ft.Border.all(1, "#40394A"),
+        on_click=lambda e: mudar_tela(ROTA_CONTA),
+        content=ft.Icon(ft.Icons.PERSON_OUTLINE, size=18, color="#B69CFF"),
     )
-    if not email_inicial:
-        page.run_task(carregar_identificacao)
-    return menu

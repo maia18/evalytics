@@ -37,8 +37,10 @@ def criar_botao_menu_base(
     return ft.Container(
         height=ALTURA_BOTAO_MENU,
         alignment=alignment,
+        bgcolor=("#302747" if dark_mode else "#EEE9FB") if ativo else None,
+        border_radius=RAIO_BOTAO_MENU,
         border=ft.Border(
-            left=ft.BorderSide(2, COR_PRIMARIA if ativo else "#00000000")
+            left=ft.BorderSide(3, COR_PRIMARIA if ativo else "#00000000")
         ),
 
         content=ft.TextButton(
@@ -53,11 +55,9 @@ def criar_botao_menu_base(
                 ),
 
                 # Hover adaptado ao tema atual
-                overlay_color=(
-                    HOVER
-                    if dark_mode
-                    else HOVER_CLARO_BOTAO_MENU
-                ),
+                overlay_color=("#39334A" if dark_mode else "#E5E1EF")
+                if dark_mode or not ativo
+                else HOVER_CLARO_BOTAO_MENU,
             ),
 
             on_click=executar_click,

@@ -1,5 +1,6 @@
 import flet as ft
 from typing import Callable, Optional
+from components.core.constants.constants import COR_PRIMARIA
 from components.widgets.menu.menu_button_base import criar_botao_menu_base
 
 def criar_botao_icon(
@@ -19,8 +20,8 @@ def criar_botao_icon(
     # Prepara o controle visual central isoladamente
     icone_control = ft.Icon(
         icone,
-        color=cor_texto,
-        size=24,
+        color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_texto,
+        size=20,
         tooltip=tooltip_text,  # tooltip crucial: menu sem tem texto, balão indica para onde a rota vai quando o usuário repousa o mouse sobre o botão
     )
     

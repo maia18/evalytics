@@ -35,14 +35,25 @@ def ajustar_responsividade(
         fechar_sidebar()  # Força o fechamento da versão mobile, caso estivesse aberta
 
         # Ajuste adaptativo extra: menu diminui para modo ícone em telas médias
-        sidebar_desktop.width = (
-            LARGURA_SIDEBAR_EXPANDIDA if categoria == "desktop" else LARGURA_SIDEBAR_COLAPSADA
+        preferencia_recolhida = getattr(page, "sidebar_recolhida", None)
+        sidebar_recolhida = (
+            bool(preferencia_recolhida)
+            if preferencia_recolhida is not None
+            else categoria == "compacta"
         )
-        sidebar_desktop.content = criar_sidebar_desktop(
-            page=page,
-            dark_mode=dark_mode,
-            mudar_tela=mudar_tela,
-            collapsed=categoria == "compacta",
-        ).content
+        if hasattr(sidebar_desktop, "definir_recolhida"):
+            sidebar_desktop.definir_recolhida(sidebar_recolhida, atualizar=False)
+        else:
+            sidebar_desktop.width = (
+                LARGURA_SIDEBAR_COLAPSADA
+                if sidebar_recolhida
+                else LARGURA_SIDEBAR_EXPANDIDA
+            )
+            sidebar_desktop.content = criar_sidebar_desktop(
+                page=page,
+                dark_mode=dark_mode,
+                mudar_tela=mudar_tela,
+                collapsed=sidebar_recolhida,
+            ).content
 
     page.update()  # Atualiza a interface com os novos tamanhos
