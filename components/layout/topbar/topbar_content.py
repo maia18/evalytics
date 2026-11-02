@@ -22,7 +22,10 @@ def criar_topbar_content(
 ) -> ft.ResponsiveRow:
     """Constrói a faixa de navegação superior (Cabeçalho da Página)."""
 
-    local_atual = obter_localizacao()
+    local_atual = (
+        getattr(page, "localidade_instituicao", None)
+        or obter_localizacao()
+    )
     tela_muito_estreita = page.width is not None and page.width < 400
     titulo_exibido = titulo.split()[0] if tela_muito_estreita else titulo
 
@@ -49,6 +52,95 @@ def criar_topbar_content(
         visible=getattr(page, "notificacoes_ativas", True),
         content=area_notificacoes,
     )
+
+    texto_localidade = ft.Text(
+        local_atual,
+        size=10,
+        weight="w500",
+        color=cores[TEXTO_PRINCIPAL],
+        max_lines=1,
+        overflow=ft.TextOverflow.ELLIPSIS,
+    )
+
+    def fechar_dialogo_localidade(dialogo: ft.AlertDialog) -> None:
+        dialogo.open = False
+        page.update()
+
+    async def salvar_localidade(valor: str, dialogo: ft.AlertDialog) -> None:
+        localidade = valor.strip()
+        if not localidade:
+            return
+        try:
+            preferencias = ft.SharedPreferences()
+            await preferencias.set("evalytics.localidade_instituicao", localidade)
+        except Exception:
+            # Mantém a seleção na sessão atual mesmo se o armazenamento local
+            # estiver indisponível nesta plataforma.
+            pass
+        page.localidade_instituicao = localidade
+        texto_localidade.value = localidade
+        fechar_dialogo_localidade(dialogo)
+
+    def abrir_seletor_localidade(e=None) -> None:
+        campo_localidade = ft.TextField(
+            label="Localidade da instituição",
+            hint_text="Ex.: Fortaleza - CE",
+            value=texto_localidade.value,
+            autofocus=True,
+            width=360,
+            on_submit=lambda evento: page.run_task(
+                salvar_localidade, campo_localidade.value or "", dialogo_localidade
+            ),
+        )
+        dialogo_localidade = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Localidade da instituição"),
+            content=ft.Column(
+                tight=True,
+                spacing=10,
+                controls=[
+                    ft.Text(
+                        "Defina a localidade que será exibida no cabeçalho.",
+                        size=12,
+                        color=cores.get("texto_secundario", ft.Colors.GREY_500),
+                    ),
+                    campo_localidade,
+                ],
+            ),
+            actions=[
+                ft.TextButton(
+                    "Cancelar",
+                    on_click=lambda evento: fechar_dialogo_localidade(dialogo_localidade),
+                ),
+                ft.ElevatedButton(
+                    "Salvar",
+                    on_click=lambda evento: page.run_task(
+                        salvar_localidade,
+                        campo_localidade.value or "",
+                        dialogo_localidade,
+                    ),
+                    bgcolor=COR_PRIMARIA,
+                    color=ft.Colors.WHITE,
+                ),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+        page.overlay.append(dialogo_localidade)
+        dialogo_localidade.open = True
+        page.update()
+
+    async def carregar_localidade_salva() -> None:
+        try:
+            preferencias = ft.SharedPreferences()
+            localidade_salva = await preferencias.get("evalytics.localidade_instituicao")
+        except Exception:
+            return
+        if isinstance(localidade_salva, str) and localidade_salva.strip():
+            page.localidade_instituicao = localidade_salva.strip()
+            texto_localidade.value = localidade_salva.strip()
+            page.update()
+
+    page.run_task(carregar_localidade_salva)
 
     conteudo = ft.ResponsiveRow(
         spacing=8,
@@ -97,15 +189,17 @@ def criar_topbar_content(
                     controls=[
                     # Chip/Badge informativo da Localização Atual
                     ft.Container(
-                        width=100,
+                        width=150,
                         padding=4,
                         border_radius=8,
                         bgcolor=cores[SURFACE],
+                        tooltip="Alterar localidade exibida",
+                        on_click=abrir_seletor_localidade,
                         content=ft.Row(
                             spacing=3,
                             controls=[
                                 ft.Icon(ft.Icons.LOCATION_ON_OUTLINED, size=14, color=COR_PRIMARIA),
-                                ft.Text(local_atual, size=10, weight="w500", color=cores[TEXTO_PRINCIPAL]),
+                                texto_localidade,
                             ],
                         ),
                     ),

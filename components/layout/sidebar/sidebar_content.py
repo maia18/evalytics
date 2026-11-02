@@ -33,7 +33,6 @@ def criar_sidebar_content(
                 ft.IconButton(
                     icon=ft.Icons.FIRST_PAGE,
                     icon_size=18,
-                    tooltip="Recolher menu lateral",
                     on_click=alternar_recolhimento,
                     visible=alternar_recolhimento is not None,
                 ),

@@ -695,7 +695,10 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
 
     conteudo = ft.Column(
         expand=True,
-        spacing=18,
+        # A tela já tem respiro dentro dos cards; reduzir apenas os intervalos
+        # entre seções evita overflow vertical em tela cheia sem alterar o
+        # tamanho dos gráficos ou dos painéis.
+        spacing=8,
         scroll=ft.ScrollMode.AUTO,
         controls=[
             cabecalho_conteudo,
