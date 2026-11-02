@@ -6,7 +6,11 @@ from components.layout.sidebar.sidebar_reports import criar_menu_relatorios
 from components.layout.sidebar.sidebar_dashboard import criar_menu_dashboard
 from components.widgets.menu.menu import MENU_ITEMS
 from components.widgets.menu.menu_item import criar_item_menu
-from components.core.router.rotas_cts import ROTA_DASHBOARD, ROTA_RELATORIOS
+from components.core.router.rotas_cts import (
+    ROTA_DASHBOARD,
+    ROTA_RELATORIOS,
+    ROTA_CONFIGURACOES,
+)
 
 def criar_sidebar_content(
     page: ft.Page,
@@ -30,6 +34,7 @@ def criar_sidebar_content(
     ]
 
     # 2. Construção da lista de navegação
+    rota_atual = getattr(page, "route", "") or ""
     for icone, texto, rota in MENU_ITEMS:
         if rota == ROTA_RELATORIOS:
             controles.extend(
@@ -43,11 +48,25 @@ def criar_sidebar_content(
                     page, dark_mode, cores[TEXTO_PRINCIPAL], mudar_tela
                 )
             )
+        elif rota == ROTA_CONFIGURACOES:
+            controles.append(ft.Divider(height=12))
+            controles.append(
+                criar_item_menu(
+                    icone,
+                    texto,
+                    rota,
+                    dark_mode,
+                    cores[TEXTO_PRINCIPAL],
+                    mudar_tela,
+                    ativo=rota_atual == rota,
+                )
+            )
         else:
             controles.append(
                 criar_item_menu(
                     icone, texto, rota, dark_mode,
                     cores[TEXTO_PRINCIPAL], mudar_tela,
+                    ativo=rota_atual == rota,
                 )
             )
 

@@ -9,6 +9,7 @@ def criar_botao_icon(
     dark_mode: bool,
     cor_texto: str,
     mudar_tela: Optional[Callable[[str], None]],
+    ativo: bool = False,
 ) -> ft.Container:
     """
     Cria um botão compacto que exibe apenas um ícone.
@@ -31,4 +32,5 @@ def criar_botao_icon(
         mudar_tela=mudar_tela,
         alignment=ft.Alignment(0, 0),  # Alignment(0, 0) força o ícone a ficar perfeitamente no centro matemático do container
         expand=True,  # Ocupa todo o espaço disponível no container de 45px (conforme configurado na casca)
+        ativo=ativo,
     )

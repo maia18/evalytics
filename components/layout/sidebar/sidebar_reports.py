@@ -8,6 +8,7 @@ from components.core.router.rotas_cts import (
     ROTA_RELATORIOS_DASHBOARD,
     ROTA_RELATORIOS_DADOS,
 )
+from components.core.constants.constants import COR_PRIMARIA
 
 
 def criar_menu_relatorios(
@@ -42,6 +43,7 @@ def criar_menu_relatorios(
         dark_mode,
         cor_texto,
         mudar_tela,
+        ativo=rota_atual == ROTA_RELATORIOS,
     )
     botao_relatorios.expand = True
 
@@ -66,11 +68,12 @@ def criar_menu_relatorios(
     )
 
     def criar_subtela(texto: str, rota: str, icone: str) -> ft.Control:
+        ativo = rota_atual == rota
         conteudo = ft.Row(
             spacing=10,
             controls=[
-                ft.Icon(icone, size=16, color=cor_icone),
-                ft.Text(texto, size=12, color=cor_texto),
+                ft.Icon(icone, size=14, color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_icone),
+                ft.Text(texto, size=11, color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_texto),
             ],
         )
         botao = criar_botao_menu_base(
@@ -80,10 +83,11 @@ def criar_menu_relatorios(
             mudar_tela=mudar_tela,
             alignment=ft.Alignment(-1, 0),
             expand=True,
+            ativo=ativo,
         )
         return ft.Container(
             expand=True,
-            padding=ft.Padding.only(left=20),
+            padding=ft.Padding.only(left=16),
             content=botao,
         )
 
@@ -97,7 +101,7 @@ def criar_menu_relatorios(
                 ft.Icons.DASHBOARD_OUTLINED,
             ),
             criar_subtela(
-                "Dados Brutos e Exportação",
+                "Dados e exportação",
                 ROTA_RELATORIOS_DADOS,
                 ft.Icons.TABLE_CHART_OUTLINED,
             ),

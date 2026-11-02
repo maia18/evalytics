@@ -8,6 +8,7 @@ from components.core.router.rotas_cts import (
 )
 from components.widgets.menu.menu_button_base import criar_botao_menu_base
 from components.widgets.menu.menu_item import criar_item_menu
+from components.core.constants.constants import COR_PRIMARIA
 
 
 def criar_menu_dashboard(
@@ -42,6 +43,7 @@ def criar_menu_dashboard(
         dark_mode,
         cor_texto,
         mudar_tela,
+        ativo=rota_atual == ROTA_DASHBOARD,
     )
     botao_dashboard.expand = True
 
@@ -66,12 +68,13 @@ def criar_menu_dashboard(
     )
 
     def criar_subtela(texto: str, rota: str, icone: str) -> ft.Control:
+        ativo = rota_atual == rota
         botao = criar_botao_menu_base(
             content=ft.Row(
                 spacing=10,
                 controls=[
-                    ft.Icon(icone, size=16, color=cor_icone),
-                    ft.Text(texto, size=12, color=cor_texto),
+                    ft.Icon(icone, size=14, color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_icone),
+                    ft.Text(texto, size=11, color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_texto),
                 ],
             ),
             rota=rota,
@@ -79,10 +82,11 @@ def criar_menu_dashboard(
             mudar_tela=mudar_tela,
             alignment=ft.Alignment(-1, 0),
             expand=True,
+            ativo=ativo,
         )
         return ft.Container(
             expand=True,
-            padding=ft.Padding.only(left=20),
+            padding=ft.Padding.only(left=16),
             content=botao,
         )
 

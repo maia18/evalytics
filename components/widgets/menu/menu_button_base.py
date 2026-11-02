@@ -6,6 +6,7 @@ from components.core.constants.constants import (
     RAIO_BOTAO_MENU,
     PADDING_BOTAO_MENU,
     HOVER_CLARO_BOTAO_MENU,
+    COR_PRIMARIA,
 )
 
 def criar_botao_menu_base(
@@ -16,6 +17,7 @@ def criar_botao_menu_base(
     alignment: Optional[ft.Alignment] = None,
     expand: bool = False,
     on_click: Optional[Callable[[ft.ControlEvent], None]] = None,
+    ativo: bool = False,
 ) -> ft.Container:
     """
     Casca compartilhada de um botão de navegação do menu (sidebar).
@@ -35,6 +37,9 @@ def criar_botao_menu_base(
     return ft.Container(
         height=ALTURA_BOTAO_MENU,
         alignment=alignment,
+        border=ft.Border(
+            left=ft.BorderSide(2, COR_PRIMARIA if ativo else "#00000000")
+        ),
 
         content=ft.TextButton(
             expand=expand,

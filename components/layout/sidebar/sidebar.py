@@ -36,7 +36,7 @@ class Sidebar(ft.Container):
 
         # Aparência
         self.bgcolor = self.cores[CARD]
-        self.padding = 20
+        self.padding = 14
 
         # Borda direita
         self.border = ft.Border(
