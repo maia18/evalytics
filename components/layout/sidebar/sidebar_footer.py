@@ -1,9 +1,9 @@
 import flet as ft
 from typing import Callable
 
-from components.core.constants.constants import COR_PRIMARIA, TEXTO_PRINCIPAL
+from components.core.constants.constants import TEXTO_PRINCIPAL
 from components.core.router.rotas_cts import ROTA_CONFIGURACOES
-from components.layout.topbar.core.account_menu import abrir_ajuda, abrir_sobre
+from components.layout.topbar.core.account_menu import abrir_ajuda
 from components.widgets.menu.botao_icon import criar_botao_icon
 from components.widgets.menu.menu_button_base import criar_botao_menu_base
 from components.widgets.menu.menu_item import criar_item_menu
@@ -21,9 +21,6 @@ def criar_rodape_sidebar(
 
     def abrir_ajuda_click(e) -> None:
         abrir_ajuda(page, cores, mudar_tela)
-
-    def abrir_sobre_click(e) -> None:
-        abrir_sobre(page, cores)
 
     if compacta:
         configuracoes = criar_botao_icon(
@@ -49,20 +46,6 @@ def criar_rodape_sidebar(
             expand=True,
             on_click=abrir_ajuda_click,
         )
-        sobre = criar_botao_menu_base(
-            content=ft.Icon(
-                ft.Icons.INFO_OUTLINE,
-                size=20,
-                color="#B69CFF" if dark_mode else COR_PRIMARIA,
-                tooltip="Sobre o Evalytics",
-            ),
-            rota="",
-            dark_mode=dark_mode,
-            mudar_tela=None,
-            alignment=ft.Alignment.CENTER,
-            expand=True,
-            on_click=abrir_sobre_click,
-        )
     else:
         configuracoes = criar_item_menu(
             ft.Icons.SETTINGS_OUTLINED,
@@ -87,29 +70,6 @@ def criar_rodape_sidebar(
             expand=True,
             on_click=abrir_ajuda_click,
         )
-        sobre = criar_botao_menu_base(
-            content=ft.Row(
-                spacing=10,
-                controls=[
-                    ft.Icon(
-                        ft.Icons.INFO_OUTLINE,
-                        size=18,
-                        color="#B69CFF" if dark_mode else COR_PRIMARIA,
-                    ),
-                    ft.Text(
-                        "Sobre o Evalytics",
-                        size=12,
-                        weight=ft.FontWeight.W_600,
-                        color="#B69CFF" if dark_mode else COR_PRIMARIA,
-                    ),
-                ],
-            ),
-            rota="",
-            dark_mode=dark_mode,
-            mudar_tela=None,
-            expand=True,
-            on_click=abrir_sobre_click,
-        )
 
     return ft.Column(
         spacing=0,
@@ -117,6 +77,5 @@ def criar_rodape_sidebar(
             ft.Divider(height=12),
             configuracoes,
             ajuda,
-            sobre,
         ],
     )

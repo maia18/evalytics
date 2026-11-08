@@ -1,7 +1,8 @@
 import logging
-from database.services.firebase_config import db
+from copy import deepcopy
+from database.services.institutions.institutions_service import obter_instituicao_id_atual
+from database.services.memory_cache import obter_cache, salvar_cache
 from database.services.cursos.firestore_courses import obter_cursos_db
-from database.services.institutions.institutions_service import listar_documentos_da_instituicao
 from utils.services.indicadores.indicadores_repository import listar_indicadores
 from utils.services.cursos.curso_utils import (
     chave_curso,
@@ -9,13 +10,12 @@ from utils.services.cursos.curso_utils import (
     normalizar_nome_curso,
     resolver_curso_avaliacao,
 )
+from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
 
 # Importação dos utilitários puros
 from .relatorio_utils import obter_semestre
 
 logger = logging.getLogger(__name__)
-COLECAO_AVALIACOES = "avaliacoes"
-
 EIXO_PADRAO = 1
 EIXOS_PADRAO = (1, 2, 3)
 
@@ -35,12 +35,12 @@ def _obter_mapa_eixos() -> dict[str, int]:
 def listar_semestres_disponiveis() -> list[str]:
     """Retorna os semestres encontrados nas avaliações reais no Firestore."""
     try:
-        indice_cursos = criar_indice_cursos_atuais(obter_cursos_db())
-        documentos = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
+        cursos = obter_cursos_db()
+        indice_cursos = criar_indice_cursos_atuais(cursos)
+        documentos = listar_avaliacoes(cursos)
         semestres = set()
 
-        for documento in documentos:
-            dados = documento.to_dict() or {}
+        for dados in documentos:
             if not resolver_curso_avaliacao(dados, indice_cursos):
                 continue
             data_avaliacao = dados.get("data_avaliacao", "")
@@ -74,17 +74,24 @@ def obter_resumo_eixos(
     eixo: int | None = None,
 ) -> dict:
     """Retorna médias e contagens válidas no mesmo conjunto filtrado."""
+    chave_cache = (
+        f"resumo_eixos:{obter_instituicao_id_atual()}:"
+        f"{semestre or ''}:{curso_nome or ''}:{eixo if eixo is not None else ''}"
+    )
+    encontrado, valor_cache = obter_cache(chave_cache)
+    if encontrado:
+        return deepcopy(valor_cache)
+
     try:
         mapa_eixo = _obter_mapa_eixos()
         cursos_cadastrados = obter_cursos_db()
         indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
-        avaliacoes = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
+        avaliacoes = listar_avaliacoes(cursos_cadastrados)
 
         acumulador: dict[int, list[float]] = {eixo_id: [] for eixo_id in EIXOS_PADRAO}
         avaliacoes_com_respostas = 0
 
-        for avaliacao in avaliacoes:
-            dados = avaliacao.to_dict() or {}
+        for dados in avaliacoes:
             curso_atual = resolver_curso_avaliacao(dados, indice_cursos)
             if not curso_atual:
                 continue
@@ -125,7 +132,7 @@ def obter_resumo_eixos(
 
         total_respostas = sum(len(notas) for notas in acumulador.values())
         todas_notas = [nota for notas in acumulador.values() for nota in notas]
-        return {
+        resumo = {
             "avaliacoes": avaliacoes_com_respostas,
             "respostas": total_respostas,
             "media_geral": sum(todas_notas) / len(todas_notas) if todas_notas else None,
@@ -137,6 +144,8 @@ def obter_resumo_eixos(
                 for eixo_id, notas in acumulador.items()
             },
         }
+        salvar_cache(chave_cache, resumo, 5.0)
+        return resumo
 
     except Exception:
         logger.exception("Erro ao calcular resumo dos eixos.")
@@ -156,6 +165,14 @@ def listar_resultados_consolidados(
     curso_nome: str | None = None,
 ) -> list[dict]:
     """Retorna avaliações consolidadas por eixo."""
+    chave_cache = (
+        f"resultados:{obter_instituicao_id_atual()}:"
+        f"{semestre or ''}:{eixo if eixo is not None else ''}:{curso_nome or ''}"
+    )
+    encontrado, valor_cache = obter_cache(chave_cache)
+    if encontrado:
+        return deepcopy(valor_cache)
+
     try:
         mapa_eixo = _obter_mapa_eixos()
         cursos_cadastrados = obter_cursos_db()
@@ -165,11 +182,10 @@ def listar_resultados_consolidados(
             if curso.get("nome") and str(curso.get("nome")).strip()
         ]
         indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
-        documentos = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
+        documentos = listar_avaliacoes(cursos_cadastrados)
         resultados: list[dict] = []
 
-        for documento in documentos:
-            dados = documento.to_dict() or {}
+        for dados in documentos:
             curso_atual = resolver_curso_avaliacao(dados, indice_cursos)
             if not curso_atual:
                 continue
@@ -214,7 +230,7 @@ def listar_resultados_consolidados(
             media_geral = sum(medias_respondidas) / len(medias_respondidas) if medias_respondidas else 0.0
 
             resultados.append({
-                "id": documento.id,
+                "id": dados.get("id", ""),
                 "curso_id": dados.get("curso_id", ""),
                 "curso_nome": normalizar_nome_curso(
                     nome_original, nomes_cadastrados
@@ -229,6 +245,7 @@ def listar_resultados_consolidados(
                 "media_geral": media_geral,
             })
 
+        salvar_cache(chave_cache, resultados, 5.0)
         return resultados
 
     except Exception:

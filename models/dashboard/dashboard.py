@@ -1,3 +1,4 @@
+import asyncio
 import flet as ft
 from typing import Callable
 
@@ -198,7 +199,19 @@ def _criar_layout(
     )
 
     if exibir_visao_geral:
-        dados_iniciais = obter_dados_dashboard()
+        dados_iniciais = {
+            "avaliacoes": 0,
+            "respostas": 0,
+            "cursos": 0,
+            "media_geral": None,
+            "medias_eixos": {},
+            "respostas_por_eixo": {},
+            "dados_por_curso": [],
+            "evolucao_semestres": [],
+            "semestres_disponiveis": [],
+            "cursos_disponiveis": [],
+            "departamentos_disponiveis": [],
+        }
         seletores = {}
         texto_contexto = ft.Text(
             "Todos os cursos · Todos os semestres · Todos os departamentos",
@@ -231,27 +244,7 @@ def _criar_layout(
             )
         )
 
-        def aplicar_filtros(e=None) -> None:
-            semestre_selecionado = seletores["semestre"].value
-            curso_selecionado = seletores["curso"].value
-            departamento_selecionado = seletores["departamento"].value
-            dados = obter_dados_dashboard(
-                semestre=(
-                    semestre_selecionado
-                    if semestre_selecionado not in (None, "", "TODOS")
-                    else None
-                ),
-                curso_nome=(
-                    curso_selecionado
-                    if curso_selecionado not in (None, "", "TODOS")
-                    else None
-                ),
-                departamento=(
-                    departamento_selecionado
-                    if departamento_selecionado not in (None, "", "TODOS")
-                    else None
-                ),
-            )
+        def atualizar_componentes(dados: dict, selecao: tuple[str, str, str]) -> None:
             linha_kpis.controls = _criar_kpis(layout, dados)
             area_eixos.content = criar_grafico_eixos(
                 layout,
@@ -268,11 +261,44 @@ def _criar_layout(
                 layout, dados["evolucao_semestres"]
             )
             texto_contexto.value = (
-                f"{curso_selecionado if curso_selecionado not in (None, '', 'TODOS') else 'Todos os cursos'}"
-                f" · {semestre_selecionado if semestre_selecionado not in (None, '', 'TODOS') else 'Todos os semestres'}"
-                f" · {departamento_selecionado if departamento_selecionado not in (None, '', 'TODOS') else 'Todos os departamentos'}"
+                f"{selecao[0] if selecao[0] not in (None, '', 'TODOS') else 'Todos'}"
+                f" · {selecao[1] if selecao[1] not in (None, '', 'TODOS') else 'Todos'}"
+                f" · {selecao[2] if selecao[2] not in (None, '', 'TODOS') else 'Todos'}"
+            )
+
+        async def carregar_dashboard(
+            semestre_selecionado=None,
+            curso_selecionado=None,
+            departamento_selecionado=None,
+        ) -> None:
+            dados = await asyncio.to_thread(
+                obter_dados_dashboard,
+                semestre=(semestre_selecionado if semestre_selecionado not in (None, "", "TODOS") else None),
+                curso_nome=(curso_selecionado if curso_selecionado not in (None, "", "TODOS") else None),
+                departamento=(departamento_selecionado if departamento_selecionado not in (None, "", "TODOS") else None),
+            )
+            for chave, valores in (
+                ("semestre", dados["semestres_disponiveis"]),
+                ("curso", dados["cursos_disponiveis"]),
+                ("departamento", dados["departamentos_disponiveis"]),
+            ):
+                seletor = seletores[chave]
+                seletor.options = [ft.dropdown.Option(key="TODOS", text="Todos")] + [
+                    ft.dropdown.Option(key=valor, text=valor) for valor in valores
+                ]
+            atualizar_componentes(
+                dados,
+                (curso_selecionado, semestre_selecionado, departamento_selecionado),
             )
             page.update()
+
+        def aplicar_filtros(e=None) -> None:
+            page.run_task(
+                carregar_dashboard,
+                seletores["semestre"].value,
+                seletores["curso"].value,
+                seletores["departamento"].value,
+            )
 
         def limpar_filtros(e=None) -> None:
             seletores["semestre"].value = "TODOS"
@@ -308,7 +334,10 @@ def _criar_layout(
         conteudo = criar_conteudo_avaliacoes(layout, mudar_tela, page)
 
     layout.add_content(ft.Container(expand=True, content=conteudo))
-    return layout.criar_view(rota)
+    view = layout.criar_view(rota)
+    if exibir_visao_geral:
+        page.run_task(carregar_dashboard)
+    return view
 
 
 def ViewDashboard(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:

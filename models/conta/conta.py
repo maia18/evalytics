@@ -1,5 +1,3 @@
-import asyncio
-from datetime import datetime
 from typing import Callable
 
 import flet as ft
@@ -13,63 +11,23 @@ from components.core.constants.constants import (
     TEXTO_PRINCIPAL,
     TEXTO_SECUNDARIO,
 )
-from components.core.router.rotas_cts import ROTA_AVALIACOES, ROTA_CONTA, ROTA_INICIAL
-from components.core.theme.darkmode_toggle import toggle_dark_mode
-from components.core.theme.theme_config import configurar_tema
+from components.core.router.rotas_cts import ROTA_CONTA
 from components.layout.responsive.responsive import ResponsiveLayout
-from components.layout.topbar.core.account_menu import (
-    abrir_dialogo_alterar_senha,
-    consultar_dados_perfil,
-    salvar_nome_perfil,
-)
-from database.services.cursos.firestore_courses import obter_cursos_db
-from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
-
-
-def _nome_usuario(usuario: dict) -> str:
-    nome = str(usuario.get("displayName") or usuario.get("name") or "").strip()
-    return nome or str(usuario.get("email") or "Conta").partition("@")[0]
-
-
-def _data_ordenacao(valor) -> float:
-    if hasattr(valor, "timestamp"):
-        try:
-            return float(valor.timestamp())
-        except (TypeError, ValueError, OSError):
-            pass
-    if isinstance(valor, str) and valor.strip():
-        try:
-            return datetime.fromisoformat(valor.strip().replace("Z", "+00:00")).timestamp()
-        except (TypeError, ValueError, OSError):
-            pass
-    return 0.0
-
-
-def _data_formatada(valor) -> str:
-    if hasattr(valor, "strftime"):
-        return valor.strftime("%d/%m/%Y")
-    if isinstance(valor, str) and valor.strip():
-        try:
-            return datetime.fromisoformat(valor.strip().replace("Z", "+00:00")).strftime("%d/%m/%Y")
-        except (TypeError, ValueError, OSError):
-            return valor[:10]
-    return "Data indisponível"
-
-
-def _card(layout: ResponsiveLayout, conteudo: ft.Control, padding: int = 18) -> ft.Container:
-    cores = layout.cores
-    return ft.Container(
-        bgcolor=cores[CARD],
-        padding=padding,
-        border_radius=12,
-        border=ft.Border.all(1, cores[BORDA]),
-        content=conteudo,
-    )
+from models.conta.conta_utils import _nome_usuario
+from models.conta.conta_perfil import criar_secao_perfil
+from models.conta.conta_secoes_auxiliares import criar_secoes_auxiliares
+from models.conta.conta_atividade import criar_secao_atividade
+from models.conta.conta_preferencias import criar_secao_preferencias
 
 
 def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     """Área única da conta: perfil, atividade recente e preferências."""
-    layout = ResponsiveLayout(page, "Minha conta", "Perfil, atividade e preferências.", mudar_tela)
+    layout = ResponsiveLayout(
+        page,
+        "Minha conta",
+        "Gerencie seu perfil e as preferências da conta.",
+        mudar_tela,
+    )
     cores = layout.cores
     usuario = auth_state.usuario or {}
     nome = _nome_usuario(usuario)
@@ -89,543 +47,34 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     altura_conteudo_secao = altura_workspace - 38 if altura_workspace else None
     altura_form_perfil = max(240, altura_conteudo_secao - 80) if altura_conteudo_secao else None
 
-    partes_nome = nome.split()
-    campo_primeiro_nome = ft.TextField(
-        label="Nome",
-        value=partes_nome[0] if partes_nome and nome != "Conta" else "",
-        hint_text="Seu nome",
-        expand=True,
-        text_style=ft.TextStyle(color=cores[TEXTO_PRINCIPAL]),
-        label_style=ft.TextStyle(color=cores[TEXTO_SECUNDARIO]),
-        border_color=cores[BORDA],
-        focused_border_color=COR_PRIMARIA,
-        border_radius=8,
+    perfil = criar_secao_perfil(page, layout, cores, nome, email, mudar_tela, altura_form_perfil)
+    cartao_perfil = perfil["cartao"]
+    campo_email = perfil["campo_email"]
+    status_seguranca = perfil["status_seguranca"]
+    carregar_perfil = perfil["carregar_perfil"]
+    deslogar = perfil["deslogar"]
+    botao_deslogar_lateral = perfil["botao_deslogar_lateral"]
+    conteudo_formulario_perfil = perfil["conteudo_formulario_perfil"]
+
+    secoes_adicionais = criar_secoes_auxiliares(
+        page, layout, cores, campo_email, status_seguranca,
+        notificacoes_ativas, contador_notificacoes_ativo,
     )
-    campo_sobrenome = ft.TextField(
-        label="Sobrenome",
-        value=" ".join(partes_nome[1:]) if len(partes_nome) > 1 else "",
-        hint_text="Seu sobrenome",
-        expand=True,
-        text_style=ft.TextStyle(color=cores[TEXTO_PRINCIPAL]),
-        label_style=ft.TextStyle(color=cores[TEXTO_SECUNDARIO]),
-        border_color=cores[BORDA],
-        focused_border_color=COR_PRIMARIA,
-        border_radius=8,
+    seguranca = secoes_adicionais["Segurança"]
+    notificacoes = secoes_adicionais["Notificações"]
+    sobre_evalytics = secoes_adicionais["Sobre o Evalytics"]
+
+    cartao_atividade, carregar_atividade = criar_secao_atividade(
+        page, layout, cores, mudar_tela
     )
-    campo_email = ft.TextField(
-        label="E-mail",
-        value=email if email != "E-mail indisponível" else "",
-        read_only=True,
-        expand=True,
-        text_style=ft.TextStyle(color=cores[TEXTO_SECUNDARIO]),
-        label_style=ft.TextStyle(color=cores[TEXTO_SECUNDARIO]),
-        border_color=cores[BORDA],
-        border_radius=8,
-    )
-
-    def atualizar_perfil(nome_atualizado: str, email_atualizado: str) -> None:
-        nome_final = nome_atualizado or (email_atualizado or "Conta").partition("@")[0]
-        partes = nome_final.split()
-        campo_primeiro_nome.value = partes[0] if partes else ""
-        campo_sobrenome.value = " ".join(partes[1:])
-        campo_email.value = email_atualizado or ""
-        avatar_perfil.content.value = iniciais_perfil()
-        page.update()
-
-    async def salvar_perfil(e) -> None:
-        nome_completo = " ".join(
-            parte.strip()
-            for parte in (campo_primeiro_nome.value or "", campo_sobrenome.value or "")
-            if parte.strip()
-        )
-        dados = await salvar_nome_perfil(page, nome_completo)
-        if dados:
-            atualizar_perfil(
-                str(dados.get("displayName") or nome_completo),
-                str(dados.get("email") or campo_email.value or ""),
-            )
-
-    async def carregar_perfil() -> None:
-        dados = await consultar_dados_perfil()
-        if dados:
-            atualizar_perfil(
-                str(
-                    dados.get("displayName")
-                    or dados.get("name")
-                    or " ".join(filter(None, (campo_primeiro_nome.value, campo_sobrenome.value)))
-                ),
-                str(dados.get("email") or campo_email.value or ""),
-            )
-            status_seguranca.value = (
-                "E-mail confirmado" if dados.get("emailVerified") else "E-mail ainda não confirmado"
-            )
-            status_seguranca.color = "#69C982" if dados.get("emailVerified") else "#F5A348"
-            page.update()
-
-    async def deslogar(e) -> None:
-        await auth_state.encerrar_sessao(page)
-        mudar_tela(ROTA_INICIAL)
-
-    botao_deslogar_lateral = ft.Container(
-        height=40,
-        padding=ft.Padding.symmetric(horizontal=9, vertical=5),
-        border_radius=8,
-        ink=True,
-        tooltip="Deslogar",
-        on_click=lambda e: page.run_task(deslogar, e),
-        content=ft.Row(
-            spacing=9,
-            controls=[
-                ft.Icon(ft.Icons.LOGOUT, size=17, color=cores[TEXTO_SECUNDARIO]),
-                ft.Text("Deslogar", size=11, color=cores[TEXTO_PRINCIPAL]),
-            ],
-        ),
-    )
-
-    def iniciais_perfil() -> str:
-        return "".join(
-            parte.strip()[0]
-            for parte in (campo_primeiro_nome.value, campo_sobrenome.value)
-            if parte and parte.strip()
-        ).upper() or "?"
-
-    avatar_perfil = ft.Container(
-        width=50,
-        height=50,
-        border_radius=12,
-        bgcolor="#302747" if layout.controller.dark_mode else "#EEE9FB",
-        alignment=ft.Alignment.CENTER,
-        content=ft.Text(
-            iniciais_perfil(),
-            size=16,
-            weight=ft.FontWeight.W_700,
-            color="#B69CFF" if layout.controller.dark_mode else COR_PRIMARIA,
-        ),
-    )
-
-    def atualizar_iniciais_avatar(e=None) -> None:
-        avatar_perfil.content.value = iniciais_perfil()
-        page.update()
-
-    campo_primeiro_nome.on_change = atualizar_iniciais_avatar
-    campo_sobrenome.on_change = atualizar_iniciais_avatar
-
-    formulario_dados = ft.Column(
-        spacing=0,
-        controls=[
-            ft.Row(
-                spacing=14,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                controls=[
-                    avatar_perfil,
-                    ft.Column(
-                        spacing=4,
-                        controls=[
-                            ft.Text("Dados pessoais", size=15, weight=ft.FontWeight.W_700, color=cores[TEXTO_PRINCIPAL]),
-                            ft.Text("Atualize as informações exibidas na sua conta.", size=11, color=cores[TEXTO_SECUNDARIO]),
-                        ],
-                    ),
-                ],
-            ),
-            ft.Container(height=30),
-            ft.Text("INFORMAÇÕES DA CONTA", size=10, weight=ft.FontWeight.W_700, color=cores[TEXTO_SECUNDARIO]),
-            ft.Container(height=10),
-            ft.ResponsiveRow(
-                spacing=14,
-                run_spacing=8,
-                controls=[
-                    ft.Container(col={"xs": 12, "md": 6}, content=ft.Row(controls=[campo_primeiro_nome])),
-                    ft.Container(col={"xs": 12, "md": 6}, content=ft.Row(controls=[campo_sobrenome])),
-                    ft.Container(col={"xs": 12}, content=ft.Row(controls=[campo_email])),
-                ],
-            ),
-            ft.Container(height=6),
-            ft.Row(
-                spacing=6,
-                controls=[
-                    ft.Icon(ft.Icons.LOCK_OUTLINE, size=13, color=cores[TEXTO_SECUNDARIO]),
-                    ft.Text("O e-mail é usado para entrar na conta e não pode ser editado aqui.", size=10, color=cores[TEXTO_SECUNDARIO]),
-                ],
-            ),
-        ],
-    )
-    rodape_perfil = ft.Column(
-        spacing=12,
-        controls=[
-            ft.Divider(height=1, color=cores[BORDA]),
-            ft.ResponsiveRow(
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                run_spacing=10,
-                controls=[
-                    ft.Container(
-                        col={"xs": 12, "md": 8},
-                        alignment=ft.Alignment.CENTER_LEFT,
-                        content=ft.Text(
-                            "As alterações serão aplicadas ao seu perfil Evalytics.",
-                            size=10,
-                            color=cores[TEXTO_SECUNDARIO],
-                        ),
-                    ),
-                    ft.Container(
-                        col={"xs": 12, "md": 4},
-                        alignment=ft.Alignment.CENTER_RIGHT,
-                        content=ft.ElevatedButton(
-                            "Salvar alterações",
-                            icon=ft.Icons.CHECK,
-                            bgcolor=COR_PRIMARIA,
-                            color=ft.Colors.WHITE,
-                            on_click=lambda e: page.run_task(salvar_perfil, e),
-                        ),
-                    ),
-                ],
-            ),
-        ],
-    )
-    conteudo_formulario_perfil = ft.Column(
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN if altura_form_perfil else ft.MainAxisAlignment.START,
-        spacing=20,
-        controls=[formulario_dados, rodape_perfil],
-    )
-    cartao_perfil = ft.Container(
-        height=altura_form_perfil,
-        padding=ft.Padding.only(top=12, bottom=12),
-        content=conteudo_formulario_perfil,
-    )
-
-    status_seguranca = ft.Text(
-        "Consultando status do e-mail...",
-        size=11,
-        color=cores[TEXTO_SECUNDARIO],
-    )
-
-    def atualizar_preferencias_notificacoes(e=None) -> None:
-        page.notificacoes_ativas = bool(switch_notificacoes.value)
-        page.contador_notificacoes_ativo = bool(switch_contador.value)
-        topbar = getattr(page, "_topbar_notificacoes", None)
-        if topbar is not None:
-            topbar.aplicar_preferencias_notificacoes()
-        page.update()
-
-    switch_notificacoes = ft.Switch(
-        value=notificacoes_ativas,
-        active_color=COR_PRIMARIA,
-        on_change=atualizar_preferencias_notificacoes,
-    )
-    switch_contador = ft.Switch(
-        value=contador_notificacoes_ativo,
-        active_color=COR_PRIMARIA,
-        on_change=atualizar_preferencias_notificacoes,
-    )
-    seguranca = _card(
-        layout,
-        ft.Column(
-            spacing=14,
-            controls=[
-                ft.Column(
-                    spacing=4,
-                    controls=[
-                        ft.Text("Segurança da conta", size=15, weight=ft.FontWeight.W_700, color=cores[TEXTO_PRINCIPAL]),
-                        ft.Text("Acompanhe a proteção dos dados de acesso.", size=11, color=cores[TEXTO_SECUNDARIO]),
-                    ],
-                ),
-                ft.Container(
-                    padding=12,
-                    border=ft.Border.all(1, cores[BORDA]),
-                    border_radius=8,
-                    content=ft.Row(
-                        spacing=9,
-                        controls=[
-                            ft.Icon(ft.Icons.MARK_EMAIL_READ_OUTLINED, size=18, color=cores[TEXTO_SECUNDARIO]),
-                            ft.Text("Verificação do e-mail", size=12, color=cores[TEXTO_PRINCIPAL]),
-                            ft.Container(expand=True),
-                            status_seguranca,
-                        ],
-                    ),
-                ),
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Column(
-                            spacing=3,
-                            controls=[
-                                ft.Text("Senha", size=12, color=cores[TEXTO_PRINCIPAL]),
-                                ft.Text("Altere sua senha de acesso.", size=10, color=cores[TEXTO_SECUNDARIO]),
-                            ],
-                        ),
-                        ft.OutlinedButton(
-                            "Alterar senha",
-                            icon=ft.Icons.LOCK_OUTLINE,
-                            on_click=lambda e: abrir_dialogo_alterar_senha(page, cores, campo_email.value or ""),
-                        ),
-                    ],
-                ),
-            ],
-        ),
-    )
-    notificacoes = _card(
-        layout,
-        ft.Column(
-            spacing=14,
-            controls=[
-                ft.Column(
-                    spacing=4,
-                    controls=[
-                        ft.Text("Notificações", size=15, weight=ft.FontWeight.W_700, color=cores[TEXTO_PRINCIPAL]),
-                        ft.Text("Escolha quais avisos aparecem no aplicativo.", size=11, color=cores[TEXTO_SECUNDARIO]),
-                    ],
-                ),
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Column(
-                            spacing=2,
-                            controls=[
-                                ft.Text("Notificações no aplicativo", size=12, color=cores[TEXTO_PRINCIPAL]),
-                                ft.Text("Mostrar o sino e o painel de notificações.", size=10, color=cores[TEXTO_SECUNDARIO]),
-                            ],
-                        ),
-                        switch_notificacoes,
-                    ],
-                ),
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Column(
-                            spacing=2,
-                            controls=[
-                                ft.Text("Contador de não lidas", size=12, color=cores[TEXTO_PRINCIPAL]),
-                                ft.Text("Exibir a quantidade pendente sobre o sino.", size=10, color=cores[TEXTO_SECUNDARIO]),
-                            ],
-                        ),
-                        switch_contador,
-                    ],
-                ),
-            ],
-        ),
-    )
-
-    lista_atividade = ft.Column(
-        height=280,
-        spacing=0,
-        scroll=ft.ScrollMode.AUTO,
-        controls=[
-            ft.Row(
-                spacing=10,
-                controls=[
-                    ft.ProgressRing(width=17, height=17, stroke_width=2),
-                    ft.Text("Carregando atividade recente...", size=12, color=cores[TEXTO_SECUNDARIO]),
-                ],
-            )
-        ],
-    )
-
-    def linha_atividade(avaliacao: dict) -> ft.Control:
-        respostas = avaliacao.get("respostas", {})
-        total_respostas = len(respostas) if isinstance(respostas, dict) else 0
-        return ft.Container(
-            padding=ft.Padding.symmetric(vertical=10, horizontal=2),
-            border=ft.Border(bottom=ft.BorderSide(1, cores[BORDA])),
-            ink=True,
-            on_click=lambda e: mudar_tela(ROTA_AVALIACOES),
-            content=ft.Row(
-                spacing=10,
-                controls=[
-                    ft.Icon(ft.Icons.ASSIGNMENT_OUTLINED, size=18, color=COR_PRIMARIA),
-                    ft.Column(
-                        expand=True,
-                        spacing=3,
-                        controls=[
-                            ft.Text(
-                                str(avaliacao.get("curso_nome") or "Curso sem identificação"),
-                                size=12,
-                                weight=ft.FontWeight.W_600,
-                                color=cores[TEXTO_PRINCIPAL],
-                                max_lines=1,
-                                overflow=ft.TextOverflow.ELLIPSIS,
-                            ),
-                            ft.Text(
-                                f"{_data_formatada(avaliacao.get('data_avaliacao'))} · {total_respostas} respostas",
-                                size=10,
-                                color=cores[TEXTO_SECUNDARIO],
-                            ),
-                        ],
-                    ),
-                    ft.Icon(ft.Icons.CHEVRON_RIGHT, size=18, color=cores[TEXTO_SECUNDARIO]),
-                ],
-            ),
-        )
-
-    async def carregar_atividade() -> None:
-        try:
-            avaliacoes, cursos = await asyncio.gather(
-                asyncio.to_thread(listar_avaliacoes),
-                asyncio.to_thread(obter_cursos_db),
-            )
-            cursos_validos = {
-                str(curso.get("nome") or "").strip().casefold()
-                for curso in cursos
-                if str(curso.get("nome") or "").strip()
-            }
-            avaliacoes_validas = [
-                avaliacao
-                for avaliacao in avaliacoes
-                if str(avaliacao.get("curso_nome") or "").strip().casefold() in cursos_validos
-            ]
-            avaliacoes_validas.sort(
-                key=lambda item: _data_ordenacao(item.get("data_avaliacao")),
-                reverse=True,
-            )
-            recentes = avaliacoes_validas[:8]
-            lista_atividade.controls = (
-                [linha_atividade(item) for item in recentes]
-                if recentes
-                else [
-                    ft.Container(
-                        padding=ft.Padding.symmetric(vertical=18),
-                        content=ft.Text("Nenhuma atividade recente encontrada.", size=12, color=cores[TEXTO_SECUNDARIO]),
-                    )
-                ]
-            )
-        except Exception:
-            lista_atividade.controls = [
-                ft.Text("Não foi possível carregar a atividade agora.", size=12, color=ft.Colors.RED_400)
-            ]
-        page.update()
-
-    cartao_atividade = _card(
-        layout,
-        ft.Column(
-            spacing=8,
-            controls=[
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Column(
-                            spacing=3,
-                            controls=[
-                                ft.Text("Atividade recente", size=16, weight=ft.FontWeight.W_700, color=cores[TEXTO_PRINCIPAL]),
-                                ft.Text("Últimas avaliações registradas na instituição.", size=11, color=cores[TEXTO_SECUNDARIO]),
-                            ],
-                        ),
-                        ft.TextButton(
-                            "Ver todas",
-                            icon=ft.Icons.ARROW_FORWARD,
-                            on_click=lambda e: mudar_tela(ROTA_AVALIACOES),
-                        ),
-                    ],
-                ),
-                lista_atividade,
-            ],
-        )
-    )
-
-    tema_atual = bool(getattr(page, "is_dark_mode", False))
-    densidade_atual = getattr(page, "preferencia_densidade_visual", "standard")
-    preferencias_pendentes = {"tema": tema_atual, "densidade": densidade_atual}
-    def aplicar_preferencias(e) -> None:
-        tema_mudou = preferencias_pendentes["tema"] != bool(getattr(page, "is_dark_mode", False))
-        densidade_atualizada = getattr(page, "preferencia_densidade_visual", "standard")
-        densidade_mudou = preferencias_pendentes["densidade"] != densidade_atualizada
-        if not tema_mudou and not densidade_mudou:
-            aviso = ft.SnackBar(content=ft.Text("As preferências já estão aplicadas."))
-            page.overlay.append(aviso)
-            aviso.open = True
-            page.update()
-            return
-
-        page.preferencia_densidade_visual = preferencias_pendentes["densidade"]
-        if tema_mudou:
-            toggle_dark_mode(page, bool(getattr(page, "is_dark_mode", False)), mudar_tela, ROTA_CONTA)
-        else:
-            configurar_tema(page, bool(getattr(page, "is_dark_mode", False)))
-            mudar_tela(ROTA_CONTA)
-
-    preferencias = _card(
-        layout,
-        ft.Column(
-            spacing=14,
-            controls=[
-                ft.Column(
-                    spacing=3,
-                    controls=[
-                        ft.Text("Preferências", size=16, weight=ft.FontWeight.W_700, color=cores[TEXTO_PRINCIPAL]),
-                        ft.Text("Ajuste a aparência da sua interface.", size=11, color=cores[TEXTO_SECUNDARIO]),
-                    ],
-                ),
-                ft.Divider(height=1),
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Column(
-                            spacing=2,
-                            controls=[
-                                ft.Text("Tema escuro", size=12, color=cores[TEXTO_PRINCIPAL]),
-                                ft.Text("Alterna entre os temas claro e escuro.", size=10, color=cores[TEXTO_SECUNDARIO]),
-                            ],
-                        ),
-                        ft.Switch(
-                            value=tema_atual,
-                            active_color=COR_PRIMARIA,
-                            on_change=lambda e: preferencias_pendentes.update(tema=bool(e.control.value)),
-                        ),
-                    ],
-                ),
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Column(
-                            spacing=2,
-                            controls=[
-                                ft.Text("Densidade compacta", size=12, color=cores[TEXTO_PRINCIPAL]),
-                                ft.Text("Reduz espaçamentos da interface.", size=10, color=cores[TEXTO_SECUNDARIO]),
-                            ],
-                        ),
-                        ft.Switch(
-                            value=densidade_atual == "compact",
-                            active_color=COR_PRIMARIA,
-                            on_change=lambda e: preferencias_pendentes.update(
-                                densidade="compact" if e.control.value else "standard"
-                            ),
-                        ),
-                    ],
-                ),
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Column(
-                            spacing=2,
-                            controls=[
-                                ft.Text("Idioma", size=12, color=cores[TEXTO_PRINCIPAL]),
-                                ft.Text("Português (Brasil)", size=10, color=cores[TEXTO_SECUNDARIO]),
-                            ],
-                        ),
-                        ft.Icon(ft.Icons.LANGUAGE, size=18, color=cores[TEXTO_SECUNDARIO]),
-                    ],
-                ),
-                ft.Divider(height=1, color=cores[BORDA]),
-                ft.Row(
-                    expand=True,
-                    alignment=ft.MainAxisAlignment.END,
-                    controls=[
-                        ft.ElevatedButton(
-                            "Aplicar alterações",
-                            icon=ft.Icons.CHECK,
-                            bgcolor=COR_PRIMARIA,
-                            color=ft.Colors.WHITE,
-                            on_click=aplicar_preferencias,
-                        ),
-                    ],
-                ),
-            ],
-        )
-    )
-
+    preferencias = criar_secao_preferencias(page, layout, cores, mudar_tela)
     secoes_conta = {
         "Perfil": cartao_perfil,
         "Atividade recente": cartao_atividade,
         "Preferências": preferencias,
         "Segurança": seguranca,
         "Notificações": notificacoes,
+        "Sobre o Evalytics": sobre_evalytics,
     }
     secao_inicial = getattr(page, "_conta_secao_ativa", "Perfil")
     if secao_inicial not in secoes_conta:
@@ -637,6 +86,7 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         spacing=14,
         scroll=ft.ScrollMode.AUTO,
     )
+
     def selecionar_secao(secao: str) -> None:
         estado["secao"] = secao
         page._conta_secao_ativa = secao
@@ -662,6 +112,7 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         ("Preferências", ft.Icons.TUNE_OUTLINED),
         ("Segurança", ft.Icons.SECURITY_OUTLINED),
         ("Notificações", ft.Icons.NOTIFICATIONS_OUTLINED),
+        ("Sobre o Evalytics", ft.Icons.INFO_OUTLINE),
     ):
         linha = ft.Row(
             spacing=9,

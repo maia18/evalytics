@@ -9,7 +9,7 @@ from components.core.constants.constants import (
     TEXTO_SECUNDARIO,
 )
 from components.layout.responsive.responsive import ResponsiveLayout
-from models.cursos.core.cursos_controller import carregar_cursos_iniciais
+from models.cursos.core.cursos_controller import carregar_cursos_iniciais_async
 from models.cursos.core.cursos_estatisticas import atualizar_estatisticas
 from models.cursos.modals.modal_add import criar_modal_add
 from models.cursos.modals.modal_edit import criar_modal_edit
@@ -62,6 +62,7 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         prefix_icon=ft.Icons.SEARCH,
         dense=True,
         width=420,
+        value=getattr(page, "_busca_cursos_inicial", ""),
     )
     filtro_departamento = ft.Dropdown(
         label="Departamento",
@@ -119,6 +120,8 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         )
         filtro_departamento.value = equivalente or "TODOS"
         aplicar_filtros()
+        if hasattr(page, "_busca_cursos_inicial"):
+            del page._busca_cursos_inicial
 
     busca.on_submit = aplicar_filtros
     contexto_ref = {}
@@ -126,7 +129,7 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     def wrapper_atualizar_interface() -> None:
         contexto = contexto_ref.get("contexto")
         if contexto:
-            carregar_cursos_iniciais(
+            page.run_task(carregar_cursos_iniciais_async,
                 contexto, tabela_cursos, atualizar_opcoes_departamentos
             )
 
@@ -144,8 +147,11 @@ def ViewCursos(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     )
     contexto_ref["contexto"] = contexto_tabela
     abrir_modal_add = criar_modal_add(contexto_tabela, campos_add)
-    carregar_cursos_iniciais(
-        contexto_tabela, tabela_cursos, atualizar_opcoes_departamentos
+    page.run_task(
+        carregar_cursos_iniciais_async,
+        contexto_tabela,
+        tabela_cursos,
+        atualizar_opcoes_departamentos,
     )
 
     conteudo = ft.Column(

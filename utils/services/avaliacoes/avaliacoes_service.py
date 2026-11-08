@@ -12,6 +12,7 @@ from database.services.institutions.institutions_service import (
     obter_instituicao_id_atual,
 )
 from database.services.cursos.firestore_courses import obter_cursos_db
+from database.services.memory_cache import invalidar_cache, obter_cache, salvar_cache
 from utils.services.cursos.curso_utils import (
     criar_indice_cursos_atuais,
     resolver_curso_avaliacao,
@@ -172,6 +173,10 @@ def salvar_avaliacao(
 
         # 4. Salva diretamente no Firestore
         db.collection(COLECAO_AVALIACOES).add(dados_avaliacao)
+        invalidar_cache(f"avaliacoes:{obter_instituicao_id_atual()}")
+        invalidar_cache("dashboard:")
+        invalidar_cache("resultados:")
+        invalidar_cache("resumo_eixos:")
 
         logger.info(
             "Avaliação do curso '%s' salva com sucesso no Firestore. "
@@ -186,10 +191,17 @@ def salvar_avaliacao(
         return False
 
 
-def listar_avaliacoes() -> list[dict]:
+def listar_avaliacoes(cursos_cadastrados: list[dict] | None = None) -> list[dict]:
     """Lista apenas avaliações vinculadas a cursos ainda cadastrados."""
+    instituicao_id = obter_instituicao_id_atual()
+    chave_cache = f"avaliacoes:{instituicao_id}"
+    encontrado, valor = obter_cache(chave_cache)
+    if encontrado:
+        return [dict(avaliacao) for avaliacao in valor]
+
     try:
-        indice_cursos = criar_indice_cursos_atuais(obter_cursos_db())
+        cursos = cursos_cadastrados if cursos_cadastrados is not None else obter_cursos_db()
+        indice_cursos = criar_indice_cursos_atuais(cursos)
         docs = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
         lista = []
         
@@ -204,6 +216,7 @@ def listar_avaliacoes() -> list[dict]:
             dados["id"] = doc.id
             lista.append(dados)
 
+        salvar_cache(chave_cache, tuple(dict(avaliacao) for avaliacao in lista), 5.0)
         return lista
 
     except Exception:

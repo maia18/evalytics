@@ -7,11 +7,13 @@ from components.layout.sidebar.sidebar_dashboard import criar_menu_dashboard
 from components.widgets.menu.menu import MENU_ITEMS
 from components.widgets.menu.menu_item import criar_item_menu
 from components.layout.sidebar.sidebar_footer import criar_rodape_sidebar
+from components.layout.search.global_search import criar_busca_sidebar
 from components.core.router.rotas_cts import (
     ROTA_DASHBOARD,
     ROTA_RELATORIOS,
     ROTA_CONFIGURACOES,
 )
+
 
 def criar_sidebar_content(
     page: ft.Page,
@@ -22,40 +24,40 @@ def criar_sidebar_content(
 ) -> ft.Column:
     """Constrói a visualização padrão (expandida) da barra lateral do sistema."""
 
-    # 1. Estrutura base da Sidebar
-    controles: list[ft.Control] = [
-        # Logo completo
-        ft.Row(
-            spacing=0,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                ft.Container(expand=True, content=criar_logo(cores)),
-                ft.IconButton(
-                    icon=ft.Icons.FIRST_PAGE,
-                    icon_size=18,
-                    on_click=alternar_recolhimento,
-                    visible=alternar_recolhimento is not None,
-                ),
-            ],
-        ),
+    # Cabeçalho da sidebar.
+    cabecalho = ft.Column(
+        spacing=0,
+        controls=[
+            ft.Row(
+                spacing=0,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    ft.Container(expand=True, content=criar_logo(cores)),
+                    ft.IconButton(
+                        icon=ft.Icons.FIRST_PAGE,
+                        icon_size=18,
+                        on_click=alternar_recolhimento,
+                        visible=alternar_recolhimento is not None,
+                    ),
+                ],
+            ),
+            ft.Divider(height=2),
+        ],
+    )
+    busca_sidebar = criar_busca_sidebar(page, cores, mudar_tela)
 
-        # Separador
-        ft.Divider(
-            height=2,
-        ),
-    ]
-
-    # 2. Construção da lista de navegação
+    # Constrói os itens da navegação normal.
     rota_atual = getattr(page, "route", "") or ""
+    controles_navegacao: list[ft.Control] = []
     for icone, texto, rota in MENU_ITEMS:
         if rota == ROTA_RELATORIOS:
-            controles.extend(
+            controles_navegacao.extend(
                 criar_menu_relatorios(
                     page, dark_mode, cores[TEXTO_PRINCIPAL], mudar_tela
                 )
             )
         elif rota == ROTA_DASHBOARD:
-            controles.extend(
+            controles_navegacao.extend(
                 criar_menu_dashboard(
                     page, dark_mode, cores[TEXTO_PRINCIPAL], mudar_tela
                 )
@@ -63,7 +65,7 @@ def criar_sidebar_content(
         elif rota == ROTA_CONFIGURACOES:
             continue
         else:
-            controles.append(
+            controles_navegacao.append(
                 criar_item_menu(
                     icone, texto, rota, dark_mode,
                     cores[TEXTO_PRINCIPAL], mudar_tela,
@@ -71,9 +73,9 @@ def criar_sidebar_content(
                 )
             )
 
-    # 3. Área rolável do menu
+    # Área rolável do menu.
     area_menu = ft.Column(
-        controls=controles,
+        controls=controles_navegacao,
         spacing=0,
         expand=True,
         scroll=ft.ScrollMode.AUTO,
@@ -81,6 +83,11 @@ def criar_sidebar_content(
 
     return ft.Column(
         controls=[
+            cabecalho,
+            ft.Container(
+                padding=ft.Padding.symmetric(vertical=6),
+                content=busca_sidebar,
+            ),
             area_menu,
             criar_rodape_sidebar(page, dark_mode, cores, mudar_tela),
         ],

@@ -1,8 +1,9 @@
 import logging
+from copy import deepcopy
 
 from database.services.cursos.firestore_courses import obter_cursos_db
-from database.services.firebase_config import db
-from database.services.institutions.institutions_service import listar_documentos_da_instituicao
+from database.services.institutions.institutions_service import obter_instituicao_id_atual
+from database.services.memory_cache import obter_cache, salvar_cache
 from utils.services.cursos.curso_utils import (
     chave_curso,
     chave_departamento,
@@ -11,12 +12,12 @@ from utils.services.cursos.curso_utils import (
     listar_nomes_cursos_filtraveis,
     resolver_curso_avaliacao,
 )
+from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
 from utils.services.relatorio.relatorio_utils import obter_semestre
 from .dashboard_utils import obter_mapa_eixos, normalizar_nota
 
 logger = logging.getLogger(__name__)
 
-COLECAO_AVALIACOES = "avaliacoes"
 EIXOS_PADRAO = (1, 2, 3)
 
 
@@ -26,6 +27,14 @@ def obter_dados_dashboard(
     departamento: str | None = None,
 ) -> dict:
     """Agrega KPIs, eixos e cursos das avaliações, com filtros opcionais."""
+    chave_cache = (
+        f"dashboard:{obter_instituicao_id_atual()}:"
+        f"{semestre or ''}:{curso_nome or ''}:{departamento or ''}"
+    )
+    encontrado, valor_cache = obter_cache(chave_cache)
+    if encontrado:
+        return deepcopy(valor_cache)
+
     resultado_vazio = {
         "avaliacoes": 0,
         "respostas": 0,
@@ -49,8 +58,7 @@ def obter_dados_dashboard(
         registros = []
         semestres_disponiveis = set()
 
-        for documento in listar_documentos_da_instituicao(COLECAO_AVALIACOES):
-            dados = documento.to_dict() or {}
+        for dados in listar_avaliacoes(cursos_cadastrados):
             semestre_avaliacao = dados.get("semestre") or obter_semestre(
                 dados.get("data_avaliacao")
             )
@@ -192,7 +200,7 @@ def obter_dados_dashboard(
             )
         ]
 
-        return {
+        resultado = {
             "avaliacoes": len(registros_filtrados),
             "respostas": quantidade_respostas,
             "cursos": sum(
@@ -227,6 +235,8 @@ def obter_dados_dashboard(
                 cursos_cadastrados
             ),
         }
+        salvar_cache(chave_cache, resultado, 5.0)
+        return resultado
 
     except Exception:
         logger.exception("Erro ao calcular dados do Dashboard.")

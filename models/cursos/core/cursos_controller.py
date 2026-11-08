@@ -1,5 +1,6 @@
 import flet as ft
 from typing import Callable
+import asyncio
 
 from database.services.cursos.firestore_courses import (
     curso_esta_ativo,
@@ -21,10 +22,12 @@ def carregar_cursos_iniciais(
     contexto_tabela: ContextoTabelaCursos,
     tabela_cursos: ft.DataTable,
     atualizar_interface_callback: Callable[[], None],
+    cursos: list[dict] | None = None,
+    avaliacoes: list[dict] | None = None,
 ) -> None:
     """Carrega cursos e avaliações, depois reconstrói as linhas da tabela."""
-    cursos = obter_cursos_db()
-    avaliacoes = listar_avaliacoes()
+    cursos = cursos if cursos is not None else obter_cursos_db()
+    avaliacoes = avaliacoes if avaliacoes is not None else listar_avaliacoes(cursos)
     nomes_cadastrados = [
         str(curso.get("nome", "")).strip()
         for curso in cursos
@@ -66,3 +69,20 @@ def carregar_cursos_iniciais(
     contexto_tabela.estado["todas_linhas"] = linhas
     tabela_cursos.rows = linhas
     atualizar_interface_callback()
+
+
+async def carregar_cursos_iniciais_async(
+    contexto_tabela: ContextoTabelaCursos,
+    tabela_cursos: ft.DataTable,
+    atualizar_interface_callback: Callable[[], None],
+) -> None:
+    """Busca dados fora da thread da interface e aplica o resultado na página."""
+    cursos = await asyncio.to_thread(obter_cursos_db)
+    avaliacoes = await asyncio.to_thread(listar_avaliacoes, cursos)
+    carregar_cursos_iniciais(
+        contexto_tabela,
+        tabela_cursos,
+        atualizar_interface_callback,
+        cursos=cursos,
+        avaliacoes=avaliacoes,
+    )

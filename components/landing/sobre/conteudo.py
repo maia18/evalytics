@@ -17,7 +17,7 @@ def criar_sobre_conteudo() -> ft.Column:
             # =========================================================
 
             ft.Text(
-                "Sobre o Evalytics",
+                "Sobre",
                 size=30,
                 weight=ft.FontWeight.BOLD,
                 color=COR_TEXTO_TITULO,

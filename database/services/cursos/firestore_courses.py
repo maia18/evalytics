@@ -8,10 +8,20 @@ from database.services.institutions.institutions_service import (
     listar_documentos_da_instituicao,
     obter_instituicao_id_atual,
 )
+from database.services.memory_cache import invalidar_cache, obter_cache, salvar_cache
 from .curso_notificacoes import criar_notificacao_curso
 
 logger = logging.getLogger(__name__)
 COLECAO_CURSOS = "cursos"
+CACHE_TTL_SEGUNDOS = 5.0
+
+
+def _invalidar_cache_cursos() -> None:
+    invalidar_cache("cursos:")
+    invalidar_cache("avaliacoes:")
+    invalidar_cache("dashboard:")
+    invalidar_cache("resultados:")
+    invalidar_cache("resumo_eixos:")
 
 
 def curso_esta_ativo(curso: dict) -> bool:
@@ -75,6 +85,7 @@ def adicionar_curso_db(
         }
 
         _, doc_ref = db.collection(COLECAO_CURSOS).add(novo_curso)
+        _invalidar_cache_cursos()
         logger.info("Curso '%s' adicionado com sucesso.", nome)
 
         criar_notificacao_curso(
@@ -92,6 +103,11 @@ def obter_cursos_db() -> list[dict]:
     """
     Retorna a lista de cursos cadastrados, cada um incluindo seu ID de documento.
     """
+    chave_cache = f"cursos:{obter_instituicao_id_atual()}"
+    encontrado, valor = obter_cache(chave_cache)
+    if encontrado:
+        return [dict(curso) for curso in valor]
+
     try:
         docs = listar_documentos_da_instituicao(COLECAO_CURSOS)
         lista_cursos = []
@@ -103,6 +119,7 @@ def obter_cursos_db() -> list[dict]:
             dado["id"] = doc.id
             lista_cursos.append(dado)
 
+        salvar_cache(chave_cache, tuple(dict(curso) for curso in lista_cursos), CACHE_TTL_SEGUNDOS)
         return lista_cursos
 
     except Exception:
@@ -137,6 +154,7 @@ def atualizar_curso_db(
                 "ativo": ativo,
             }
         )
+        _invalidar_cache_cursos()
 
         logger.info("Curso '%s' atualizado com sucesso.", nome)
 
@@ -166,6 +184,7 @@ def atualizar_status_curso_db(doc_id: str, ativo: bool) -> bool:
         status_anterior = curso_esta_ativo(dados_atuais)
 
         curso_ref.update({"ativo": ativo})
+        _invalidar_cache_cursos()
         logger.info(
             "Status do curso '%s' alterado para %s.",
             doc_id,
@@ -198,6 +217,7 @@ def excluir_curso_db(doc_id: str) -> bool:
         nome_curso = dados_curso.get("nome", doc_id)
 
         curso_ref.delete()
+        _invalidar_cache_cursos()
         logger.info("Curso '%s' excluído com sucesso.", nome_curso)
 
         criar_notificacao_curso(

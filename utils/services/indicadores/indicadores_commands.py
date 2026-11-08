@@ -1,10 +1,18 @@
 import logging
 from database.services.firebase_config import db
+from database.services.memory_cache import invalidar_cache
 from utils.services.indicadores.indicadores_queries import buscar_indicador
 from .indicador_notificacoes import criar_notificacao_indicador
 
 logger = logging.getLogger(__name__)
 COLECAO_INDICADORES = "indicadores"
+
+
+def _invalidar_cache_indicadores() -> None:
+    invalidar_cache("mapa_eixos:")
+    invalidar_cache("dashboard:")
+    invalidar_cache("resultados:")
+    invalidar_cache("resumo_eixos:")
 
 def adicionar_indicador(titulo: str, eixo: int, descricao: str) -> bool:
     """Cria um novo indicador no Firestore."""
@@ -35,6 +43,7 @@ def adicionar_indicador(titulo: str, eixo: int, descricao: str) -> bool:
         }
 
         db.collection(COLECAO_INDICADORES).add(novo_item)
+        _invalidar_cache_indicadores()
         logger.info("Indicador '%s' adicionado ao eixo %s.", titulo, eixo)
 
         # Delega a criação da notificação para o serviço especializado
@@ -62,6 +71,7 @@ def excluir_indicador(indicador_id: str) -> bool:
             return False
 
         doc_ref.delete()
+        _invalidar_cache_indicadores()
         logger.info("Indicador '%s' excluído com sucesso.", indicador_id)
         return True
 
@@ -106,6 +116,7 @@ def atualizar_indicador(indicador_id: str, novo_titulo: str, nova_descricao: str
             "titulo": novo_titulo,
             "descricao": nova_descricao,
         })
+        _invalidar_cache_indicadores()
 
         logger.info("Indicador '%s' atualizado.", indicador_id)
         return True
@@ -145,6 +156,7 @@ def atualizar_criterios_indicador(indicador_id: str, novos_criterios: dict) -> b
         }
 
         doc_ref.update({"criterios": criterios})
+        _invalidar_cache_indicadores()
         logger.info("Critérios do indicador '%s' atualizados.", indicador_id)
         return True
 

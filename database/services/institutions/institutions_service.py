@@ -61,21 +61,17 @@ def listar_documentos_da_instituicao(nome_colecao: str, instituicao_id: str | No
     """Lê documentos de uma coleção e limita o resultado ao tenant ativo."""
     chave = instituicao_id or obter_instituicao_id_atual()
     colecao = db.collection(nome_colecao)
-    documentos = colecao.where("instituicao_id", "==", chave).stream()
-    vistos: set[str] = set()
-    for snapshot in documentos:
-        vistos.add(snapshot.id)
-        yield snapshot
+    if chave != INSTITUICAO_PADRAO_ID:
+        yield from colecao.where("instituicao_id", "==", chave).stream()
+        return
 
-    # Compatibilidade temporária com documentos antigos sem tenant. O script
-    # migrar_dados_legados.py remove essa necessidade após a revisão dos dados.
-    if chave == INSTITUICAO_PADRAO_ID:
-        for snapshot in colecao.stream():
-            if snapshot.id in vistos:
-                continue
-            dados = snapshot.to_dict() or {}
-            if documento_pertence_a_instituicao(dados, chave):
-                yield snapshot
+    # A instituição padrão ainda pode ter documentos legados sem tenant. Uma
+    # única leitura completa os cobre sem executar primeiro a consulta filtrada
+    # e depois reler toda a coleção para o fallback.
+    for snapshot in colecao.stream():
+        dados = snapshot.to_dict() or {}
+        if documento_pertence_a_instituicao(dados, chave):
+            yield snapshot
 
 
 def obter_instituicao(instituicao_id: str | None = None) -> dict:

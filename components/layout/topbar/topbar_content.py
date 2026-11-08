@@ -85,7 +85,6 @@ def criar_topbar_content(
         visible=getattr(page, "notificacoes_ativas", True),
         content=area_notificacoes,
     )
-
     texto_localidade = ft.Text(
         catalogo_campi[local_atual][1] if local_atual else sigla_instituicao,
         size=10,
