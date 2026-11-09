@@ -1,9 +1,12 @@
+import logging
 import requests
 from typing import (
     Optional, 
     Dict, 
     Any,
 )
+
+logger = logging.getLogger(__name__)
 
 def renovar_token_firebase(api_key: str, refresh_token: str) -> Optional[Dict[str, Any]]:
     """Comunica com o Google Identity Toolkit para renovar a sessão utilizando o refresh token."""
@@ -22,5 +25,5 @@ def renovar_token_firebase(api_key: str, refresh_token: str) -> Optional[Dict[st
         return None
         
     except Exception as erro:
-        print(f"Erro na comunicação com a API de autenticação: {erro}")
+        logger.exception("Erro na comunicação com a API de autenticação: %s", erro)
         return None

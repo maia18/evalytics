@@ -36,11 +36,10 @@ def criar_tabela_resultados(
             expand=True,
             controls=[
                 estado_tabela,
-                ft.Row(
+                ft.Container(
                     expand=True,
                     visible=not carregando,
-                    scroll=ft.ScrollMode.AUTO,
-                    controls=[criar_estrutura_tabela(page, resultados_iniciais)],
+                    content=criar_estrutura_tabela(page, resultados_iniciais),
                 ),
             ],
         ),
@@ -48,7 +47,7 @@ def criar_tabela_resultados(
 
     def definir_resultados(resultados: list[dict]) -> None:
         linha_tabela = conteudo_tabela.content.controls[1]
-        linha_tabela.controls = [criar_estrutura_tabela(page, resultados)]
+        linha_tabela.content = criar_estrutura_tabela(page, resultados)
         linha_tabela.visible = True
         estado_tabela.value = ""
         estado_tabela.visible = False
@@ -64,8 +63,6 @@ def criar_tabela_resultados(
         botao_pdf.disabled = ativo
         page.update()
 
-    conteudo_tabela.definir_resultados = definir_resultados
-    conteudo_tabela.definir_carregando = definir_carregando
     versao_consulta = {"atual": 0}
 
     def atualizar_tabela(
@@ -95,9 +92,9 @@ def criar_tabela_resultados(
                 )
                 if not consulta_ainda_ativa():
                     return
-                conteudo_tabela.content.controls[1].controls = [
-                    criar_estrutura_tabela(page, resultados_filtrados)
-                ]
+                conteudo_tabela.content.controls[1].content = criar_estrutura_tabela(
+                    page, resultados_filtrados
+                )
                 conteudo_tabela.content.controls[1].visible = True
                 estado_tabela.value = ""
                 estado_tabela.visible = False
@@ -116,8 +113,6 @@ def criar_tabela_resultados(
 
         definir_carregando(True, "Aplicando filtros…")
         page.run_task(buscar_resultados)
-
-    conteudo_tabela.atualizar = atualizar_tabela
 
     # ======================================================
     # BOTÕES DE EXPORTAÇÃO
@@ -166,7 +161,7 @@ def criar_tabela_resultados(
     # ======================================================
     # CONTAINER FINAL
     # ======================================================
-    return ft.Container(
+    tabela_resultados = ft.Container(
         expand=True,
         bgcolor=layout.cores[CARD],
         padding=25,
@@ -183,3 +178,9 @@ def criar_tabela_resultados(
             ],
         ),
     )
+    # Os callbacks precisam estar no controle externo retornado pela fábrica,
+    # pois é esse card que a tela de relatórios guarda e atualiza.
+    tabela_resultados.definir_resultados = definir_resultados
+    tabela_resultados.definir_carregando = definir_carregando
+    tabela_resultados.atualizar = atualizar_tabela
+    return tabela_resultados

@@ -44,6 +44,7 @@ def obter_dados_dashboard(
         "medias_eixos": {},
         "respostas_por_eixo": {},
         "dados_por_curso": [],
+        "dados_por_departamento": [],
         "evolucao_semestres": [],
         "semestres_disponiveis": [],
         "cursos_disponiveis": [],
@@ -122,6 +123,7 @@ def obter_dados_dashboard(
             eixo: [] for eixo in EIXOS_PADRAO
         }
         estatisticas_cursos: dict[str, dict] = {}
+        estatisticas_departamentos: dict[str, dict] = {}
         quantidade_respostas = 0
 
         for registro in registros_filtrados:
@@ -141,6 +143,21 @@ def obter_dados_dashboard(
             curso["avaliacoes"] += 1
             curso["respostas"] += len(respostas)
 
+            departamento_nome = registro["departamento"] or "Sem departamento"
+            departamento_stats = estatisticas_departamentos.setdefault(
+                departamento_nome,
+                {
+                    "departamento": departamento_nome,
+                    "cursos": set(),
+                    "avaliacoes": 0,
+                    "respostas": 0,
+                    "notas": [],
+                },
+            )
+            departamento_stats["cursos"].add(nome_curso)
+            departamento_stats["avaliacoes"] += 1
+            departamento_stats["respostas"] += len(respostas)
+
             for indicador_id, valor in respostas.items():
                 nota = normalizar_nota(valor)
                 if nota is None:
@@ -148,6 +165,7 @@ def obter_dados_dashboard(
 
                 notas_gerais.append(nota)
                 curso["notas"].append(nota)
+                departamento_stats["notas"].append(nota)
                 eixo_id = mapa_eixos.get(str(indicador_id))
                 if eixo_id in notas_por_eixo:
                     notas_por_eixo[eixo_id].append(nota)
@@ -174,6 +192,20 @@ def obter_dados_dashboard(
                     "notas": [],
                 },
             )
+            nome_departamento = str(
+                curso_cadastrado.get("departamento", "")
+            ).strip() or "Sem departamento"
+            departamento_stats = estatisticas_departamentos.setdefault(
+                nome_departamento,
+                {
+                    "departamento": nome_departamento,
+                    "cursos": set(),
+                    "avaliacoes": 0,
+                    "respostas": 0,
+                    "notas": [],
+                },
+            )
+            departamento_stats["cursos"].add(nome_cadastrado)
 
         medias_eixos = {
             eixo_id: round(sum(notas) / len(notas), 2)
@@ -199,6 +231,23 @@ def obter_dados_dashboard(
                 estatisticas_cursos.items(), key=lambda item: item[0].casefold()
             )
         ]
+        dados_por_departamento = [
+            {
+                "departamento": nome,
+                "cursos": len(dados["cursos"]),
+                "avaliacoes": dados["avaliacoes"],
+                "respostas": dados["respostas"],
+                "media_geral": (
+                    round(sum(dados["notas"]) / len(dados["notas"]), 2)
+                    if dados["notas"]
+                    else None
+                ),
+            }
+            for nome, dados in sorted(
+                estatisticas_departamentos.items(),
+                key=lambda item: item[0].casefold(),
+            )
+        ]
 
         resultado = {
             "avaliacoes": len(registros_filtrados),
@@ -215,6 +264,7 @@ def obter_dados_dashboard(
             "medias_eixos": medias_eixos,
             "respostas_por_eixo": respostas_por_eixo,
             "dados_por_curso": dados_por_curso,
+            "dados_por_departamento": dados_por_departamento,
             "evolucao_semestres": [
                 {
                     "semestre": semestre_item,

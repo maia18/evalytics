@@ -1,9 +1,12 @@
 import asyncio
+import logging
 import flet as ft
 from components.layout.topbar.core.notifications.notifications import (
     contar_nao_lidas,
     listar_notificacoes,
 )
+
+logger = logging.getLogger(__name__)
 
 async def _tarefa_monitorar_notificacoes(page: ft.Page):
     """Executa o loop contínuo de checagem de notificações em background."""
@@ -31,7 +34,7 @@ async def _tarefa_monitorar_notificacoes(page: ft.Page):
         except asyncio.CancelledError:
             break
         except Exception as erro:
-            print(f"Erro ao atualizar notificações: {erro}")
+            logger.exception("Erro ao atualizar notificações: %s", erro)
 
         await asyncio.sleep(5)
 

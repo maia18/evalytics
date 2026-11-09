@@ -16,7 +16,7 @@ def criar_grafico_evolucao_semestres(
     if evolucao:
         controles = [
             ft.Container(
-                padding=ft.Padding.symmetric(vertical=12),
+                padding=ft.Padding.symmetric(vertical=5),
                 content=ft.Column(
                     spacing=5,
                     controls=[
@@ -59,13 +59,12 @@ def criar_grafico_evolucao_semestres(
     return ft.Container(
         height=altura,
         bgcolor=layout.cores[CARD],
-        padding=8,
+        padding=14,
         border_radius=8,
         border=criar_borda_uniforme(layout.cores[BORDA]),
         content=ft.Column(
-            expand=True,
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            spacing=8,
+            alignment=ft.MainAxisAlignment.START,
+            spacing=6,
             controls=[
                 ft.Column(
                     spacing=4,

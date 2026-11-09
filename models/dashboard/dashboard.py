@@ -27,6 +27,9 @@ from models.dashboard.widgets.grafico_evolucao_semestres import (
 from models.dashboard.widgets.tabela_cursos_dashboard import (
     criar_tabela_cursos_dashboard,
 )
+from models.dashboard.widgets.tabela_departamentos_dashboard import (
+    criar_tabela_departamentos_dashboard,
+)
 
 
 CORES_BARRAS_GRAFICO_EIXOS = [COR_PRIMARIA, "#34D399", "#F87171"]
@@ -202,7 +205,6 @@ def _criar_layout(
         altura_tela = float(getattr(page, "height", 768) or 768)
         altura_card_eixos = max(300, min(420, int(altura_tela * 0.55)))
         altura_card_cursos = max(230, min(320, int(altura_tela * 0.38)))
-        altura_card_evolucao = max(190, min(260, int(altura_tela * 0.30)))
         dados_iniciais = {
             "avaliacoes": 0,
             "respostas": 0,
@@ -211,6 +213,7 @@ def _criar_layout(
             "medias_eixos": {},
             "respostas_por_eixo": {},
             "dados_por_curso": [],
+            "dados_por_departamento": [],
             "evolucao_semestres": [],
             "semestres_disponiveis": [],
             "cursos_disponiveis": [],
@@ -246,13 +249,17 @@ def _criar_layout(
         )
         area_evolucao = ft.Container(
             content=criar_grafico_evolucao_semestres(
-                layout, dados_iniciais["evolucao_semestres"],
-                altura=altura_card_evolucao,
+                layout, dados_iniciais["evolucao_semestres"]
+            )
+        )
+        area_departamentos = ft.Container(
+            content=criar_tabela_departamentos_dashboard(
+                layout, dados_iniciais["dados_por_departamento"]
             )
         )
         paineis_analiticos = ft.Column(
             spacing=12,
-            controls=[area_eixos, area_cursos, area_evolucao],
+            controls=[area_eixos, area_cursos, area_departamentos, area_evolucao],
         )
 
         def atualizar_componentes(dados: dict, selecao: tuple[str, str, str]) -> None:
@@ -271,8 +278,10 @@ def _criar_layout(
                 altura=altura_card_cursos,
             )
             area_evolucao.content = criar_grafico_evolucao_semestres(
-                layout, dados["evolucao_semestres"],
-                altura=altura_card_evolucao,
+                layout, dados["evolucao_semestres"]
+            )
+            area_departamentos.content = criar_tabela_departamentos_dashboard(
+                layout, dados["dados_por_departamento"]
             )
             texto_contexto.value = (
                 f"{selecao[0] if selecao[0] not in (None, '', 'TODOS') else 'Todos'}"

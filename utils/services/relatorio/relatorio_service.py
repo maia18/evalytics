@@ -1,6 +1,5 @@
 import logging
 from copy import deepcopy
-from concurrent.futures import ThreadPoolExecutor
 from database.services.institutions.institutions_service import obter_instituicao_id_atual
 from database.services.memory_cache import obter_cache, salvar_cache
 from database.services.cursos.firestore_courses import obter_cursos_db
@@ -87,13 +86,8 @@ def obter_resumo_eixos(
         return deepcopy(valor_cache)
 
     try:
-        # Os metadados vêm de coleções independentes. Consultá-los em paralelo
-        # reduz o tempo de espera da primeira abertura (cache frio).
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            tarefa_mapa = executor.submit(_obter_mapa_eixos)
-            tarefa_cursos = executor.submit(obter_cursos_db)
-            mapa_eixo = tarefa_mapa.result()
-            cursos_cadastrados = tarefa_cursos.result()
+        mapa_eixo = _obter_mapa_eixos()
+        cursos_cadastrados = obter_cursos_db()
         indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
         avaliacoes = listar_avaliacoes(cursos_cadastrados)
 
@@ -184,13 +178,10 @@ def listar_resultados_consolidados(
         return deepcopy(valor_cache)
 
     try:
-        # Indicadores e catálogo não dependem um do outro; carregue juntos
-        # para diminuir a latência da consulta inicial de relatórios.
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            tarefa_mapa = executor.submit(_obter_mapa_eixos, propagar_erro)
-            tarefa_cursos = executor.submit(obter_cursos_db, propagar_erro)
-            mapa_eixo = tarefa_mapa.result()
-            cursos_cadastrados = tarefa_cursos.result()
+        # Mantém as leituras Firestore em sequência dentro do mesmo worker.
+        # Isso evita concorrência no cliente Firestore durante a carga inicial.
+        mapa_eixo = _obter_mapa_eixos(propagar_erro)
+        cursos_cadastrados = obter_cursos_db(propagar_erro)
         nomes_cadastrados = [
             str(curso.get("nome", "")).strip()
             for curso in cursos_cadastrados

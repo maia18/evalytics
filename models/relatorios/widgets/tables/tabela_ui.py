@@ -33,26 +33,62 @@ def formatar_data(data_iso) -> str:
     except (ValueError, AttributeError, TypeError):
         return str(data_iso)
 
-def criar_linha_resultado(item: dict) -> ft.DataRow:
-    """Gera uma DataRow para um item de resultado específico."""
+def criar_linha_resultado(
+    item: dict,
+    *,
+    cabecalho: bool = False,
+    cor_cabecalho: str | None = None,
+) -> ft.Container:
+    """Gera uma linha responsiva da tabela de resultados consolidados."""
     eixos = item.get("eixos", {})
-    curso_nome = item.get("curso_nome", "Curso não informado")
-    data_avaliacao = formatar_data(item.get("data_avaliacao", ""))
-
-    eixo_1 = eixos.get(1, 0.0)
-    eixo_2 = eixos.get(2, 0.0)
-    eixo_3 = eixos.get(3, 0.0)
-    media_geral = item.get("media_geral", 0.0)
-
-    return ft.DataRow(
-        cells=[
-            ft.DataCell(ft.Text(curso_nome, color=ft.Colors.ON_SURFACE)),
-            ft.DataCell(ft.Text(data_avaliacao, color=ft.Colors.ON_SURFACE)),
-            ft.DataCell(ft.Text(formatar_nota(eixo_1), color=ft.Colors.ON_SURFACE)),
-            ft.DataCell(ft.Text(formatar_nota(eixo_2), color=ft.Colors.ON_SURFACE)),
-            ft.DataCell(ft.Text(formatar_nota(eixo_3), color=ft.Colors.ON_SURFACE)),
-            ft.DataCell(ft.Text(formatar_nota(media_geral), weight="bold", color=ft.Colors.ON_SURFACE)),
+    if cabecalho:
+        dados = [
+            ("Curso", 6, False, True),
+            ("Data", 2, False, True),
+            ("Eixo 1", 1, True, True),
+            ("Eixo 2", 1, True, True),
+            ("Eixo 3", 1, True, True),
+            ("Média Geral", 2, True, True),
         ]
+    else:
+        dados = [
+            (str(item.get("curso_nome", "Curso não informado")), 6, False, False),
+            (formatar_data(item.get("data_avaliacao", "")), 2, False, False),
+            (formatar_nota(eixos.get(1, 0.0)), 1, True, False),
+            (formatar_nota(eixos.get(2, 0.0)), 1, True, False),
+            (formatar_nota(eixos.get(3, 0.0)), 1, True, False),
+            (formatar_nota(item.get("media_geral", 0.0)), 2, True, True),
+        ]
+
+    return ft.Container(
+        bgcolor=cor_cabecalho if cabecalho else None,
+        content=ft.Row(
+            expand=True,
+            spacing=0,
+            controls=[
+                ft.Container(
+                    expand=proporcao,
+                    padding=ft.Padding.symmetric(horizontal=14, vertical=14),
+                    alignment=(
+                        ft.Alignment.CENTER_RIGHT
+                        if numerica
+                        else ft.Alignment.CENTER_LEFT
+                    ),
+                    content=ft.Text(
+                        texto,
+                        size=12 if cabecalho else 11,
+                        weight=ft.FontWeight.BOLD if negrito else None,
+                        color=ft.Colors.ON_SURFACE,
+                        text_align=(
+                            ft.TextAlign.RIGHT if numerica else ft.TextAlign.LEFT
+                        ),
+                        max_lines=1,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                    ),
+                )
+                for texto, proporcao, numerica, negrito in dados
+            ],
+        ),
     )
 
 def criar_estado_vazio() -> ft.Control:
@@ -78,23 +114,25 @@ def criar_estrutura_tabela(page: ft.Page, resultados: list[dict]) -> ft.Control:
     if not resultados:
         return criar_estado_vazio()
 
-    linhas = [criar_linha_resultado(item) for item in resultados]
+    linhas: list[ft.Control] = [
+        criar_linha_resultado(
+            {},
+            cabecalho=True,
+            cor_cabecalho=(
+                ft.Colors.BLUE_GREY_900
+                if page.theme_mode == ft.ThemeMode.DARK
+                else ft.Colors.BLUE_50
+            ),
+        )
+    ]
+    for indice, item in enumerate(resultados):
+        linhas.append(criar_linha_resultado(item))
+        if indice < len(resultados) - 1:
+            linhas.append(ft.Divider(height=1, color=ft.Colors.OUTLINE_VARIANT))
 
-    return ft.DataTable(
-        # Usa melhor a largura do painel; em telas estreitas, o contêiner externo
-        # permite rolagem horizontal sem comprimir as colunas.
-        column_spacing=112,
-        horizontal_margin=24,
-        heading_row_color=(
-            ft.Colors.BLUE_GREY_900 if page.theme_mode == ft.ThemeMode.DARK else ft.Colors.BLUE_50
-        ),
-        columns=[
-            ft.DataColumn(ft.Text("Curso", weight="bold", color=ft.Colors.ON_SURFACE)),
-            ft.DataColumn(ft.Text("Data", weight="bold", color=ft.Colors.ON_SURFACE)),
-            ft.DataColumn(ft.Text("Eixo 1", weight="bold", color=ft.Colors.ON_SURFACE)),
-            ft.DataColumn(ft.Text("Eixo 2", weight="bold", color=ft.Colors.ON_SURFACE)),
-            ft.DataColumn(ft.Text("Eixo 3", weight="bold", color=ft.Colors.ON_SURFACE)),
-            ft.DataColumn(ft.Text("Média Geral", weight="bold", color=ft.Colors.ON_SURFACE)),
-        ],
-        rows=linhas,
+    return ft.Column(
+        expand=True,
+        spacing=0,
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        controls=linhas,
     )

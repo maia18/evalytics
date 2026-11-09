@@ -121,17 +121,16 @@ def _criar_view_relatorios(
         page.update()
 
     async def carregar_relatorios() -> None:
+        logger.info("Iniciando carregamento de resultados para %s.", rota)
         try:
             resultados_carregados = await asyncio.wait_for(
                 asyncio.to_thread(listar_resultados_avaliacoes, True),
-                timeout=45,
+                timeout=30,
             )
 
-            # Evita montar controles e redesenhar uma tela que o usuário já deixou.
-            if (
-                getattr(page, "rota_navegacao_atual", None) != rota
-                or getattr(page, "_relatorios_load_generation", None) != geracao
-            ):
+            # Descarta apenas uma carga superada por outra abertura da mesma tela.
+            if getattr(page, "_relatorios_load_generation", None) != geracao:
+                logger.info("Carga de resultados substituída por uma navegação mais recente.")
                 return
             # Mantém os callbacks dos botões ligados à lista que já existe.
             resultados_originais.clear()
@@ -139,12 +138,13 @@ def _criar_view_relatorios(
             secao_filtros.atualizar_opcoes(resultados_carregados)
             tabela_resultados.definir_resultados(resultados_carregados)
             page.update()
+            logger.info(
+                "Resultados de relatórios carregados: %s registro(s).",
+                len(resultados_carregados),
+            )
         except Exception:
             logger.exception("Falha ao carregar a tela de relatórios.")
-            if (
-                getattr(page, "rota_navegacao_atual", None) != rota
-                or getattr(page, "_relatorios_load_generation", None) != geracao
-            ):
+            if getattr(page, "_relatorios_load_generation", None) != geracao:
                 return
             tabela_resultados.definir_carregando(
                 True, "Falha ao consultar os resultados."

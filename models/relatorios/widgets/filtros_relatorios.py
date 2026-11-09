@@ -230,16 +230,9 @@ def criar_secao_filtros(
             botao_limpar,
         ],
     )
-    icone_filtros = ft.Icon(ft.Icons.KEYBOARD_ARROW_RIGHT, size=20)
-
     def alternar_filtros(e=None):
         linha_controles.visible = not linha_controles.visible
         atualizar_resumo_filtros()
-        icone_filtros.name = (
-            ft.Icons.KEYBOARD_ARROW_DOWN
-            if linha_controles.visible
-            else ft.Icons.KEYBOARD_ARROW_RIGHT
-        )
         page.update()
 
     secao_filtros = ft.Container(
@@ -253,16 +246,10 @@ def criar_secao_filtros(
                 ft.Container(
                     on_click=alternar_filtros,
                     content=ft.Row(
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        spacing=8,
                         controls=[
-                            ft.Row(
-                                spacing=8,
-                                controls=[
-                                    ft.Icon(ft.Icons.FILTER_ALT, size=18),
-                                    ft.Text("Filtros", weight="w500"),
-                                ],
-                            ),
-                            icone_filtros,
+                            ft.Icon(ft.Icons.FILTER_ALT, size=18),
+                            ft.Text("Filtros", weight="w500"),
                         ],
                     ),
                 ),
