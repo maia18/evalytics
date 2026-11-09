@@ -1,7 +1,9 @@
+import asyncio
 import flet as ft
 from typing import Callable
 from components.layout.responsive.responsive import ResponsiveLayout
 from database.services.cursos.firestore_courses import curso_esta_ativo, obter_cursos_db
+from utils.services.indicadores.indicadores_repository import listar_indicadores
 from models.formulario.core.form_controller import FormularioController
 from models.formulario.core.formulario_ui import (
     criar_dropdown_cursos,
@@ -57,11 +59,7 @@ def ViewFormulario(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     # CARREGAMENTO DE DADOS E EVENTOS
     # ==========================================================
     
-    try:
-        cursos = [curso for curso in obter_cursos_db() if curso_esta_ativo(curso)]
-    except Exception:
-        cursos = []
-
+    cursos: list[dict] = []
     dropdown_curso = criar_dropdown_cursos(cursos, layout.cores)
 
     def iniciar_avaliacao(e: ft.ControlEvent) -> None:
@@ -86,22 +84,49 @@ def ViewFormulario(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     if controller.curso_id and controller.curso_nome:
         controller.atualizar_renderizacao() # Avaliação já em andamento, pula a seleção
         
-    elif cursos:
-        # Exibe card de seleção
-        area_dinamica_conteudo.controls = [
-            criar_card_selecao_curso(
-                dropdown_curso,
-                layout.cores,
-                getattr(page, "is_dark_mode", False),
-                iniciar_avaliacao,
-            )
-        ]
-        
     else:
-        # Exibe estado sem cursos
         area_dinamica_conteudo.controls = [
-            criar_estado_sem_cursos(layout.cores, lambda _: mudar_tela("/cursos"))
+            ft.Container(
+                expand=True,
+                alignment=ft.Alignment.CENTER,
+                content=ft.ProgressRing(),
+            )
         ]
 
     layout.add_content(area_central)
-    return layout.criar_view("/formulario")
+    view = layout.criar_view("/formulario")
+
+    async def carregar_dados_formulario() -> None:
+        nonlocal cursos, dropdown_curso
+        try:
+            tarefas = [asyncio.to_thread(listar_indicadores)]
+            if not (controller.curso_id and controller.curso_nome):
+                tarefas.append(asyncio.to_thread(obter_cursos_db))
+            dados = await asyncio.gather(*tarefas)
+            controller.definir_indicadores(dados[0])
+            if len(dados) > 1:
+                cursos = [curso for curso in dados[1] if curso_esta_ativo(curso)]
+        except Exception:
+            cursos = []
+
+        if controller.curso_id and controller.curso_nome:
+            controller.atualizar_renderizacao()
+        elif cursos:
+            dropdown_curso = criar_dropdown_cursos(cursos, layout.cores)
+            area_dinamica_conteudo.controls = [
+                criar_card_selecao_curso(
+                    dropdown_curso,
+                    layout.cores,
+                    getattr(page, "is_dark_mode", False),
+                    iniciar_avaliacao,
+                )
+            ]
+        else:
+            area_dinamica_conteudo.controls = [
+                criar_estado_sem_cursos(layout.cores, lambda _: mudar_tela("/cursos"))
+            ]
+        page.update()
+
+    if not controller.indicadores_carregados or not (controller.curso_id and controller.curso_nome):
+        page.run_task(carregar_dados_formulario)
+    return view

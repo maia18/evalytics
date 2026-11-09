@@ -1,3 +1,5 @@
+import asyncio
+import logging
 import flet as ft
 from typing import Callable
 
@@ -17,6 +19,8 @@ from models.relatorios.widgets.modal_filtros_exportacao import (
 )
 from utils.services.relatorio.relatorio_service import listar_resultados_avaliacoes
 
+logger = logging.getLogger(__name__)
+
 
 def _criar_view_relatorios(
     page: ft.Page,
@@ -30,7 +34,7 @@ def _criar_view_relatorios(
         mudar_tela=mudar_tela,
     )
     borda_container = criar_borda_uniforme(layout.cores[BORDA])
-    resultados_originais = listar_resultados_avaliacoes()
+    resultados_originais: list[dict] = []
 
     def exportar_csv_selecionado(
         resultados: list[dict], _semestre: str, _eixo: int | None
@@ -66,8 +70,6 @@ def _criar_view_relatorios(
         if tabela_resultados is not None and hasattr(tabela_resultados, "atualizar"):
             tabela_resultados.atualizar(semestre, curso_nome, eixo)
 
-        page.update()
-
     secao_filtros = criar_secao_filtros(
         layout,
         borda_container,
@@ -75,7 +77,7 @@ def _criar_view_relatorios(
         aplicar_filtros,
         exportar_csv_atual,
         exportar_pdf_atual,
-        resultados=resultados_originais,
+        resultados=[],
         embutido=True,
     )
     tabela_resultados = criar_tabela_resultados(
@@ -85,10 +87,73 @@ def _criar_view_relatorios(
         exportar_csv_atual,
         exportar_pdf_atual,
         secao_filtros=secao_filtros,
+        resultados_iniciais=[],
+        carregando=True,
     )
+    erro_carregamento = ft.Row(
+        visible=False,
+        controls=[
+            ft.Icon(ft.Icons.ERROR_OUTLINE, color=ft.Colors.AMBER_400),
+            ft.Text("Não foi possível carregar os resultados."),
+            ft.TextButton(
+                "Tentar novamente",
+                icon=ft.Icons.REFRESH,
+                on_click=lambda e: tentar_novamente(),
+            ),
+        ],
+    )
+    area_conteudo = ft.Container(
+        expand=True,
+        content=ft.Column(
+            expand=True,
+            controls=[tabela_resultados, erro_carregamento],
+        ),
+    )
+    layout.add_content(area_conteudo)
+    view = layout.criar_view(rota)
+    geracao = getattr(page, "_relatorios_load_generation", 0) + 1
+    page._relatorios_load_generation = geracao
 
-    layout.add_content(ft.Container(expand=True, content=tabela_resultados))
-    return layout.criar_view(rota)
+    def tentar_novamente() -> None:
+        erro_carregamento.visible = False
+        tabela_resultados.definir_carregando(True)
+        page.run_task(carregar_relatorios)
+        page.update()
+
+    async def carregar_relatorios() -> None:
+        try:
+            resultados_carregados = await asyncio.wait_for(
+                asyncio.to_thread(listar_resultados_avaliacoes, True),
+                timeout=45,
+            )
+
+            # Evita montar controles e redesenhar uma tela que o usuário já deixou.
+            if (
+                getattr(page, "rota_navegacao_atual", None) != rota
+                or getattr(page, "_relatorios_load_generation", None) != geracao
+            ):
+                return
+            # Mantém os callbacks dos botões ligados à lista que já existe.
+            resultados_originais.clear()
+            resultados_originais.extend(resultados_carregados)
+            secao_filtros.atualizar_opcoes(resultados_carregados)
+            tabela_resultados.definir_resultados(resultados_carregados)
+            page.update()
+        except Exception:
+            logger.exception("Falha ao carregar a tela de relatórios.")
+            if (
+                getattr(page, "rota_navegacao_atual", None) != rota
+                or getattr(page, "_relatorios_load_generation", None) != geracao
+            ):
+                return
+            tabela_resultados.definir_carregando(
+                True, "Falha ao consultar os resultados."
+            )
+            erro_carregamento.visible = True
+            page.update()
+
+    page.run_task(carregar_relatorios)
+    return view
 
 
 def ViewRelatorios(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:

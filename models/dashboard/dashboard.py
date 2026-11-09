@@ -199,6 +199,10 @@ def _criar_layout(
     )
 
     if exibir_visao_geral:
+        altura_tela = float(getattr(page, "height", 768) or 768)
+        altura_card_eixos = max(300, min(420, int(altura_tela * 0.55)))
+        altura_card_cursos = max(230, min(320, int(altura_tela * 0.38)))
+        altura_card_evolucao = max(190, min(260, int(altura_tela * 0.30)))
         dados_iniciais = {
             "avaliacoes": 0,
             "respostas": 0,
@@ -231,17 +235,24 @@ def _criar_layout(
                 CORES_BARRAS_GRAFICO_EIXOS,
                 dados_iniciais["respostas_por_eixo"],
                 dados_iniciais["media_geral"],
+                altura=altura_card_eixos,
             )
         )
         area_cursos = ft.Container(
             content=criar_tabela_cursos_dashboard(
-                layout, dados_iniciais["dados_por_curso"]
+                layout, dados_iniciais["dados_por_curso"],
+                altura=altura_card_cursos,
             )
         )
         area_evolucao = ft.Container(
             content=criar_grafico_evolucao_semestres(
-                layout, dados_iniciais["evolucao_semestres"]
+                layout, dados_iniciais["evolucao_semestres"],
+                altura=altura_card_evolucao,
             )
+        )
+        paineis_analiticos = ft.Column(
+            spacing=12,
+            controls=[area_eixos, area_cursos, area_evolucao],
         )
 
         def atualizar_componentes(dados: dict, selecao: tuple[str, str, str]) -> None:
@@ -253,12 +264,15 @@ def _criar_layout(
                 CORES_BARRAS_GRAFICO_EIXOS,
                 dados["respostas_por_eixo"],
                 dados["media_geral"],
+                altura=altura_card_eixos,
             )
             area_cursos.content = criar_tabela_cursos_dashboard(
-                layout, dados["dados_por_curso"]
+                layout, dados["dados_por_curso"],
+                altura=altura_card_cursos,
             )
             area_evolucao.content = criar_grafico_evolucao_semestres(
-                layout, dados["evolucao_semestres"]
+                layout, dados["evolucao_semestres"],
+                altura=altura_card_evolucao,
             )
             texto_contexto.value = (
                 f"{selecao[0] if selecao[0] not in (None, '', 'TODOS') else 'Todos'}"
@@ -325,9 +339,7 @@ def _criar_layout(
                 filtros,
                 texto_contexto,
                 linha_kpis,
-                area_eixos,
-                area_cursos,
-                area_evolucao,
+                paineis_analiticos,
             ],
         )
     else:
@@ -366,25 +378,43 @@ def ViewDashboardResultados(
         subtitulo="Analise as médias e respostas válidas por eixo avaliativo.",
         mudar_tela=mudar_tela,
     )
-    resultados = listar_resultados_avaliacoes()
     painel_resultados = TelaResultados(page)
 
     def aplicar_filtros(semestre, curso_nome, eixo) -> None:
         painel_resultados.atualizar(semestre, curso_nome, eixo)
 
-    filtros = criar_secao_filtros(
-        layout,
-        criar_borda_uniforme(layout.cores[BORDA]),
-        page,
-        aplicar_filtros,
-        resultados=resultados,
+    area_resultados = ft.Container(
+        expand=True,
+        alignment=ft.Alignment.CENTER,
+        content=ft.ProgressRing(),
     )
-    painel_resultados.limpar_filtros = filtros.limpar_filtros
     layout.add_content(
         ft.Column(
             expand=True,
             spacing=8,
-            controls=[filtros, ft.Container(expand=True, content=painel_resultados)],
+            controls=[area_resultados],
         )
     )
-    return layout.criar_view(ROTA_DASHBOARD_RESULTADOS)
+    view = layout.criar_view(ROTA_DASHBOARD_RESULTADOS)
+
+    async def carregar_resultados_e_filtros() -> None:
+        resultados = await asyncio.to_thread(listar_resultados_avaliacoes)
+        if getattr(page, "rota_navegacao_atual", None) != ROTA_DASHBOARD_RESULTADOS:
+            return
+        filtros = criar_secao_filtros(
+            layout,
+            criar_borda_uniforme(layout.cores[BORDA]),
+            page,
+            aplicar_filtros,
+            resultados=resultados,
+        )
+        painel_resultados.limpar_filtros = filtros.limpar_filtros
+        area_resultados.content = ft.Column(
+            expand=True,
+            spacing=8,
+            controls=[filtros, ft.Container(expand=True, content=painel_resultados)],
+        )
+        page.update()
+
+    page.run_task(carregar_resultados_e_filtros)
+    return view

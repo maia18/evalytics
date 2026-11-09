@@ -1,5 +1,6 @@
 import logging
 from copy import deepcopy
+from concurrent.futures import ThreadPoolExecutor
 from database.services.institutions.institutions_service import obter_instituicao_id_atual
 from database.services.memory_cache import obter_cache, salvar_cache
 from database.services.cursos.firestore_courses import obter_cursos_db
@@ -18,11 +19,12 @@ from .relatorio_utils import obter_semestre
 logger = logging.getLogger(__name__)
 EIXO_PADRAO = 1
 EIXOS_PADRAO = (1, 2, 3)
+CACHE_RELATORIOS_TTL = 15.0
 
-def _obter_mapa_eixos() -> dict[str, int]:
+def _obter_mapa_eixos(propagar_erro: bool = False) -> dict[str, int]:
     """Cria um mapa relacionando o ID do indicador ao seu eixo."""
     try:
-        indicadores = listar_indicadores()
+        indicadores = listar_indicadores(propagar_erro=propagar_erro)
         return {
             indicador["id"]: indicador.get("eixo", EIXO_PADRAO)
             for indicador in indicadores
@@ -30,6 +32,8 @@ def _obter_mapa_eixos() -> dict[str, int]:
         }
     except Exception:
         logger.exception("Erro ao montar mapa de eixos.")
+        if propagar_erro:
+            raise
         return {}
 
 def listar_semestres_disponiveis() -> list[str]:
@@ -83,8 +87,13 @@ def obter_resumo_eixos(
         return deepcopy(valor_cache)
 
     try:
-        mapa_eixo = _obter_mapa_eixos()
-        cursos_cadastrados = obter_cursos_db()
+        # Os metadados vêm de coleções independentes. Consultá-los em paralelo
+        # reduz o tempo de espera da primeira abertura (cache frio).
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            tarefa_mapa = executor.submit(_obter_mapa_eixos)
+            tarefa_cursos = executor.submit(obter_cursos_db)
+            mapa_eixo = tarefa_mapa.result()
+            cursos_cadastrados = tarefa_cursos.result()
         indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
         avaliacoes = listar_avaliacoes(cursos_cadastrados)
 
@@ -144,7 +153,7 @@ def obter_resumo_eixos(
                 for eixo_id, notas in acumulador.items()
             },
         }
-        salvar_cache(chave_cache, resumo, 5.0)
+        salvar_cache(chave_cache, resumo, CACHE_RELATORIOS_TTL)
         return resumo
 
     except Exception:
@@ -163,6 +172,7 @@ def listar_resultados_consolidados(
     semestre: str | None = None,
     eixo: int | None = None,
     curso_nome: str | None = None,
+    propagar_erro: bool = False,
 ) -> list[dict]:
     """Retorna avaliações consolidadas por eixo."""
     chave_cache = (
@@ -174,15 +184,22 @@ def listar_resultados_consolidados(
         return deepcopy(valor_cache)
 
     try:
-        mapa_eixo = _obter_mapa_eixos()
-        cursos_cadastrados = obter_cursos_db()
+        # Indicadores e catálogo não dependem um do outro; carregue juntos
+        # para diminuir a latência da consulta inicial de relatórios.
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            tarefa_mapa = executor.submit(_obter_mapa_eixos, propagar_erro)
+            tarefa_cursos = executor.submit(obter_cursos_db, propagar_erro)
+            mapa_eixo = tarefa_mapa.result()
+            cursos_cadastrados = tarefa_cursos.result()
         nomes_cadastrados = [
             str(curso.get("nome", "")).strip()
             for curso in cursos_cadastrados
             if curso.get("nome") and str(curso.get("nome")).strip()
         ]
         indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
-        documentos = listar_avaliacoes(cursos_cadastrados)
+        documentos = listar_avaliacoes(
+            cursos_cadastrados, propagar_erro=propagar_erro
+        )
         resultados: list[dict] = []
 
         for dados in documentos:
@@ -245,13 +262,15 @@ def listar_resultados_consolidados(
                 "media_geral": media_geral,
             })
 
-        salvar_cache(chave_cache, resultados, 5.0)
+        salvar_cache(chave_cache, resultados, CACHE_RELATORIOS_TTL)
         return resultados
 
     except Exception:
         logger.exception("Erro ao listar resultados consolidados.")
+        if propagar_erro:
+            raise
         return []
 
-def listar_resultados_avaliacoes() -> list[dict]:
+def listar_resultados_avaliacoes(propagar_erro: bool = False) -> list[dict]:
     """Mantém compatibilidade com chamadas antigas."""
-    return listar_resultados_consolidados()
+    return listar_resultados_consolidados(propagar_erro=propagar_erro)

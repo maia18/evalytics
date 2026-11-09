@@ -89,13 +89,13 @@ def listar_indicadores_por_eixo(
         )
         return []
     
-def listar_indicadores() -> list[dict]:
+def listar_indicadores(propagar_erro: bool = False) -> list[dict]:
     """Retorna todos os indicadores cadastrados no Firestore."""
     encontrado, valor = obter_cache("indicadores:todos")
     if encontrado:
         return [dict(indicador) for indicador in valor]
     try:
-        docs = db.collection(COLECAO_INDICADORES).stream()
+        docs = db.collection(COLECAO_INDICADORES).stream(timeout=12.0)
         indicadores = [
             {
                 "id": doc.id,
@@ -114,4 +114,6 @@ def listar_indicadores() -> list[dict]:
         logger.exception(
             "Erro ao listar todos os indicadores no Firestore."
         )
+        if propagar_erro:
+            raise
         return []

@@ -2,8 +2,6 @@ from collections.abc import Callable
 
 import flet as ft
 
-from database.services.cursos.firestore_courses import obter_cursos_db
-from utils.services.cursos.curso_utils import listar_nomes_cursos_filtraveis
 from utils.services.relatorio.relatorio_utils import filtrar_resultados, obter_semestre
 
 
@@ -28,9 +26,13 @@ def abrir_modal_filtros_exportacao(
         ao_exportar([], "Todos", None)
         return
 
-    cursos_disponiveis = listar_nomes_cursos_filtraveis(
-        resultados,
-        obter_cursos_db(),
+    cursos_disponiveis = sorted(
+        {
+            str(resultado.get("curso_nome") or resultado.get("curso") or "").strip()
+            for resultado in resultados
+            if str(resultado.get("curso_nome") or resultado.get("curso") or "").strip()
+        },
+        key=str.casefold,
     )
     semestres_disponiveis = sorted(
         {

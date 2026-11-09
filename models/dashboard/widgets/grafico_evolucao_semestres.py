@@ -9,35 +9,42 @@ from components.core.constants.constants import (
 from components.core.theme.border_utils import criar_borda_uniforme
 
 
-def criar_grafico_evolucao_semestres(layout, evolucao: list[dict]) -> ft.Container:
+def criar_grafico_evolucao_semestres(
+    layout, evolucao: list[dict], altura: int | None = None
+) -> ft.Container:
     """Compara a média das respostas válidas entre semestres."""
     if evolucao:
         controles = [
-            ft.Column(
-                spacing=5,
-                controls=[
-                    ft.Column(
-                        spacing=2,
-                        controls=[
-                            ft.Text(item["semestre"], size=11),
-                            ft.Text(
-                                f"{item['media_geral']:.1f}/5,0 · {item['respostas_validas']} resp.",
-                                size=10,
-                                color=layout.cores[TEXTO_SECUNDARIO],
-                            ),
-                        ],
-                    ),
-                    ft.ProgressBar(
-                        value=max(
-                            0.0,
-                            min((item["media_geral"] - 1.0) / 4.0, 1.0),
+            ft.Container(
+                padding=ft.Padding.symmetric(vertical=12),
+                content=ft.Column(
+                    spacing=5,
+                    controls=[
+                        ft.Column(
+                            spacing=2,
+                            controls=[
+                                ft.Text(item["semestre"], size=11),
+                                ft.Text(
+                                    f"{item['media_geral']:.1f}/5,0 · {item['respostas_validas']} resp.",
+                                    size=10,
+                                    color=layout.cores[TEXTO_SECUNDARIO],
+                                ),
+                            ],
                         ),
-                        color=ft.Colors.BLUE_400,
-                        bgcolor=ft.Colors.with_opacity(0.14, ft.Colors.BLUE_400),
-                        height=8,
-                        border_radius=6,
-                    ),
-                ],
+                        ft.ProgressBar(
+                            value=max(
+                                0.0,
+                                min((item["media_geral"] - 1.0) / 4.0, 1.0),
+                            ),
+                            color=ft.Colors.BLUE_400,
+                            bgcolor=ft.Colors.with_opacity(
+                                0.14, ft.Colors.BLUE_400
+                            ),
+                            height=8,
+                            border_radius=6,
+                        ),
+                    ],
+                ),
             )
             for item in evolucao
         ]
@@ -50,11 +57,14 @@ def criar_grafico_evolucao_semestres(layout, evolucao: list[dict]) -> ft.Contain
         ]
 
     return ft.Container(
+        height=altura,
         bgcolor=layout.cores[CARD],
         padding=8,
         border_radius=8,
         border=criar_borda_uniforme(layout.cores[BORDA]),
         content=ft.Column(
+            expand=True,
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             spacing=8,
             controls=[
                 ft.Column(

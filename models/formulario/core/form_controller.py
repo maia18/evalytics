@@ -2,7 +2,6 @@ import flet as ft
 from typing import Callable, Optional
 from models.formulario.core.steps import FormularioStepsMixin
 from models.formulario.core.render import FormularioRenderMixin
-from utils.services.indicadores.indicadores_repository import listar_indicadores
 
 class FormularioController(FormularioStepsMixin, FormularioRenderMixin):
     """
@@ -23,6 +22,7 @@ class FormularioController(FormularioStepsMixin, FormularioRenderMixin):
         area_dinamica: ft.Column,
         area_central: ft.Container,
         cores: dict[str, str],
+        indicadores: list[dict] | None = None,
     ) -> None:
         self.cores = cores
         self.page = page
@@ -34,20 +34,10 @@ class FormularioController(FormularioStepsMixin, FormularioRenderMixin):
         # INDICADORES
         # ==========================================================
 
-        indicadores = listar_indicadores()
-
-        # Carrega somente indicadores ativos. Caso o campo "status" não exista, considera ATIVO.
-        self.indicadores_ativos = sorted(
-            [
-                ind
-                for ind in indicadores
-                if ind.get("status", "ATIVO") == "ATIVO"
-            ],
-            key=lambda ind: (
-                int(ind.get("eixo", 0)),
-                ind.get("titulo", "").lower(),
-            ),
-        )
+        self.indicadores_ativos: list[dict] = []
+        self.indicadores_carregados = indicadores is not None
+        if indicadores is not None:
+            self.definir_indicadores(indicadores)
 
         # ==========================================================
         # CURSO DA AVALIAÇÃO
@@ -65,6 +55,17 @@ class FormularioController(FormularioStepsMixin, FormularioRenderMixin):
             "respostas": {},
             "justificativas": {},
         }
+
+    def definir_indicadores(self, indicadores: list[dict]) -> None:
+        """Atualiza o catálogo usado pelo formulário sem consultar o banco."""
+        self.indicadores_ativos = sorted(
+            [item for item in indicadores if item.get("status", "ATIVO") == "ATIVO"],
+            key=lambda item: (
+                int(item.get("eixo", 0)),
+                str(item.get("titulo", "")).lower(),
+            ),
+        )
+        self.indicadores_carregados = True
 
     def definir_curso(
         self,

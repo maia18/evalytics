@@ -1,10 +1,6 @@
 import flet as ft
 from components.core.constants.constants import CARD, TEXTO_SECUNDARIO
-from utils.services.relatorio.relatorio_service import (
-    listar_semestres_disponiveis,
-)
-from database.services.cursos.firestore_courses import obter_cursos_db
-from utils.services.cursos.curso_utils import listar_nomes_cursos_filtraveis
+from utils.services.relatorio.relatorio_utils import obter_semestre
 
 NOMES_EIXOS = {
     1: "Organização Didático-Pedagógica",
@@ -23,15 +19,25 @@ def criar_secao_filtros(
     embutido: bool = False,
 ) -> ft.Container:
     """
-    Cria a seção de filtros dos relatórios.
-        Os semestres são carregados diretamente das avaliações existentes no Firestore.
+    Cria filtros a partir do mesmo conjunto de resultados exibido na tabela.
     """
 
     # ======================================================
     # SEMESTRES REAIS
     # ======================================================
 
-    semestres = listar_semestres_disponiveis()
+    resultados = resultados or []
+    def opcoes_semestres(resultados_atuais: list[dict]) -> list[str]:
+        valores = set()
+        for resultado in resultados_atuais:
+            semestre = resultado.get("semestre") or obter_semestre(
+                resultado.get("data_avaliacao")
+            )
+            if semestre:
+                valores.add(str(semestre))
+        return sorted(valores, reverse=True)
+
+    semestres = opcoes_semestres(resultados)
 
     opcoes_semestre = [
         ft.dropdown.Option(
@@ -56,9 +62,13 @@ def criar_secao_filtros(
         dense=True,
     )
 
-    cursos = listar_nomes_cursos_filtraveis(
-        resultados or [],
-        obter_cursos_db(),
+    cursos = sorted(
+        {
+            str(resultado.get("curso_nome") or "").strip()
+            for resultado in resultados
+            if str(resultado.get("curso_nome") or "").strip()
+        },
+        key=str.casefold,
     )
     dropdown_curso = ft.Dropdown(
         label="Curso",
@@ -262,4 +272,33 @@ def criar_secao_filtros(
         ),
     )
     secao_filtros.limpar_filtros = lambda: limpar_filtros()
+
+    def atualizar_opcoes(resultados_atuais: list[dict]) -> None:
+        dropdown_semestre.options = [
+            ft.dropdown.Option(key="TODOS", text="Todos"),
+            *[
+                ft.dropdown.Option(key=semestre, text=semestre)
+                for semestre in opcoes_semestres(resultados_atuais)
+            ],
+        ]
+        cursos_atuais = sorted(
+            {
+                str(resultado.get("curso_nome") or "").strip()
+                for resultado in resultados_atuais
+                if str(resultado.get("curso_nome") or "").strip()
+            },
+            key=str.casefold,
+        )
+        dropdown_curso.options = [
+            ft.dropdown.Option(key="TODOS", text="Todos"),
+            *[
+                ft.dropdown.Option(key=curso, text=curso)
+                for curso in cursos_atuais
+            ],
+        ]
+        dropdown_semestre.value = "TODOS"
+        dropdown_curso.value = "TODOS"
+        atualizar_resumo_filtros()
+
+    secao_filtros.atualizar_opcoes = atualizar_opcoes
     return secao_filtros

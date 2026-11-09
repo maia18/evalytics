@@ -11,6 +11,7 @@ def criar_grafico_eixos(
     cores_barras: list[str],
     respostas_por_eixo: dict[int, int] | None = None,
     media_geral: float | None = None,
+    altura: int | None = None,
 ) -> ft.Container:
     """Exibe médias por eixo na escala de 0 a 5, com volume e comparação."""
     respostas_por_eixo = respostas_por_eixo or {}
@@ -87,11 +88,14 @@ def criar_grafico_eixos(
         ]
 
     return ft.Container(
+        height=altura,
         bgcolor=layout.cores[CARD],
         padding=8,
         border_radius=8,
         border=criar_borda_uniforme(layout.cores[BORDA]),
         content=ft.Column(
+            expand=True,
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             spacing=10,
             controls=[
                 ft.Column(

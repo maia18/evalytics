@@ -8,7 +8,6 @@ from components.core.constants.constants import (
 )
 from components.layout.topbar.core.notifications.notifications import (
     listar_notificacoes,
-    contar_nao_lidas,
     marcar_todas_como_lidas,
     limpar_notificacoes,
 )

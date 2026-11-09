@@ -1,3 +1,4 @@
+import asyncio
 import flet as ft
 from utils.services.relatorio.relatorio_service import obter_resumo_eixos
 
@@ -28,20 +29,27 @@ def TelaResultados(page: ft.Page) -> ft.Container:
             ),
         ],
     )
+    versao_consulta = {"atual": 0}
 
     # ======================================================
     # ATUALIZA DASHBOARD (CONTROLLER LOGIC)
     # ======================================================
-    def atualizar_dashboard(
+    async def _carregar_dashboard(
         semestre: str | None = None,
         curso_nome: str | None = None,
         eixo: int | None = None,
+        versao: int = 0,
     ) -> None:
-        resumo = obter_resumo_eixos(
+        resumo = await asyncio.to_thread(
+            obter_resumo_eixos,
             semestre=semestre,
             curso_nome=curso_nome,
             eixo=eixo,
         )
+        if getattr(page, "rota_navegacao_atual", None) != "/dashboard/resultados":
+            return
+        if versao != versao_consulta["atual"]:
+            return
         media_geral = resumo["media_geral"]
         rotulo_media = f"{media_geral:.1f} / 5,0" if media_geral is not None else "—"
         resumo_resultados.value = (
@@ -64,8 +72,21 @@ def TelaResultados(page: ft.Page) -> ft.Container:
 
         # Durante a montagem inicial, a view ainda não foi anexada à página;
         # o Navigator fará a primeira atualização ao concluir a navegação.
-        if page.views:
-            page.update()
+        page.update()
+
+    def atualizar_dashboard(
+        semestre: str | None = None,
+        curso_nome: str | None = None,
+        eixo: int | None = None,
+    ) -> None:
+        versao_consulta["atual"] += 1
+        page.run_task(
+            _carregar_dashboard,
+            semestre,
+            curso_nome,
+            eixo,
+            versao_consulta["atual"],
+        )
 
     # O título e a descrição são exibidos pelo cabeçalho da tela responsiva.
     dashboard = ft.Container(

@@ -4,6 +4,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from datetime import datetime
+from threading import Lock
 import requests
 
 from database.services.firebase_config import db
@@ -36,6 +37,9 @@ EXTENSOES_PERMITIDAS = {
 }
 
 COLECAO_AVALIACOES = "avaliacoes"
+CACHE_CURSOS_AVALIACOES_TTL = 15.0
+CACHE_AVALIACOES_TTL = 15.0
+_lock_carregamento_cursos_avaliacoes = Lock()
 
 
 def enviar_ficheiro_dreamhost(caminho_local: str, nome_arquivo: str) -> str:
@@ -174,7 +178,9 @@ def salvar_avaliacao(
 
         # 4. Salva diretamente no Firestore
         db.collection(COLECAO_AVALIACOES).add(dados_avaliacao)
+        invalidar_cache("cursos_avaliacoes:")
         invalidar_cache(f"avaliacoes:{obter_instituicao_id_atual()}")
+        invalidar_cache("respostas_tabela:")
         invalidar_cache("dashboard:")
         invalidar_cache("resultados:")
         invalidar_cache("resumo_eixos:")
@@ -192,7 +198,10 @@ def salvar_avaliacao(
         return False
 
 
-def listar_avaliacoes(cursos_cadastrados: list[dict] | None = None) -> list[dict]:
+def listar_avaliacoes(
+    cursos_cadastrados: list[dict] | None = None,
+    propagar_erro: bool = False,
+) -> list[dict]:
     """Lista apenas avaliações vinculadas a cursos ainda cadastrados."""
     instituicao_id = obter_instituicao_id_atual()
     chave_cache = f"avaliacoes:{instituicao_id}"
@@ -217,17 +226,59 @@ def listar_avaliacoes(cursos_cadastrados: list[dict] | None = None) -> list[dict
             dados["id"] = doc.id
             lista.append(dados)
 
-        salvar_cache(chave_cache, tuple(dict(avaliacao) for avaliacao in lista), 5.0)
+        salvar_cache(
+            chave_cache,
+            tuple(dict(avaliacao) for avaliacao in lista),
+            CACHE_AVALIACOES_TTL,
+        )
         return lista
 
     except Exception:
         logger.exception("Erro ao consultar avaliações no Firestore.")
+        if propagar_erro:
+            raise
         return []
 
 
 def carregar_cursos_e_avaliacoes() -> tuple[list[dict], list[dict]]:
     """Carrega cursos e avaliações válidas em paralelo para telas de entrada."""
     instituicao_id = obter_instituicao_id_atual()
+    chave_pacote = f"cursos_avaliacoes:{instituicao_id}"
+    encontrado_pacote, pacote = obter_cache(chave_pacote)
+    if encontrado_pacote:
+        cursos_cache, avaliacoes_cache = pacote
+        return (
+            [dict(item) for item in cursos_cache],
+            [dict(item) for item in avaliacoes_cache],
+        )
+
+    # Navegações iniciais podem solicitar o mesmo conjunto ao mesmo tempo.
+    # A segunda chamada aguarda no worker e reutiliza o cache que a primeira gravar.
+    with _lock_carregamento_cursos_avaliacoes:
+        encontrado_pacote, pacote = obter_cache(chave_pacote)
+        if encontrado_pacote:
+            cursos_cache, avaliacoes_cache = pacote
+            return (
+                [dict(item) for item in cursos_cache],
+                [dict(item) for item in avaliacoes_cache],
+            )
+
+        cursos, avaliacoes = _buscar_cursos_e_avaliacoes(instituicao_id)
+        salvar_cache(
+            chave_pacote,
+            (
+                tuple(dict(item) for item in cursos),
+                tuple(dict(item) for item in avaliacoes),
+            ),
+            CACHE_CURSOS_AVALIACOES_TTL,
+        )
+        return cursos, avaliacoes
+
+
+def _buscar_cursos_e_avaliacoes(
+    instituicao_id: str,
+) -> tuple[list[dict], list[dict]]:
+    """Obtém cursos e avaliações sem bloquear a thread da interface."""
     chave_cache = f"avaliacoes:{instituicao_id}"
     encontrado, valor = obter_cache(chave_cache)
 
@@ -265,7 +316,7 @@ def carregar_cursos_e_avaliacoes() -> tuple[list[dict], list[dict]]:
                 salvar_cache(
                     chave_cache,
                     tuple(dict(item) for item in avaliacoes),
-                    5.0,
+                    CACHE_AVALIACOES_TTL,
                 )
             return cursos, avaliacoes
     except Exception:

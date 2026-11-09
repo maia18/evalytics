@@ -1,6 +1,8 @@
 import logging
 from database.services.firebase_config import db
 from database.services.institutions.institutions_service import listar_documentos_da_instituicao
+from database.services.institutions.institutions_service import obter_instituicao_id_atual
+from database.services.memory_cache import obter_cache, salvar_cache
 from database.services.cursos.firestore_courses import obter_cursos_db
 from utils.services.indicadores.indicadores_repository import listar_indicadores
 from utils.services.cursos.curso_utils import (
@@ -21,6 +23,11 @@ def obter_respostas_tabela() -> list[dict]:
     Busca as avaliações reais do Firestore e transforma cada resposta de indicador em uma linha da tabela.
         Uma avaliação pode gerar várias linhas, pois cada indicador respondido representa uma resposta individual.
     """
+    chave_cache = f"respostas_tabela:{obter_instituicao_id_atual()}"
+    encontrado, valor = obter_cache(chave_cache)
+    if encontrado:
+        return [dict(linha) for linha in valor]
+
     try:
         documentos = listar_documentos_da_instituicao(COLECAO_AVALIACOES)
         indicadores = listar_indicadores()
@@ -76,6 +83,11 @@ def obter_respostas_tabela() -> list[dict]:
         # Mais recentes primeiro.
         linhas.sort(key=lambda item: item["data"], reverse=True)
 
+        salvar_cache(
+            chave_cache,
+            tuple(dict(linha) for linha in linhas),
+            15.0,
+        )
         return linhas
 
     except Exception:

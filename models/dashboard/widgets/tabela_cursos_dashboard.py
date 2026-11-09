@@ -10,7 +10,9 @@ from components.core.constants.constants import (
 from components.core.theme.border_utils import criar_borda_uniforme
 
 
-def criar_tabela_cursos_dashboard(layout, dados_por_curso: list[dict]) -> ft.Container:
+def criar_tabela_cursos_dashboard(
+    layout, dados_por_curso: list[dict], altura: int | None = None
+) -> ft.Container:
     """Resume avaliações, respostas e média para cada curso selecionado."""
 
     def criar_celula(
@@ -24,7 +26,7 @@ def criar_tabela_cursos_dashboard(layout, dados_por_curso: list[dict]) -> ft.Con
     ) -> ft.Container:
         return ft.Container(
             expand=proporcao,
-            padding=ft.Padding.symmetric(horizontal=14, vertical=8),
+            padding=ft.Padding.symmetric(horizontal=14, vertical=14),
             alignment=alinhamento,
             content=ft.Text(
                 texto,
@@ -117,12 +119,14 @@ def criar_tabela_cursos_dashboard(layout, dados_por_curso: list[dict]) -> ft.Con
                 linhas.append(ft.Divider(height=1, color=layout.cores[BORDA]))
 
         conteudo_tabela = ft.Column(
+            expand=True,
             spacing=0,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             controls=linhas,
         )
 
     return ft.Container(
+        height=altura,
         bgcolor=layout.cores[CARD],
         padding=8,
         border_radius=8,

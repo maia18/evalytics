@@ -83,6 +83,7 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     if secao_inicial not in secoes_conta:
         secao_inicial = "Perfil"
     estado = {"secao": secao_inicial}
+    secoes_carregadas = {"Perfil": False, "Atividade recente": False}
     botoes_secoes: dict[str, ft.Container] = {}
     conteudo_secao = ft.Column(
         height=altura_conteudo_secao,
@@ -94,6 +95,12 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         estado["secao"] = secao
         page._conta_secao_ativa = secao
         conteudo_secao.controls = [secoes_conta[secao]]
+        if secao == "Perfil" and not secoes_carregadas["Perfil"]:
+            secoes_carregadas["Perfil"] = True
+            page.run_task(carregar_perfil)
+        elif secao == "Atividade recente" and not secoes_carregadas["Atividade recente"]:
+            secoes_carregadas["Atividade recente"] = True
+            page.run_task(carregar_atividade)
         cor_ativa = "#B69CFF" if layout.controller.dark_mode else COR_PRIMARIA
         fundo_ativo = "#302747" if layout.controller.dark_mode else "#EEE9FB"
         for nome, botao in botoes_secoes.items():
@@ -258,6 +265,10 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         page.update()
 
     page.on_resize = ajustar_dimensoes_conta
-    page.run_task(carregar_atividade)
-    page.run_task(carregar_perfil)
+    if estado["secao"] == "Perfil":
+        secoes_carregadas["Perfil"] = True
+        page.run_task(carregar_perfil)
+    elif estado["secao"] == "Atividade recente":
+        secoes_carregadas["Atividade recente"] = True
+        page.run_task(carregar_atividade)
     return view

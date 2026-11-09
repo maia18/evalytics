@@ -13,12 +13,15 @@ from .curso_notificacoes import criar_notificacao_curso
 
 logger = logging.getLogger(__name__)
 COLECAO_CURSOS = "cursos"
-CACHE_TTL_SEGUNDOS = 5.0
+# Escritas no catálogo invalidam os caches relacionados imediatamente.
+CACHE_TTL_SEGUNDOS = 15.0
 
 
 def _invalidar_cache_cursos() -> None:
     invalidar_cache("cursos:")
+    invalidar_cache("cursos_avaliacoes:")
     invalidar_cache("avaliacoes:")
+    invalidar_cache("respostas_tabela:")
     invalidar_cache("dashboard:")
     invalidar_cache("resultados:")
     invalidar_cache("resumo_eixos:")
@@ -99,7 +102,7 @@ def adicionar_curso_db(
         logger.exception("Erro ao adicionar curso.")
         return None
 
-def obter_cursos_db() -> list[dict]:
+def obter_cursos_db(propagar_erro: bool = False) -> list[dict]:
     """
     Retorna a lista de cursos cadastrados, cada um incluindo seu ID de documento.
     """
@@ -124,6 +127,8 @@ def obter_cursos_db() -> list[dict]:
 
     except Exception:
         logger.exception("Erro ao obter cursos.")
+        if propagar_erro:
+            raise
         return []
 
 def atualizar_curso_db(
