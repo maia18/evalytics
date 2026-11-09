@@ -1,5 +1,7 @@
 import csv
+import io
 import logging
+from pathlib import Path
 import flet as ft
 from typing import Optional
 from models.avaliacoes.core.feedback import mostrar_feedback
@@ -8,7 +10,7 @@ from .csv_data_service import preparar_dados_csv
 
 logger = logging.getLogger(__name__)
 
-def exportar_csv(page: ft.Page, resultados: Optional[list[dict]] = None) -> None:
+async def exportar_csv(page: ft.Page, resultados: Optional[list[dict]] = None) -> None:
     """Exporta as respostas reais das avaliações atualmente selecionadas pelos filtros."""
     
     if resultados is None:
@@ -18,7 +20,7 @@ def exportar_csv(page: ft.Page, resultados: Optional[list[dict]] = None) -> None
         mostrar_feedback(page, "Não existem dados para exportar.", sucesso=False)
         return
 
-    nome_arquivo = gerar_nome_arquivo()
+    nome_arquivo = Path(gerar_nome_arquivo()).name
 
     try:
         dados_exportacao = preparar_dados_csv(resultados)
@@ -27,13 +29,32 @@ def exportar_csv(page: ft.Page, resultados: Optional[list[dict]] = None) -> None
             mostrar_feedback(page, "Não existem respostas para exportar.", sucesso=False)
             return
 
-        with open(nome_arquivo, mode="w", newline="", encoding="utf-8-sig") as arquivo_csv:
-            escritor = csv.writer(arquivo_csv, delimiter=";")
-            escritor.writerows(dados_exportacao)
+        buffer = io.StringIO(newline="")
+        escritor = csv.writer(buffer, delimiter=";")
+        escritor.writerows(dados_exportacao)
+        conteudo_csv = buffer.getvalue().encode("utf-8-sig")
+
+        seletor_arquivos = getattr(page, "file_picker_evidencias", None)
+        if seletor_arquivos is None:
+            # Fallback para sessões que não registraram o FilePicker global.
+            caminho = Path.cwd() / nome_arquivo
+            caminho.write_bytes(conteudo_csv)
+            caminho_salvo = str(caminho)
+        else:
+            caminho_salvo = await seletor_arquivos.save_file(
+                dialog_title="Salvar exportação CSV",
+                file_name=nome_arquivo,
+                file_type=ft.FilePickerFileType.CUSTOM,
+                allowed_extensions=["csv"],
+                src_bytes=conteudo_csv,
+            )
+
+        if not caminho_salvo:
+            return
 
         mostrar_feedback(
             page, 
-            f"Arquivo CSV exportado com sucesso: {nome_arquivo}", 
+            f"Arquivo CSV exportado com sucesso: {caminho_salvo}", 
             sucesso=True
         )
 

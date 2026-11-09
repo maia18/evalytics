@@ -36,10 +36,10 @@ def _criar_view_relatorios(
     borda_container = criar_borda_uniforme(layout.cores[BORDA])
     resultados_originais: list[dict] = []
 
-    def exportar_csv_selecionado(
+    async def exportar_csv_selecionado(
         resultados: list[dict], _semestre: str, _eixo: int | None
     ) -> None:
-        exportar_csv(page, resultados=list(resultados))
+        await exportar_csv(page, resultados=list(resultados))
 
     def exportar_csv_atual(e=None) -> None:
         abrir_modal_filtros_exportacao(

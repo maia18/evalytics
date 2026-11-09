@@ -40,18 +40,90 @@ def criar_card_tabela_dados(layout, page: ft.Page, expand: bool = True, height: 
         ]
         del page._busca_avaliacoes_termo
     
-    # Constrói o widget nativo de tabela de dados do Flet
+    chaves_ordenacao = {1: "data", 5: "nota"}
+    # A tabela sempre abre pelas respostas mais recentes.
+    dados_tabela.sort(
+        key=lambda item: _chave_ordenacao(item.get("data"), "data"),
+        reverse=True,
+    )
+    estado_ordenacao = {"indice": 1, "crescente": False}
+    icones_ordenacao = {}
+
+    def ordenar_coluna(indice: int) -> None:
+        if indice not in chaves_ordenacao:
+            return
+
+        if estado_ordenacao["indice"] == indice:
+            estado_ordenacao["crescente"] = not estado_ordenacao["crescente"]
+        else:
+            estado_ordenacao["indice"] = indice
+            estado_ordenacao["crescente"] = True
+
+        chave = chaves_ordenacao[indice]
+        dados_ordenados = sorted(
+            dados_tabela,
+            key=lambda item: _chave_ordenacao(item.get(chave), chave),
+            reverse=not estado_ordenacao["crescente"],
+        )
+        for coluna, icone in icones_ordenacao.items():
+            if coluna == indice:
+                icone.icon = (
+                    ft.Icons.ARROW_UPWARD
+                    if estado_ordenacao["crescente"]
+                    else ft.Icons.ARROW_DOWNWARD
+                )
+                icone.tooltip = (
+                    "Ordem crescente" if estado_ordenacao["crescente"]
+                    else "Ordem decrescente"
+                )
+            else:
+                icone.icon = ft.Icons.SWAP_VERT
+                icone.tooltip = "Ordenar esta coluna"
+        tabela_dados.rows = [criar_linha(item) for item in dados_ordenados]
+        page.update()
+
+    colunas = ("ID", "Data", "Curso", "Eixo", "Indicador", "Nota", "Comentário")
+
+    def criar_cabecalho(indice: int, nome: str):
+        if indice not in chaves_ordenacao:
+            return ft.Text(nome)
+
+        icone = ft.Icon(
+            icon=(
+                ft.Icons.ARROW_DOWNWARD
+                if indice == estado_ordenacao["indice"]
+                else ft.Icons.SWAP_VERT
+            ),
+            size=17,
+        )
+        icones_ordenacao[indice] = icone
+        largura = 220 if indice == 1 else 120
+        return ft.Container(
+            width=largura,
+            height=48,
+            on_click=lambda e, coluna=indice: ordenar_coluna(coluna),
+            ink=True,
+            content=ft.Row(
+                width=largura,
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                controls=[ft.Text(nome), icone],
+            ),
+        )
+
+    # A seta faz parte do rótulo e fica ancorada à borda direita da coluna.
     tabela_dados = ft.DataTable(
         expand=True,
+        # Linhas com eixo/indicador extensos precisam crescer para exibir
+        # o texto inteiro em múltiplas linhas, sem recortá-lo na altura padrão.
+        data_row_min_height=56,
+        data_row_max_height=160,
+        column_spacing=20,
         # Definição estrutural do cabeçalho das colunas
         columns=[
-            ft.DataColumn(ft.Text("ID")),
-            ft.DataColumn(ft.Text("Data")),
-            ft.DataColumn(ft.Text("Curso")),
-            ft.DataColumn(ft.Text("Eixo")),
-            ft.DataColumn(ft.Text("Indicador")),
-            ft.DataColumn(ft.Text("Nota")),
-            ft.DataColumn(ft.Text("Comentário")),
+            ft.DataColumn(
+                criar_cabecalho(indice, nome),
+            )
+            for indice, nome in enumerate(colunas)
         ],
         rows=[criar_linha(item) for item in dados_tabela], # Mapeia a lista de dicionários vindas do Firestore diretamente para a função visual que constrói cada linha (Row)
     )
@@ -62,7 +134,8 @@ def criar_card_tabela_dados(layout, page: ft.Page, expand: bool = True, height: 
         controls=[
             # Primeira linha interna: Título alinhado à esquerda, Botão à direita (SPACE_BETWEEN)
             ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.START,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
                     ft.Text(
                         "Respostas Recentes (Raw Data)",
@@ -82,9 +155,8 @@ def criar_card_tabela_dados(layout, page: ft.Page, expand: bool = True, height: 
 
 def _termos_data(data: str, normalizar) -> str:
     """Acrescenta semestre e mês por extenso para a busca global."""
-    try:
-        data_obj = datetime.strptime(str(data), "%d/%m/%Y")
-    except (TypeError, ValueError):
+    data_obj = _parse_data_tabela(data)
+    if data_obj is None:
         return ""
     meses = (
         "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -95,3 +167,37 @@ def _termos_data(data: str, normalizar) -> str:
         f"{data_obj.year}.{semestre} {data_obj.month:02d}/{data_obj.year} "
         f"{meses[data_obj.month - 1]} {data_obj.year}"
     )
+
+
+def _chave_ordenacao(valor, campo: str):
+    """Gera chaves consistentes para ordenar texto, datas e notas."""
+    if campo == "data":
+        return _parse_data_tabela(valor) or datetime.min
+
+    if campo == "nota":
+        try:
+            return (0, float(valor))
+        except (TypeError, ValueError):
+            return (1, str(valor or "").casefold())
+
+    texto = unicodedata.normalize("NFD", str(valor or "").casefold())
+    return "".join(caractere for caractere in texto if unicodedata.category(caractere) != "Mn")
+
+
+def _parse_data_tabela(valor) -> Optional[datetime]:
+    """Lê datas exibidas em formato brasileiro ou armazenadas em ISO 8601."""
+    if isinstance(valor, datetime):
+        return valor
+
+    texto = str(valor or "").strip()
+    try:
+        return datetime.fromisoformat(texto.replace("Z", "+00:00")).replace(tzinfo=None)
+    except ValueError:
+        pass
+
+    for formato in ("%d/%m/%Y, %H:%M", "%d/%m/%Y %H:%M", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(texto, formato)
+        except ValueError:
+            continue
+    return None

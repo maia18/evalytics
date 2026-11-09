@@ -401,13 +401,13 @@ def ViewDashboardResultados(
             page,
             aplicar_filtros,
             resultados=resultados,
+            compacto=True,
         )
         painel_resultados.limpar_filtros = filtros.limpar_filtros
-        area_resultados.content = ft.Column(
-            expand=True,
-            spacing=8,
-            controls=[filtros, ft.Container(expand=True, content=painel_resultados)],
-        )
+        # Os filtros ficam junto ao resumo que controlam, dentro do painel de
+        # resultados, sem uma faixa isolada ocupando toda a largura da tela.
+        painel_resultados.content.controls.insert(1, filtros)
+        area_resultados.content = painel_resultados
         page.update()
 
     page.run_task(carregar_resultados_e_filtros)

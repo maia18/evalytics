@@ -5,6 +5,7 @@ from components.core.constants.constants import COR_PRIMARIA, TEXTO_SECUNDARIO
 from components.widgets.card.card_base import criar_card_base
 from database.services.avaliacoes.firestore_avaliacoes import obter_respostas_tabela
 from models.avaliacoes.core.csv.export_csv import exportar_csv
+from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
 
 def criar_card_controle_ciclo(
     layout,
@@ -38,6 +39,11 @@ def criar_card_controle_ciclo(
         return f"{agora.year}.{semestre}"
 
     semestre_atual = obter_semestre_atual()
+
+    async def exportar_avaliacoes(e):
+        # A exportação precisa dos documentos completos das avaliações, não das
+        # linhas resumidas (uma por indicador) exibidas na tabela deste painel.
+        await exportar_csv(page, listar_avaliacoes())
 
     conteudo = ft.Column(
         spacing=14,
@@ -75,10 +81,7 @@ def criar_card_controle_ciclo(
                         icon=ft.Icons.DOWNLOAD,
                         bgcolor=ft.Colors.BLUE_700,
                         color=ft.Colors.WHITE,
-                        on_click=lambda e: exportar_csv(
-                            page,
-                            dados_tabela,
-                        ),
+                        on_click=exportar_avaliacoes,
                     ),
                 ],
             ),

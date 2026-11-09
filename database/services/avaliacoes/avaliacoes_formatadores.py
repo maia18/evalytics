@@ -1,4 +1,5 @@
 import flet as ft
+from datetime import datetime
 
 NOMES_EIXOS = {
     1: "Organização Didático-Pedagógica",
@@ -23,4 +24,12 @@ def formatar_data(data) -> str:
     try:
         return data.strftime("%d/%m/%Y, %H:%M")
     except AttributeError:
-        return str(data)
+        texto = str(data).strip()
+
+    # Dados antigos/importados podem estar armazenados como ISO 8601, por
+    # exemplo: 2026-10-06T15:30:36.898210.
+    try:
+        data_obj = datetime.fromisoformat(texto.replace("Z", "+00:00"))
+        return data_obj.strftime("%d/%m/%Y, %H:%M")
+    except (AttributeError, TypeError, ValueError):
+        return texto

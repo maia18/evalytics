@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from database.services.firebase_config import db
 from database.services.institutions.institutions_service import listar_documentos_da_instituicao
@@ -43,7 +44,33 @@ def formatar_data(data) -> str:
         return ""
     if hasattr(data, "strftime"):
         return data.strftime("%d/%m/%Y %H:%M")
-    return str(data)
+    texto = str(data).strip()
+    try:
+        return datetime.fromisoformat(texto.replace("Z", "+00:00")).strftime(
+            "%d/%m/%Y %H:%M"
+        )
+    except ValueError:
+        return texto
+
+
+def _chave_ordenacao_avaliacao(avaliacao: dict) -> tuple:
+    """Ordena exportações pela data mais recente e desempata por curso e ID."""
+    data = avaliacao.get("data_avaliacao") or avaliacao.get("data")
+    try:
+        if hasattr(data, "timestamp"):
+            instante = float(data.timestamp())
+        else:
+            texto = str(data or "").strip()
+            try:
+                data_obj = datetime.fromisoformat(texto.replace("Z", "+00:00"))
+            except ValueError:
+                data_obj = datetime.strptime(texto, "%d/%m/%Y %H:%M")
+            instante = data_obj.timestamp()
+    except (OSError, OverflowError, TypeError, ValueError):
+        instante = 0.0
+
+    # Datas válidas primeiro, da mais recente para a mais antiga.
+    return (-instante, str(avaliacao.get("curso_nome") or avaliacao.get("curso") or "").casefold(), str(avaliacao.get("id") or ""))
 
 
 def obter_mapa_indicadores() -> dict[str, dict]:
@@ -180,9 +207,10 @@ def preparar_dados_csv(resultados: list[dict]) -> list[list[str]]:
     if not resultados:
         return dados
 
+    resultados_ordenados = sorted(resultados, key=_chave_ordenacao_avaliacao)
     ids_avaliacoes = [
         str(resultado.get("id"))
-        for resultado in resultados
+        for resultado in resultados_ordenados
         if resultado.get("id")
     ]
     if not ids_avaliacoes:

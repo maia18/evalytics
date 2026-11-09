@@ -1,4 +1,5 @@
 from collections.abc import Callable
+import inspect
 
 import flet as ft
 
@@ -23,7 +24,10 @@ def abrir_modal_filtros_exportacao(
 ) -> None:
     """Abre a seleção comum de curso, semestre e eixo para as exportações."""
     if not resultados:
-        ao_exportar([], "Todos", None)
+        if inspect.iscoroutinefunction(ao_exportar):
+            page.run_task(ao_exportar, [], "Todos", None)
+        else:
+            ao_exportar([], "Todos", None)
         return
 
     cursos_disponiveis = sorted(
@@ -84,7 +88,7 @@ def abrir_modal_filtros_exportacao(
         modal.open = False
         page.update()
 
-    def confirmar_exportacao(e=None) -> None:
+    async def confirmar_exportacao(e=None) -> None:
         semestre = (
             dropdown_semestre.value
             if dropdown_semestre.value != "TODOS"
@@ -108,7 +112,9 @@ def abrir_modal_filtros_exportacao(
             curso_nome=curso,
         )
         fechar_modal()
-        ao_exportar(resultados_filtrados, semestre or "Todos", eixo)
+        resultado = ao_exportar(resultados_filtrados, semestre or "Todos", eixo)
+        if inspect.isawaitable(resultado):
+            await resultado
 
     modal = ft.AlertDialog(
         modal=True,

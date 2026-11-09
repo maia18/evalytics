@@ -17,6 +17,7 @@ def criar_secao_filtros(
     ao_exportar_pdf=None,
     resultados: list[dict] | None = None,
     embutido: bool = False,
+    compacto: bool = False,
 ) -> ft.Container:
     """
     Cria filtros a partir do mesmo conjunto de resultados exibido na tabela.
@@ -58,8 +59,10 @@ def criar_secao_filtros(
         label="Semestre",
         options=opcoes_semestre,
         value="TODOS",
-        width=240,
+        width=260 if compacto else 240,
+        height=60 if compacto else None,
         dense=True,
+        label_style=ft.TextStyle(size=11) if compacto else None,
     )
 
     cursos = sorted(
@@ -80,8 +83,10 @@ def criar_secao_filtros(
             ],
         ],
         value="TODOS",
-        width=280,
+        width=260 if compacto else 280,
+        height=60 if compacto else None,
         dense=True,
+        label_style=ft.TextStyle(size=11) if compacto else None,
     )
 
     # ======================================================
@@ -107,8 +112,10 @@ def criar_secao_filtros(
         label="Eixo Avaliativo",
         options=opcoes_eixo,
         value="TODOS",
-        width=280,
+        width=260 if compacto else 280,
+        height=60 if compacto else None,
         dense=True,
+        label_style=ft.TextStyle(size=11) if compacto else None,
     )
 
     # ======================================================
@@ -169,17 +176,21 @@ def criar_secao_filtros(
     # ======================================================
 
     botao_filtrar = ft.ElevatedButton(
-        "Aplicar filtros",
+        "Aplicar" if compacto else "Aplicar filtros",
         icon=ft.Icons.FILTER_ALT,
         bgcolor=ft.Colors.BLUE_700,
         color=ft.Colors.WHITE,
         on_click=aplicar_filtros,
+        width=120 if compacto else None,
+        height=38 if compacto else None,
     )
 
     botao_limpar = ft.OutlinedButton(
         "Limpar",
         icon=ft.Icons.CLEAR,
         on_click=limpar_filtros,
+        width=120 if compacto else None,
+        height=38 if compacto else None,
     )
 
     resumo_filtros = ft.Text(
@@ -188,6 +199,7 @@ def criar_secao_filtros(
         size=12,
         color=layout.cores[TEXTO_SECUNDARIO],
     )
+    estado_filtros_abertos = {"value": compacto}
 
     def atualizar_resumo_filtros():
         filtros_ativos = []
@@ -211,36 +223,56 @@ def criar_secao_filtros(
                 filtros_ativos.append(rotulo)
 
         resumo_filtros.value = " · ".join(filtros_ativos)
-        resumo_filtros.visible = bool(filtros_ativos) and not linha_controles.visible
+        resumo_filtros.visible = bool(filtros_ativos) and not estado_filtros_abertos["value"]
 
     # ======================================================
     # LAYOUT
     # ======================================================
 
-    linha_controles = ft.Row(
+    campos_e_acoes = [
+        dropdown_semestre,
+        dropdown_curso,
+        dropdown_eixo,
+        botao_filtrar,
+        botao_limpar,
+    ]
+    linha_controles = None if compacto else ft.Row(
         visible=False,
         wrap=True,
         spacing=18,
         run_spacing=18,
-        controls=[
-            dropdown_semestre,
-            dropdown_curso,
-            dropdown_eixo,
-            botao_filtrar,
-            botao_limpar,
-        ],
+        controls=campos_e_acoes,
     )
+    rotulo_filtros = ft.Text(
+        "Filtros",
+        weight="w500",
+        visible=True,
+    )
+
     def alternar_filtros(e=None):
-        linha_controles.visible = not linha_controles.visible
+        estado_filtros_abertos["value"] = not estado_filtros_abertos["value"]
+        aberto = estado_filtros_abertos["value"]
+        rotulo_filtros.visible = not aberto
+        if compacto:
+            for controle in campos_e_acoes:
+                controle.visible = aberto
+        else:
+            linha_controles.visible = aberto
         atualizar_resumo_filtros()
         page.update()
 
-    secao_filtros = ft.Container(
-        bgcolor=None if embutido else layout.cores[CARD],
-        padding=0 if embutido else ft.Padding.symmetric(horizontal=16, vertical=8),
-        border_radius=0 if embutido else 8,
-        border=None if embutido else borda_container,
-        content=ft.Column(
+    if compacto:
+        for controle in campos_e_acoes:
+            controle.visible = True
+        controles_filtros = ft.Row(
+            spacing=8,
+            run_spacing=8,
+            wrap=True,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=campos_e_acoes,
+        )
+    else:
+        controles_filtros = ft.Column(
             spacing=15,
             controls=[
                 ft.Container(
@@ -256,7 +288,21 @@ def criar_secao_filtros(
                 linha_controles,
                 resumo_filtros,
             ],
+        )
+
+    secao_filtros = ft.Container(
+        width=float("inf") if compacto else None,
+        bgcolor=None if embutido or compacto else layout.cores[CARD],
+        padding=(
+            ft.Padding.symmetric(horizontal=0, vertical=8)
+            if compacto and not embutido
+            else 0
+            if embutido
+            else ft.Padding.symmetric(horizontal=16, vertical=8)
         ),
+        border_radius=0 if embutido else 8,
+        border=None if embutido else borda_container,
+        content=controles_filtros,
     )
     secao_filtros.limpar_filtros = lambda: limpar_filtros()
 
