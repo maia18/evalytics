@@ -36,18 +36,20 @@ async def exportar_csv(page: ft.Page, resultados: Optional[list[dict]] = None) -
 
         seletor_arquivos = getattr(page, "file_picker_evidencias", None)
         if seletor_arquivos is None:
-            # Fallback para sessões que não registraram o FilePicker global.
-            caminho = Path.cwd() / nome_arquivo
-            caminho.write_bytes(conteudo_csv)
-            caminho_salvo = str(caminho)
-        else:
-            caminho_salvo = await seletor_arquivos.save_file(
-                dialog_title="Salvar exportação CSV",
-                file_name=nome_arquivo,
-                file_type=ft.FilePickerFileType.CUSTOM,
-                allowed_extensions=["csv"],
-                src_bytes=conteudo_csv,
+            mostrar_feedback(
+                page,
+                "O seletor para salvar arquivos não está disponível.",
+                sucesso=False,
             )
+            return
+
+        caminho_salvo = await seletor_arquivos.save_file(
+            dialog_title="Salvar exportação CSV",
+            file_name=nome_arquivo,
+            file_type=ft.FilePickerFileType.CUSTOM,
+            allowed_extensions=["csv"],
+            src_bytes=conteudo_csv,
+        )
 
         if not caminho_salvo:
             return

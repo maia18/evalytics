@@ -48,10 +48,10 @@ def _criar_view_relatorios(
             ft.Colors.GREEN_700,
         )
 
-    def exportar_pdf_selecionado(
+    async def exportar_pdf_selecionado(
         resultados: list[dict], semestre: str, eixo: int | None
     ) -> None:
-        processar_exportacao_pdf(page, resultados, semestre, eixo)
+        await processar_exportacao_pdf(page, resultados, semestre, eixo)
 
     def exportar_pdf_atual(e=None) -> None:
         abrir_modal_filtros_exportacao(

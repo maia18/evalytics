@@ -1,5 +1,6 @@
-import os
 import logging
+import tempfile
+from pathlib import Path
 import flet as ft
 from typing import Optional
 from datetime import datetime
@@ -17,7 +18,6 @@ from utils.services.cursos.curso_utils import (
 from .pdf_builder import construir_documento_pdf
 
 logger = logging.getLogger(__name__)
-CAMINHO_IMAGEM_TEMP = "radar_temp.png"
 COLECAO_AVALIACOES = "avaliacoes"
 
 
@@ -91,7 +91,7 @@ def carregar_avaliacoes_detalhadas(
 
     return avaliacoes
 
-def gerar_pdf_completo(
+async def gerar_pdf_completo(
     page: ft.Page,
     medias: dict[int, float | None],
     nomes_eixos: dict[int, str],
@@ -136,39 +136,59 @@ def gerar_pdf_completo(
         # ==================================================
         # GERAÇÃO DO ARQUIVO PDF E GRÁFICO AUXILIAR
         # ==================================================
-        salvar_grafico_radar(medias_validas, nomes_eixos, CAMINHO_IMAGEM_TEMP)
-
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         nome_arquivo = f"relatorio_evalytics_{timestamp}.pdf"
         avaliacoes_detalhadas = carregar_avaliacoes_detalhadas(
             resultados or [], eixo_selecionado=eixo_selecionado
         )
 
-        # Delega a tarefa de desenho do documento ao pdf_builder
-        construir_documento_pdf(
-            caminho_arquivo=nome_arquivo,
-            medias_validas=medias_validas,
-            nomes_eixos=nomes_eixos,
-            semestre=semestre,
-            quantidade_avaliacoes=quantidade_avaliacoes,
-            texto_cursos=texto_cursos,
-            caminho_imagem_radar=CAMINHO_IMAGEM_TEMP,
-            avaliacoes_detalhadas=avaliacoes_detalhadas,
+        with tempfile.TemporaryDirectory(prefix="evalytics_pdf_") as diretorio_temp:
+            caminho_imagem_temp = Path(diretorio_temp) / "radar_temp.png"
+            caminho_pdf_temp = Path(diretorio_temp) / nome_arquivo
+            salvar_grafico_radar(
+                medias_validas,
+                nomes_eixos,
+                str(caminho_imagem_temp),
+            )
+            construir_documento_pdf(
+                caminho_arquivo=str(caminho_pdf_temp),
+                medias_validas=medias_validas,
+                nomes_eixos=nomes_eixos,
+                semestre=semestre,
+                quantidade_avaliacoes=quantidade_avaliacoes,
+                texto_cursos=texto_cursos,
+                caminho_imagem_radar=str(caminho_imagem_temp),
+                avaliacoes_detalhadas=avaliacoes_detalhadas,
+            )
+            conteudo_pdf = caminho_pdf_temp.read_bytes()
+
+        seletor_arquivos = getattr(page, "file_picker_evidencias", None)
+        if seletor_arquivos is None:
+            mostrar_feedback(
+                page,
+                "O seletor para salvar arquivos não está disponível.",
+                sucesso=False,
+            )
+            return None
+
+        caminho_salvo = await seletor_arquivos.save_file(
+            dialog_title="Salvar relatório PDF",
+            file_name=nome_arquivo,
+            file_type=ft.FilePickerFileType.CUSTOM,
+            allowed_extensions=["pdf"],
+            src_bytes=conteudo_pdf,
         )
 
-        # ==================================================
-        # LIMPEZA E FEEDBACK
-        # ==================================================
-        if os.path.exists(CAMINHO_IMAGEM_TEMP):
-            os.remove(CAMINHO_IMAGEM_TEMP)
+        if not caminho_salvo:
+            return None
 
-        mostrar_feedback(page, f"PDF gerado com sucesso: {nome_arquivo}", sucesso=True)
-        return nome_arquivo
+        # ==================================================
+        # FEEDBACK
+        # ==================================================
+        mostrar_feedback(page, f"PDF salvo com sucesso: {caminho_salvo}", sucesso=True)
+        return caminho_salvo
 
     except Exception:
-        if os.path.exists(CAMINHO_IMAGEM_TEMP):
-            os.remove(CAMINHO_IMAGEM_TEMP)
-
         logger.exception("Erro ao gerar o documento PDF.")
         mostrar_feedback(page, "Erro ao gerar o documento PDF.", sucesso=False)
         return None

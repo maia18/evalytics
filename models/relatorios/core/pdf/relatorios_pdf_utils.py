@@ -39,7 +39,7 @@ def calcular_medias_pdf(resultados_filtrados: list[dict]) -> dict[int, float | N
 
     return medias
 
-def processar_exportacao_pdf(
+async def processar_exportacao_pdf(
     page: ft.Page, 
     resultados_filtrados: list[dict], 
     semestre_atual: str | None,
@@ -71,7 +71,7 @@ def processar_exportacao_pdf(
         }
     )
 
-    gerar_pdf_completo(
+    await gerar_pdf_completo(
         page,
         medias=medias_validas,
         nomes_eixos=NOMES_EIXOS,
