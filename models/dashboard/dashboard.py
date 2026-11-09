@@ -5,7 +5,6 @@ from typing import Callable
 from components.core.constants.constants import (
     BORDA,
     COR_PRIMARIA,
-    TEXTO_SECUNDARIO,
 )
 from components.core.router.rotas_cts import (
     ROTA_DASHBOARD_VISAO_GERAL,
@@ -220,11 +219,6 @@ def _criar_layout(
             "departamentos_disponiveis": [],
         }
         seletores = {}
-        texto_contexto = ft.Text(
-            "Todos os cursos · Todos os semestres · Todos os departamentos",
-            size=12,
-            color=layout.cores[TEXTO_SECUNDARIO],
-        )
         linha_kpis = ft.ResponsiveRow(
             spacing=12,
             run_spacing=12,
@@ -262,7 +256,7 @@ def _criar_layout(
             controls=[area_eixos, area_cursos, area_departamentos, area_evolucao],
         )
 
-        def atualizar_componentes(dados: dict, selecao: tuple[str, str, str]) -> None:
+        def atualizar_componentes(dados: dict) -> None:
             linha_kpis.controls = _criar_kpis(layout, dados)
             area_eixos.content = criar_grafico_eixos(
                 layout,
@@ -282,11 +276,6 @@ def _criar_layout(
             )
             area_departamentos.content = criar_tabela_departamentos_dashboard(
                 layout, dados["dados_por_departamento"]
-            )
-            texto_contexto.value = (
-                f"{selecao[0] if selecao[0] not in (None, '', 'TODOS') else 'Todos'}"
-                f" · {selecao[1] if selecao[1] not in (None, '', 'TODOS') else 'Todos'}"
-                f" · {selecao[2] if selecao[2] not in (None, '', 'TODOS') else 'Todos'}"
             )
 
         async def carregar_dashboard(
@@ -309,10 +298,7 @@ def _criar_layout(
                 seletor.options = [ft.dropdown.Option(key="TODOS", text="Todos")] + [
                     ft.dropdown.Option(key=valor, text=valor) for valor in valores
                 ]
-            atualizar_componentes(
-                dados,
-                (curso_selecionado, semestre_selecionado, departamento_selecionado),
-            )
+            atualizar_componentes(dados)
             page.update()
 
         def aplicar_filtros(e=None) -> None:
@@ -346,7 +332,6 @@ def _criar_layout(
             scroll=ft.ScrollMode.AUTO,
             controls=[
                 filtros,
-                texto_contexto,
                 linha_kpis,
                 paineis_analiticos,
             ],

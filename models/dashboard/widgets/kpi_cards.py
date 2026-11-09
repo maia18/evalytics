@@ -19,14 +19,15 @@ def criar_kpi_card(
 
     return ft.Container(
         col=col,
+        height=96,
         bgcolor=layout.cores[CARD],
-        padding=8,
+        padding=12,
         border_radius=8,
         border=criar_borda_uniforme(
             layout.cores[BORDA]
         ),
         content=ft.Column(
-            spacing=6,
+            spacing=8,
             controls=[
                 ft.Row(
                     alignment=(
