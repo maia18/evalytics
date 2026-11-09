@@ -44,8 +44,12 @@ def carregar_cursos_iniciais(
         if chave:
             contagem_por_nome[chave] = contagem_por_nome.get(chave, 0) + 1
 
+    cursos_ordenados = sorted(
+        cursos,
+        key=lambda curso: not curso_esta_ativo(curso),
+    )
     linhas = []
-    for curso in cursos:
+    for curso in cursos_ordenados:
         nome = curso.get("nome", "")
         quantidade_avaliacoes = contagem_por_nome.get(
             chave_curso(normalizar_nome_curso(nome, nomes_cadastrados)), 0
