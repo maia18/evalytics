@@ -3,12 +3,15 @@ from typing import Callable
 from components.core.constants.constants import (
     CARD,
     BORDA,
-    COR_PRIMARIA,
     SUCESSO,
     AVISO,
 )
+from utils.services.indicadores.indicadores_repository import (
+    atualizar_status_indicador,
+)
 
 def criar_linha_indicador(
+    page: ft.Page,
     item: dict,
     abrir_modal_criterios: Callable[..., None],
     abrir_modal_edicao: Callable[..., None],
@@ -24,11 +27,51 @@ def criar_linha_indicador(
     Lógica de formatação condicional: 
         Determina a cor da "etiqueta" com base no status salvo no banco.
     '''
-    cor_status = (
-        cores[SUCESSO]
-        if item.get("status") == "ATIVO"
-        else cores[AVISO]
+    status_texto = ft.Text(
+        item.get("status", "ATIVO"),
+        size=12,
+        color=ft.Colors.WHITE,
+        weight=ft.FontWeight.BOLD,
     )
+    badge_status = ft.Container(
+        padding=5,
+        border_radius=4,
+        ink=True,
+        content=status_texto,
+    )
+    cor_destaque_indicador = (
+        "#B69CFF" if cores[CARD] == "#2A2A2A" else "#5B21B6"
+    )
+
+    def atualizar_visual_status(status: str) -> None:
+        status_texto.value = status
+        badge_status.bgcolor = cores[SUCESSO] if status == "ATIVO" else cores[AVISO]
+
+    def alternar_status(e: ft.ControlEvent) -> None:
+        status_atual = str(item.get("status", "ATIVO")).upper()
+        novo_status = "INATIVO" if status_atual == "ATIVO" else "ATIVO"
+        indicador_id = item.get("id")
+
+        if not atualizar_status_indicador(indicador_id, novo_status):
+            page.snack_bar = ft.SnackBar(
+                ft.Text("Não foi possível atualizar o status do indicador."),
+                bgcolor=cores[AVISO],
+            )
+            page.snack_bar.open = True
+            page.update()
+            return
+
+        item["status"] = novo_status
+        atualizar_visual_status(novo_status)
+        page.snack_bar = ft.SnackBar(
+            ft.Text(f"Indicador marcado como {novo_status.lower()}."),
+            bgcolor=cores[SUCESSO],
+        )
+        page.snack_bar.open = True
+        page.update()
+
+    atualizar_visual_status(str(item.get("status", "ATIVO")).upper())
+    badge_status.on_click = alternar_status
 
     return ft.Container(
         padding=15,
@@ -56,7 +99,7 @@ def criar_linha_indicador(
                         item["titulo"],
                         size=15,
                         weight=ft.FontWeight.W_500,
-                        color=cores[COR_PRIMARIA],
+                        color=cor_destaque_indicador,
                     ),
                     
                     # Ao clicar no título, abre o modal de critérios. 
@@ -64,24 +107,14 @@ def criar_linha_indicador(
                 ),
 
                 # 2. ETIQUETA DE STATUS (Badge)
-                ft.Container(
-                    bgcolor=cor_status,
-                    padding=5,
-                    border_radius=4,
-                    content=ft.Text(
-                        item.get("status", "ATIVO"), # Fallback seguro caso 'status' não exista no dict
-                        size=12,
-                        color=ft.Colors.WHITE,
-                        weight=ft.FontWeight.BOLD,
-                    ),
-                ),
+                badge_status,
 
                 # 3. BLOCO DE AÇÕES (Ícones de Edição e Exclusão)
                 ft.Row(
                     controls=[
                         ft.IconButton(
                             icon=ft.Icons.EDIT,
-                            icon_color=cores[COR_PRIMARIA],
+                            icon_color=cor_destaque_indicador,
                             tooltip="Editar",
                             on_click=lambda e, i=item: abrir_modal_edicao(e, i),
                         ),

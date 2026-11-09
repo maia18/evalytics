@@ -90,7 +90,13 @@ def criar_modal_criterios(
             height=450,
             scroll=ft.ScrollMode.AUTO,
             spacing=15,
-            controls=campos_criterios,
+            controls=[
+                ft.Container(
+                    padding=ft.Padding.only(top=8),
+                    content=campos_criterios[0],
+                ),
+                *campos_criterios[1:],
+            ],
         ),
         actions=[
             ft.TextButton(

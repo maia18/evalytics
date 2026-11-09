@@ -8,7 +8,6 @@ from components.core.router.rotas_cts import (
     ROTA_DASHBOARD_RESULTADOS,
 )
 from components.widgets.menu.menu_button_base import criar_botao_menu_base
-from components.widgets.menu.menu_item import criar_item_menu
 from components.core.constants.constants import COR_PRIMARIA
 
 
@@ -22,60 +21,88 @@ def criar_menu_dashboard(
     rota_atual = getattr(page, "route", "") or ""
     expandido = rota_atual.startswith(ROTA_DASHBOARD)
     cor_icone = ft.Colors.GREY_700 if not dark_mode else ft.Colors.GREY_300
+    estado_hover = {"ativo": False}
+    destacado_inicial = expandido
+    icone_dashboard = ft.Icon(
+        ft.Icons.GRID_VIEW_OUTLINED,
+        size=18,
+        color=("#B69CFF" if dark_mode else COR_PRIMARIA)
+        if destacado_inicial
+        else cor_icone,
+    )
+    texto_dashboard = ft.Text(
+        "Dashboard",
+        size=13,
+        weight="w600" if destacado_inicial else "w500",
+        color=("#B69CFF" if dark_mode else COR_PRIMARIA)
+        if destacado_inicial
+        else cor_texto,
+    )
+
+    def atualizar_destaque_dashboard() -> None:
+        destacado = (
+            estado_hover["ativo"]
+            or subtelas.visible
+            or rota_atual.startswith(ROTA_DASHBOARD)
+        )
+        # Mantém o contorno no item principal; os subtópicos usam marcador próprio.
+        botao_dashboard.bgcolor = (
+            ("#302747" if dark_mode else "#EEE9FB") if destacado else None
+        )
+        botao_dashboard.border = ft.Border(
+            left=ft.BorderSide(3, COR_PRIMARIA if destacado else "#00000000")
+        )
+        icone_dashboard.color = (
+            ("#B69CFF" if dark_mode else COR_PRIMARIA) if destacado else cor_icone
+        )
+        texto_dashboard.color = (
+            ("#B69CFF" if dark_mode else COR_PRIMARIA) if destacado else cor_texto
+        )
+        texto_dashboard.weight = "w600" if destacado else "w500"
 
     def alternar_subtelas(e=None) -> None:
         subtelas.visible = not subtelas.visible
-        seta.icon = (
-            ft.Icons.KEYBOARD_ARROW_DOWN
-            if subtelas.visible
-            else ft.Icons.KEYBOARD_ARROW_RIGHT
-        )
-        seta.tooltip = (
-            "Recolher subtelas do dashboard"
-            if subtelas.visible
-            else "Mostrar subtelas do dashboard"
-        )
+        atualizar_destaque_dashboard()
         page.update()
 
-    botao_dashboard = criar_item_menu(
-        ft.Icons.GRID_VIEW_OUTLINED,
-        "Dashboard",
-        ROTA_DASHBOARD,
-        dark_mode,
-        cor_texto,
-        mudar_tela,
-        ativo=rota_atual == ROTA_DASHBOARD,
-    )
-    botao_dashboard.expand = True
+    def ao_passar_mouse(e: ft.ControlEvent) -> None:
+        estado_hover["ativo"] = e.data == "true"
+        atualizar_destaque_dashboard()
+        page.update()
 
-    seta = ft.IconButton(
-        icon=(
-            ft.Icons.KEYBOARD_ARROW_DOWN
-            if expandido
-            else ft.Icons.KEYBOARD_ARROW_RIGHT
+    botao_dashboard = criar_botao_menu_base(
+        content=ft.Row(
+            spacing=10,
+            controls=[icone_dashboard, texto_dashboard],
         ),
-        icon_size=18,
-        tooltip=(
-            "Recolher subtelas do dashboard"
-            if expandido
-            else "Mostrar subtelas do dashboard"
-        ),
+        rota=ROTA_DASHBOARD,
+        dark_mode=dark_mode,
+        mudar_tela=None,
+        expand=True,
         on_click=alternar_subtelas,
+        # O contorno pertence ao invólucro externo, sem duplicar a borda do botão.
+        ativo=False,
     )
-    linha_dashboard = ft.Row(
-        spacing=0,
-        vertical_alignment=ft.CrossAxisAlignment.CENTER,
-        controls=[botao_dashboard, ft.Container(height=45, content=seta)],
-    )
+    botao_dashboard.on_hover = ao_passar_mouse
 
     def criar_subtela(texto: str, rota: str, icone: str) -> ft.Control:
         ativo = rota_atual == rota
         botao = criar_botao_menu_base(
             content=ft.Row(
-                spacing=10,
+                spacing=8,
                 controls=[
-                    ft.Icon(icone, size=14, color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_icone),
-                    ft.Text(texto, size=11, color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_texto),
+                    ft.Container(
+                        width=3,
+                        height=16,
+                        bgcolor="#A78BFA" if ativo else "#00000000",
+                    ),
+                    ft.Icon(icone, size=14, color=cor_icone),
+                    ft.Text(
+                        texto,
+                        size=11,
+                        weight="w600" if ativo else "w500",
+                        color=cor_texto,
+                    ),
                 ],
             ),
             rota=rota,
@@ -85,14 +112,20 @@ def criar_menu_dashboard(
             expand=True,
             ativo=ativo,
         )
+        if ativo:
+            # A seleção usa um marcador vertical, sem contorno nem caixa.
+            botao.bgcolor = None
+            botao.border = ft.Border(
+                left=ft.BorderSide(3, "#00000000")
+            )
         return ft.Container(
             expand=True,
-            padding=ft.Padding.only(left=16),
+            padding=ft.Padding.only(left=16, right=2),
             content=botao,
         )
 
     subtelas = ft.Column(
-        spacing=0,
+        spacing=2,
         visible=expandido,
         controls=[
             criar_subtela(
@@ -112,4 +145,5 @@ def criar_menu_dashboard(
             ),
         ],
     )
-    return [linha_dashboard, subtelas]
+    atualizar_destaque_dashboard()
+    return [botao_dashboard, subtelas]

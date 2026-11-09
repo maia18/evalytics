@@ -70,6 +70,7 @@ def criar_layout_lista(
     for item in lista_da_pasta:
         controles_lista.append(
             criar_linha_indicador(
+                page,
                 item,
                 
                 # ATENÇÃO DEV: O uso de `i=item` aqui é obrigatório.

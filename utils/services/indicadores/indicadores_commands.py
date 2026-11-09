@@ -2,7 +2,10 @@ import logging
 from database.services.firebase_config import db
 from database.services.memory_cache import invalidar_cache
 from utils.services.indicadores.indicadores_queries import buscar_indicador
-from .indicador_notificacoes import criar_notificacao_indicador
+from .indicador_notificacoes import (
+    criar_notificacao_indicador,
+    criar_notificacao_status_indicador,
+)
 
 logger = logging.getLogger(__name__)
 COLECAO_INDICADORES = "indicadores"
@@ -125,6 +128,34 @@ def atualizar_indicador(indicador_id: str, novo_titulo: str, nova_descricao: str
 
     except Exception:
         logger.exception("Erro ao atualizar indicador no Firestore.")
+        return False
+
+
+def atualizar_status_indicador(indicador_id: str, novo_status: str) -> bool:
+    """Atualiza o status de um indicador no Firestore."""
+    try:
+        status = str(novo_status or "").strip().upper()
+        if not indicador_id or status not in {"ATIVO", "INATIVO"}:
+            logger.warning("ID ou status inválido ao atualizar indicador.")
+            return False
+
+        doc_ref = db.collection(COLECAO_INDICADORES).document(indicador_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            logger.warning("Indicador não encontrado para atualização de status: %s", indicador_id)
+            return False
+
+        dados_indicador = doc.to_dict() or {}
+        doc_ref.update({"status": status})
+        _invalidar_cache_indicadores()
+        criar_notificacao_status_indicador(
+            str(dados_indicador.get("titulo") or "Indicador"),
+            status,
+        )
+        logger.info("Status do indicador '%s' alterado para %s.", indicador_id, status)
+        return True
+    except Exception:
+        logger.exception("Erro ao atualizar status do indicador no Firestore.")
         return False
 
 

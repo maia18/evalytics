@@ -196,7 +196,7 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
         else:
             corpo_notificacoes.alignment = ft.Alignment.CENTER
             corpo_notificacoes.content = ft.Text(
-                "Você não tem notificações.",
+                "Sem notificações",
                 size=12,
                 color=ft.Colors.GREY,
                 text_align=ft.TextAlign.CENTER,
