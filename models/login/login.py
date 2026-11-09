@@ -27,8 +27,6 @@ from components.landing.palette import (
     ROSA as LOGIN_ROSA,
 )
 
-from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
-
 def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     """
     Constrói a View (página inteira) de Login e Cadastro.
@@ -107,8 +105,10 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         }
 
         try:
-            # Faz a requisição síncrona (A thread pausa aqui aguardando a API)
-            response = requests.post(url, json=payload)
+            # A chamada de rede roda fora do event loop para manter a interface responsiva.
+            response = await asyncio.to_thread(
+                requests.post, url, json=payload, timeout=20
+            )
             data = response.json()
 
             if response.status_code == 200:
@@ -122,14 +122,6 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
                 )
                 mudar_tela("/inicio") # Redireciona para a tela inicial
 
-                # Diagnóstico temporário da autenticação
-                print("Usuário autenticado:", auth_state.autenticado)
-                print("ID token disponível:", bool(auth_state.id_token))
-                print("Refresh token disponível:", bool(auth_state.refresh_token))
-                
-                resultado = listar_avaliacoes()
-                print("Avaliações retornadas pela API:", len(resultado))
-                
                 # Exibe a confirmação de login.
                 sucesso = ft.SnackBar(
                     content=ft.Text(

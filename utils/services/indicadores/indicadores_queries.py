@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 from database.services.firebase_config import db
+from database.services.memory_cache import obter_cache, salvar_cache
 
 logger = logging.getLogger(__name__)
 COLECAO_INDICADORES = "indicadores"
@@ -90,16 +91,24 @@ def listar_indicadores_por_eixo(
     
 def listar_indicadores() -> list[dict]:
     """Retorna todos os indicadores cadastrados no Firestore."""
+    encontrado, valor = obter_cache("indicadores:todos")
+    if encontrado:
+        return [dict(indicador) for indicador in valor]
     try:
         docs = db.collection(COLECAO_INDICADORES).stream()
-
-        return [
+        indicadores = [
             {
                 "id": doc.id,
                 **doc.to_dict(),
             }
             for doc in docs
         ]
+        salvar_cache(
+            "indicadores:todos",
+            tuple(dict(indicador) for indicador in indicadores),
+            30,
+        )
+        return indicadores
 
     except Exception:
         logger.exception(

@@ -14,6 +14,7 @@ async def _tarefa_monitorar_notificacoes(page: ft.Page):
             if topbar_atual is not None:
                 # Atualiza o contador de notificações
                 quantidade = await asyncio.to_thread(contar_nao_lidas)
+                page._notificacoes_nao_lidas_cache = quantidade
                 topbar_atual.atualizar_notificacoes(quantidade)
 
                 # Atualiza a lista do painel se ele estiver aberto
@@ -22,6 +23,7 @@ async def _tarefa_monitorar_notificacoes(page: ft.Page):
 
                 if painel is not None and painel.visible and atualizar_lista is not None:
                     novas_notificacoes = await asyncio.to_thread(listar_notificacoes)
+                    page._notificacoes_cache = novas_notificacoes
                     atualizar_lista(novas_notificacoes)
 
                 page.update()

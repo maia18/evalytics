@@ -7,11 +7,10 @@ from components.core.constants.constants import TEXTO_PRINCIPAL, TEXTO_SECUNDARI
 from components.core.constants.texts import TXTS_INICIO
 from components.layout.responsive.responsive import ResponsiveLayout
 from database.services.cursos.firestore_courses import (
-    obter_cursos_db,
     curso_esta_ativo,
 )
 from database.services.dashboard.dashboard_utils import normalizar_nota
-from utils.services.avaliacoes.avaliacoes_service import listar_avaliacoes
+from utils.services.avaliacoes.avaliacoes_service import carregar_cursos_e_avaliacoes
 
 from models.inicio.inicio_widgets import (
     _chave_data,
@@ -134,9 +133,8 @@ def ViewInicio(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
 
     async def carregar_dados_inicio() -> None:
         try:
-            cursos_carregados = await asyncio.to_thread(obter_cursos_db)
-            avaliacoes_carregadas = await asyncio.to_thread(
-                listar_avaliacoes, cursos_carregados
+            cursos_carregados, avaliacoes_carregadas = await asyncio.to_thread(
+                carregar_cursos_e_avaliacoes
             )
         except Exception:
             logger.exception("Falha ao carregar os dados da tela inicial.")

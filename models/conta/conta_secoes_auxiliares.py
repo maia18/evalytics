@@ -109,43 +109,4 @@ def criar_secoes_auxiliares(page, layout, cores, campo_email, status_seguranca, 
             ],
         ),
     )
-    sobre_evalytics = _card(
-        layout,
-        ft.Column(
-            spacing=10,
-            controls=[
-                ft.Row(
-                    spacing=12,
-                    controls=[
-                        ft.Container(
-                            width=42,
-                            height=42,
-                            border_radius=11,
-                            bgcolor="#302747" if layout.controller.dark_mode else "#EEE9FB",
-                            alignment=ft.Alignment.CENTER,
-                            content=ft.Icon(
-                                ft.Icons.INFO_OUTLINE,
-                                size=21,
-                                color="#B69CFF" if layout.controller.dark_mode else COR_PRIMARIA,
-                            ),
-                        ),
-                        ft.Column(
-                            spacing=3,
-                            controls=[
-                                ft.Text("Sobre", size=16, weight=ft.FontWeight.W_700, color=cores[TEXTO_PRINCIPAL]),
-                                ft.Text("solução inteligente para gestão & execução de autoavaliações institucionais", size=11, color=cores[TEXTO_SECUNDARIO]),
-                            ],
-                        ),
-                    ],
-                ),
-                ft.Divider(height=1, color=cores[BORDA]),
-                ft.Text(
-                    "O Evalytics organiza avaliações institucionais, acompanha indicadores por curso e eixo e reúne resultados para consulta e exportação em PDF ou CSV.",
-                    size=13,
-                    color=cores[TEXTO_PRINCIPAL],
-                ),
-            ],
-        ),
-    )
-
-    return {'Segurança': seguranca, 'Notificações': notificacoes, 'Sobre o Evalytics': sobre_evalytics}
+    return {'Segurança': seguranca, 'Notificações': notificacoes}

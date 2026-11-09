@@ -9,6 +9,7 @@ COLECAO_INDICADORES = "indicadores"
 
 
 def _invalidar_cache_indicadores() -> None:
+    invalidar_cache("indicadores:")
     invalidar_cache("mapa_eixos:")
     invalidar_cache("dashboard:")
     invalidar_cache("resultados:")

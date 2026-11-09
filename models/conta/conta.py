@@ -18,6 +18,7 @@ from models.conta.conta_perfil import criar_secao_perfil
 from models.conta.conta_secoes_auxiliares import criar_secoes_auxiliares
 from models.conta.conta_atividade import criar_secao_atividade
 from models.conta.conta_preferencias import criar_secao_preferencias
+from models.conta.conta_sobre import criar_secao_sobre
 
 
 def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
@@ -62,7 +63,7 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     )
     seguranca = secoes_adicionais["Segurança"]
     notificacoes = secoes_adicionais["Notificações"]
-    sobre_evalytics = secoes_adicionais["Sobre o Evalytics"]
+    sobre_evalytics = criar_secao_sobre(page, layout, cores, max(300, altura_conteudo_secao - 14) if altura_conteudo_secao else None)
 
     cartao_atividade, carregar_atividade = criar_secao_atividade(
         page, layout, cores, mudar_tela
@@ -74,9 +75,11 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         "Preferências": preferencias,
         "Segurança": seguranca,
         "Notificações": notificacoes,
-        "Sobre o Evalytics": sobre_evalytics,
+        "Sobre": sobre_evalytics,
     }
     secao_inicial = getattr(page, "_conta_secao_ativa", "Perfil")
+    if secao_inicial == "Sobre o Evalytics":
+        secao_inicial = "Sobre"
     if secao_inicial not in secoes_conta:
         secao_inicial = "Perfil"
     estado = {"secao": secao_inicial}
@@ -112,7 +115,7 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         ("Preferências", ft.Icons.TUNE_OUTLINED),
         ("Segurança", ft.Icons.SECURITY_OUTLINED),
         ("Notificações", ft.Icons.NOTIFICATIONS_OUTLINED),
-        ("Sobre o Evalytics", ft.Icons.INFO_OUTLINE),
+        ("Sobre", ft.Icons.INFO_OUTLINE),
     ):
         linha = ft.Row(
             spacing=9,
@@ -243,6 +246,7 @@ def ViewConta(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         workspace.height = altura_atual_workspace
         painel_navegacao.height = altura_atual_workspace
         conteudo_secao.height = altura_atual_secao
+        sobre_evalytics.height = max(300, altura_atual_secao - 14) if altura_atual_secao else None
         cartao_perfil.height = altura_atual_perfil
         espacador_navegacao.expand = bool(altura_atual_workspace)
         espacador_navegacao.height = None if altura_atual_workspace else 10

@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from datetime import datetime
 import requests
@@ -222,3 +223,51 @@ def listar_avaliacoes(cursos_cadastrados: list[dict] | None = None) -> list[dict
     except Exception:
         logger.exception("Erro ao consultar avaliações no Firestore.")
         return []
+
+
+def carregar_cursos_e_avaliacoes() -> tuple[list[dict], list[dict]]:
+    """Carrega cursos e avaliações válidas em paralelo para telas de entrada."""
+    instituicao_id = obter_instituicao_id_atual()
+    chave_cache = f"avaliacoes:{instituicao_id}"
+    encontrado, valor = obter_cache(chave_cache)
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futuro_cursos = executor.submit(obter_cursos_db)
+            futuro_documentos = None
+            if not encontrado:
+                futuro_documentos = executor.submit(
+                    lambda: list(
+                        listar_documentos_da_instituicao(
+                            COLECAO_AVALIACOES, instituicao_id
+                        )
+                    )
+                )
+
+            cursos = futuro_cursos.result()
+            if encontrado:
+                avaliacoes = [dict(item) for item in valor]
+            else:
+                docs = futuro_documentos.result()
+                indice_cursos = criar_indice_cursos_atuais(cursos)
+                avaliacoes = []
+                for doc in docs:
+                    dados = doc.to_dict() or {}
+                    if not documento_pertence_a_instituicao(dados, instituicao_id):
+                        continue
+                    curso_atual = resolver_curso_avaliacao(dados, indice_cursos)
+                    if not curso_atual:
+                        continue
+                    dados["curso_nome"] = curso_atual.get("nome", "")
+                    dados["id"] = doc.id
+                    avaliacoes.append(dados)
+
+                salvar_cache(
+                    chave_cache,
+                    tuple(dict(item) for item in avaliacoes),
+                    5.0,
+                )
+            return cursos, avaliacoes
+    except Exception:
+        logger.exception("Falha ao carregar cursos e avaliações em paralelo.")
+        return [], []

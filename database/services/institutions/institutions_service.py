@@ -4,6 +4,7 @@ import os
 
 from firebase_admin import firestore
 from database.services.firebase_config import db
+from database.services.memory_cache import invalidar_cache, obter_cache, salvar_cache
 
 COLECAO_INSTITUICOES = "instituicoes"
 COLECAO_CURSOS = "cursos"
@@ -77,20 +78,31 @@ def listar_documentos_da_instituicao(nome_colecao: str, instituicao_id: str | No
 def obter_instituicao(instituicao_id: str | None = None) -> dict:
     """Retorna os metadados da instituição atual."""
     chave = instituicao_id or obter_instituicao_id_atual()
+    chave_cache = f"instituicao:{chave}"
+    encontrado, valor = obter_cache(chave_cache)
+    if encontrado:
+        return dict(valor)
     try:
         snapshot = db.collection(COLECAO_INSTITUICOES).document(chave).get()
         if snapshot.exists:
             dados = snapshot.to_dict() or {}
             dados["id"] = snapshot.id
+            salvar_cache(chave_cache, dict(dados), 300)
             return dados
     except Exception:
         pass
-    return {"id": chave, "sigla": chave.upper(), "nome": chave.upper()}
+    dados = {"id": chave, "sigla": chave.upper(), "nome": chave.upper()}
+    salvar_cache(chave_cache, dict(dados), 300)
+    return dados
 
 
 def listar_campi_instituicao(instituicao_id: str | None = None) -> list[dict]:
     """Lista os campi ativos cadastrados para a instituição da sessão."""
     chave = instituicao_id or obter_instituicao_id_atual()
+    chave_cache = f"campi:{chave}"
+    encontrado, valor = obter_cache(chave_cache)
+    if encontrado:
+        return [dict(campus) for campus in valor]
     try:
         snapshots = (
             db.collection(COLECAO_INSTITUICOES)
@@ -105,8 +117,11 @@ def listar_campi_instituicao(instituicao_id: str | None = None) -> list[dict]:
                 continue
             campus["id"] = snapshot.id
             campi.append(campus)
-        return sorted(campi, key=lambda item: str(item.get("nome", "")).casefold())
+        campi = sorted(campi, key=lambda item: str(item.get("nome", "")).casefold())
+        salvar_cache(chave_cache, tuple(dict(campus) for campus in campi), 300)
+        return campi
     except Exception:
+        salvar_cache(chave_cache, (), 30)
         return []
 
 
@@ -130,6 +145,7 @@ def salvar_instituicao(
             },
             merge=True,
         )
+        invalidar_cache(f"instituicao:{chave}")
         return True
     except Exception:
         return False
@@ -161,6 +177,7 @@ def salvar_campus(
             },
             merge=True,
         )
+        invalidar_cache(f"campi:{chave_instituicao}")
         return True
     except Exception:
         return False

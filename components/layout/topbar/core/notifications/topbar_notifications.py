@@ -1,4 +1,6 @@
+import asyncio
 import flet as ft
+from components.core.auth.auth_state import auth_state
 from components.core.constants.constants import (
     TEXTO_PRINCIPAL, 
     SURFACE, 
@@ -17,9 +19,21 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
         Retorna múltiplos componentes que serão ancorados na Topbar pelo Layout Principal.
     """
     
-    # Busca o estado inicial do banco de dados/memória
-    notificacoes = listar_notificacoes()
-    quantidade_nao_lidas = contar_nao_lidas()
+    # A montagem do cabeçalho ocorre em toda navegação. Usa o estado local já
+    # carregado e deixa a consulta ao Firestore para o monitor/abertura do painel.
+    usuario_atual = auth_state.usuario or {}
+    usuario_id = usuario_atual.get("user_id") or usuario_atual.get("localId")
+    if getattr(page, "_notificacoes_usuario_cache", None) != usuario_id:
+        page._notificacoes_usuario_cache = usuario_id
+        page._notificacoes_cache = []
+        page._notificacoes_nao_lidas_cache = 0
+
+    notificacoes = list(getattr(page, "_notificacoes_cache", []))
+    quantidade_nao_lidas = getattr(
+        page,
+        "_notificacoes_nao_lidas_cache",
+        sum(1 for item in notificacoes if not item.get("lida", False)),
+    )
 
     # 1. O Badge (Bolinha vermelha com o número de mensagens)
     badge_notificacoes = ft.Container(
@@ -59,6 +73,16 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
         painel_notificacoes.visible = not painel_notificacoes.visible
         botao_notificacoes.icon = ft.Icons.NOTIFICATIONS if painel_notificacoes.visible else ft.Icons.NOTIFICATIONS_NONE # Muda o ícone do sino de "vazado" para "preenchido" quando o painel está aberto
         page.update()
+        if painel_notificacoes.visible:
+            page.run_task(carregar_lista_em_segundo_plano)
+
+    async def carregar_lista_em_segundo_plano() -> None:
+        novas_notificacoes = await asyncio.to_thread(listar_notificacoes)
+        page._notificacoes_cache = novas_notificacoes
+        atualizar_lista_notificacoes(novas_notificacoes)
+        topbar_atual = getattr(page, "_topbar_notificacoes", None)
+        if topbar_atual is not None and topbar_atual.painel_notificacoes is painel_notificacoes:
+            page.update()
 
     botao_notificacoes.on_click = alternar_painel
 
@@ -151,6 +175,7 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
 
     def atualizar_lista_notificacoes(novas_notificacoes: list[dict]) -> None:
         """Atualiza lista, estado vazio, altura do painel e ações disponíveis."""
+        page._notificacoes_cache = list(novas_notificacoes)
         lista_notificacoes.controls = criar_itens_notificacoes(novas_notificacoes)
         tem_notificacoes = bool(novas_notificacoes)
         painel_notificacoes.height = (

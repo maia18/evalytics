@@ -1,3 +1,4 @@
+import asyncio
 import flet as ft
 from .auth_service import renovar_token_firebase
 from .auth_constants import (
@@ -132,7 +133,9 @@ class AuthState:
         if not refresh_token:
             return False
 
-        data = renovar_token_firebase(api_key, refresh_token) # Delega a requisição HTTP (REST API do Firebase) para a camada de serviços
+        data = await asyncio.to_thread(
+            renovar_token_firebase, api_key, refresh_token
+        )
 
         # Se a renovação falhou (ex: token revogado ou expirado no backend), limpamos tudo.
         if not data:
