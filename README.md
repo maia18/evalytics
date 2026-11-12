@@ -1,80 +1,58 @@
-# 📊 Evalytics
+# Evalytics
 
-O **Evalytics** é uma solução inteligente para a gestão e execução de autoavaliações institucionais, desenhada para alinhar cursos superiores às diretrizes oficiais do **MEC/INEP**.
+O Evalytics apoia a autoavaliação institucional de cursos superiores. A aplicação permite gerenciar cursos, organizar indicadores por eixo, registrar avaliações e suas evidências e gerar relatórios.
 
-O sistema transforma o complexo processo de avaliação em uma jornada fluida, utilizando tecnologia de ponta para garantir **performance**, **escalabilidade** e uma **experiência** de usuário impecável para coordenadores e avaliadores.
+A interface é feita em Python com Flet. O aplicativo usa Firebase Authentication para o login e Cloud Firestore para armazenar os dados. O repositório também inclui uma API FastAPI para avaliações e evidências.
 
----
+Para preencher uma avaliação e exportar os resultados, consulte o [guia de uso](docs/guia-de-uso.md). Para localizar os componentes e entender como os dados são gravados, veja o [mapa técnico](docs/mapa-tecnico.md).
 
-## Stack Tecnológica
+## Execução local no Windows
 
-O projeto foi modernizado para oferecer uma arquitetura robusta e escalável:
+### 1. Preparar o ambiente
 
-* **Interface (Frontend)**: [Flet](https://flet.dev/) (Interface reativa e moderna rodando sobre o motor do Flutter)
-* **Banco de Dados (Backend)**: [Firebase Firestore](https://firebase.google.com/) (Banco de dados NoSQL orientado a documentos com sincronização em tempo real)
-* **Segurança**: Firebase Auth (Gestão segura de usuários e permissões administrativas)
+Instale o Python 3.12 e o Git. No PowerShell, clone o repositório e instale as dependências declaradas no projeto:
 
----
-
-## Principais Funcionalidades
-
-* **Gerenciamento Hierárquico**: Organização intuitiva de indicadores por eixos temáticos (Pastas).
-* **Editor Dinâmico**: Fluxo otimizado para atualização de títulos, descrições e critérios de avaliação com um clique.
-* **Interface Cross-Platform**: Experiência consistente em diferentes dispositivos.
-* **Dados em Tempo Real**: Sincronização imediata das avaliações entre usuários e base de dados.
-
----
-
-## Execução local
-
-### 1. Clonar o projeto
-
-```
+```powershell
 git clone https://github.com/maia18/evalytics-app.git
 cd evalytics-app
-```
-
-### 2. Configurar o ambiente
-
-#### Windows:
-
-```
 python -m venv venv
-.\venv\Scripts\activate
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-#### Linux / Mac:
+O arquivo `requirements.txt` inclui dependências específicas do Windows. Os passos abaixo cobrem a execução do aplicativo Flet.
 
+### 2. Configurar o Firebase de desenvolvimento
+
+Solicite à equipe a chave de API do aplicativo Firebase e o JSON da conta de serviço autorizada a acessar o Firestore de desenvolvimento. Use valores do mesmo projeto e confirme que o login por e-mail e senha está habilitado no Firebase Authentication.
+
+1. Na raiz do repositório, crie um arquivo `.env` e substitua o valor de exemplo pela chave de API:
+
+   ```dotenv
+   FIREBASE_API_KEY=chave_do_projeto_de_desenvolvimento
+   ```
+
+2. Salve o JSON da conta de serviço em `database/services/firebase_credentials.json`. O aplicativo procura esse arquivo ao inicializar o cliente Firestore e usa o banco com ID `default`.
+3. Em um clone novo, crie o arquivo local `database/services/firebase_keys.py` com este conteúdo:
+
+   ```python
+   import os
+
+   from dotenv import load_dotenv
+
+   load_dotenv()
+   FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
+   ```
+
+   Se você já tem esse módulo local, basta conferir se ele carrega o `.env` e exporta `FIREBASE_API_KEY`.
+
+O Git ignora os três arquivos locais. Mantenha a chave de API no `.env` e o JSON da conta de serviço fora do controle de versão.
+
+### 3. Abrir o aplicativo e entrar
+
+Na raiz do projeto, execute:
+
+```powershell
+.\venv\Scripts\python.exe main.py
 ```
-python3 -m venv venv
-source venv/bin/activate
-```
 
-### 3. Instalar as dependências
-
-```
-pip install flet firebase-admin
-pip freeze > requirements.txt
-```
-
-### 4. Credenciais de Segurança
-
-
-​Por questões de segurança, as chaves do Firebase não são enviadas ao GitHub. 
-Você precisará solicitar o arquivo 
-```firebase_credentials.json``` à equipe e colá-lo na raiz do projeto (o arquivo já está configurado no .gitignore).
-
-### 5. Executar
-
-```
-python main.py
-```
-
----
-
-## Acesso de Desenvolvimento
-
-Enquanto a autenticação via Firebase Auth está sendo implementada, as credenciais administrativas locais são:
-
-- Usuário: admin
-- Senha: admin123
+Na tela de login, entre com o e-mail e a senha de uma conta do projeto Firebase de desenvolvimento. Se precisar criar uma conta, use **Cadastre-se**. Para conferir a conexão com o Firestore após o login, abra a tela de cursos ou indicadores e verifique se os dados de desenvolvimento são carregados.
