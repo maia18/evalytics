@@ -38,7 +38,7 @@ O formulário aceita até 20 arquivos por indicador, com até 10 MB cada. Entre 
 
 ![Seleção de um curso e abertura da primeira pergunta em Nova Avaliação.](media/abrir-avaliacao.gif)
 
-**Preenchimento e envio da avaliação**
+**Preenchimento & Envio da avaliação**
 
 ![Seleção de uma nota, conferência de um anexo e confirmação Avaliação Enviada.](media/preencher-enviar.gif)
 
