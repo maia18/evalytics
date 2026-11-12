@@ -36,11 +36,15 @@ O formulário aceita até 20 arquivos por indicador, com até 10 MB cada. Entre 
 
 **Abertura da avaliação**
 
-![Seleção de um curso e abertura da primeira pergunta em Nova Avaliação.](media/abrir-avaliacao.gif)
+<p align="center">
+  <img src="media/abrir-avaliacao.gif" alt="Seleção de um curso e abertura da primeira pergunta em Nova Avaliação.">
+</p>
 
 **Preenchimento & Envio da avaliação**
 
-![Seleção de uma nota, conferência de um anexo e confirmação Avaliação Enviada.](media/preencher-enviar.gif)
+<p align="center">
+  <img src="media/preencher-enviar.gif" alt="Seleção de uma nota, conferência de um anexo e confirmação Avaliação Enviada.">
+</p>
 
 ### Exemplo de autoavaliação
 
@@ -68,7 +72,9 @@ Este exemplo utiliza um curso fictício de Pedagogia e o indicador **Planos de e
 
 **Exportação em CSV**
 
-![Abertura da janela Exportar CSV, com os filtros de curso, semestre e eixo avaliativo.](media/exportar-csv.gif)
+<p align="center">
+  <img src="media/exportar-csv.gif" alt="Abertura da janela Exportar CSV, com os filtros de curso, semestre e eixo avaliativo.">
+</p>
 
 ### Interpretação dos resultados
 
