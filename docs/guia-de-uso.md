@@ -10,10 +10,12 @@ Após a autenticação, utilize o menu lateral para acessar o cadastro de cursos
 - [Configuração de indicadores](#2-configuração-de-indicadores)
 - [Preenchimento e envio da avaliação](#3-preenchimento-e-envio-da-avaliação)
   - [Exemplo de autoavaliação](#exemplo-de-autoavaliação)
+  - [Seleção de evidências e redação de justificativas](#seleção-de-evidências-e-redação-de-justificativas)
   - [Lista de verificação antes do envio](#lista-de-verificação-antes-do-envio)
 - [Consulta e exportação de resultados](#4-consulta-e-exportação-de-resultados)
   - [Interpretação dos resultados](#interpretação-dos-resultados)
   - [Exemplos de exportação](#exemplos-de-exportação)
+- [Após o envio da avaliação](#5-após-o-envio-da-avaliação)
 - [Solução de problemas](#solução-de-problemas)
 
 ## 1. Cadastro de cursos
@@ -73,6 +75,16 @@ Este exemplo utiliza um curso fictício de Pedagogia e o indicador **Planos de e
 4. Selecione **Anexar evidências** e inclua o arquivo `planos-de-ensino.pdf`. Prossiga com os demais indicadores, conclua a lista de verificação e selecione **Finalizar** na última pergunta.
 5. Após a confirmação **Avaliação Enviada!**, abra **Relatórios** e filtre pelo curso de Pedagogia e pelo semestre da avaliação. Exporte o PDF com esses mesmos filtros para consultar a nota, a justificativa e a referência da evidência.
 
+### Seleção de evidências e redação de justificativas
+
+1. **Identifique o que o critério exige.** No exemplo de Pedagogia, a nota 4 exige que os planos de ensino tenham sido revisados e estejam disponíveis para consulta.
+2. **Selecione documentos que comprovem os requisitos.** Para comprovar a revisão, anexe um registro que identifique as disciplinas e as datas de revisão. Para demonstrar a disponibilidade, inclua um registro da publicação dos planos com a data e o local de consulta. Se um único documento comprovar ambos os requisitos, indique onde cada informação pode ser encontrada.
+3. **Relacione a nota às evidências na justificativa.** Registre o que foi verificado, o período a que se refere e onde a informação consta no anexo. Use o nome do arquivo e, quando possível, a página ou a seção.
+
+> No semestre 2026.2, a coordenação revisou os planos de ensino das disciplinas avaliadas. O arquivo `planos-de-ensino.pdf` apresenta as disciplinas e as datas de revisão na página 2. A página 3 registra a disponibilização dos planos no ambiente acadêmico. Esses registros sustentam a nota 4.
+
+Se os documentos comprovarem apenas parte do critério, registre a lacuna na justificativa e atribua a nota correspondente ao que foi comprovado.
+
 ### Lista de verificação antes do envio
 
 - [ ] O curso selecionado corresponde ao curso avaliado.
@@ -108,6 +120,22 @@ Os dois arquivos apresentam a mesma avaliação fictícia de Pedagogia, com nota
 - [Dados de exemplo em CSV](exemplos/dados-brutos-exemplo.csv) com as colunas da exportação e uma linha para o indicador avaliado. Ao importar o arquivo, selecione UTF-8 e ponto e vírgula como separador.
 
 O endereço da evidência é ilustrativo.
+
+## 5. Após o envio da avaliação
+
+### Localização do registro
+
+1. Após a confirmação **Avaliação Enviada!**, abra **Relatórios**, selecione o curso e o semestre em **Filtros** e clique em **Aplicar filtros**. Use a coluna **Data** para localizar a avaliação.
+2. Se houver várias avaliações do mesmo curso na mesma data, exporte o CSV com os mesmos filtros. Use `Data_Avaliacao` para conferir a data e o horário registrados e `ID_Avaliacao` para distinguir os registros. As linhas com o mesmo identificador pertencem à mesma avaliação. O PDF apresenta esse identificador na seção detalhada.
+
+### Solicitação de correção
+
+Após o envio, o aplicativo não oferece edição de notas, justificativas ou evidências da avaliação. Se for necessário corrigir um registro, informe à equipe responsável o identificador da avaliação, o indicador afetado e a correção necessária. Aguarde a orientação da equipe antes de iniciar uma nova avaliação, pois um novo envio cria um registro adicional.
+
+### Efeitos da inativação no histórico
+
+- **Curso inativado.** O curso deixa de aparecer em **Nova Avaliação**. As avaliações anteriores permanecem disponíveis nos relatórios enquanto o curso estiver cadastrado. Se o cadastro for excluído, as avaliações associadas a ele deixam de aparecer nos relatórios.
+- **Indicador inativado.** O indicador deixa de aparecer nos novos formulários. Os registros com cópia histórica preservam as perguntas, os critérios e as respostas da época. Nos registros sem essa cópia, o detalhamento consulta o catálogo atual, e os critérios do indicador inativado podem deixar de aparecer.
 
 ## Solução de problemas
 

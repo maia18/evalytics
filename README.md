@@ -8,6 +8,8 @@ Os procedimentos de avaliação e exportação de resultados estão no [Guia de 
 
 ## Execução local no Windows
 
+Em caso de falha na preparação do ambiente ou na autenticação, consulte o [Diagnóstico da instalação](#diagnóstico-da-instalação).
+
 ### 1. Preparação do ambiente
 
 Instale o Python 3.12 e o Git. Execute os comandos a seguir no PowerShell para clonar o repositório, criar o ambiente virtual e instalar as dependências.
@@ -56,3 +58,17 @@ Execute o comando a seguir na raiz do projeto.
 ```
 
 Na tela de login, informe o e-mail e a senha de uma conta do projeto Firebase de desenvolvimento. Para criar uma conta, selecione **Cadastre-se**. Após a autenticação, abra a tela de cursos ou de indicadores e verifique se os dados de desenvolvimento são carregados pelo Firestore.
+
+## Diagnóstico da instalação
+
+Execute as verificações na raiz do projeto, no PowerShell.
+
+| Sintoma | Verificação |
+| --- | --- |
+| `python` não é encontrado ou abre a Microsoft Store | Execute `Get-Command python -All` e `python --version`. Confirme que o comando aponta para uma instalação funcional do Python 3.12. Após instalar ou ajustar o caminho do Python, abra uma nova janela do PowerShell. |
+| O executável do ambiente virtual não inicia | Execute `.\venv\Scripts\python.exe --version`. Se a pasta do projeto foi movida ou a instalação original do Python foi removida, renomeie o ambiente virtual antigo e recrie-o na pasta atual seguindo a etapa de preparação. |
+| O pip exibe `No matching distribution found` | Confira o nome e a versão do pacote citados na mensagem. Verifique a versão do Python no ambiente virtual, o acesso ao índice de pacotes configurado e se ele disponibiliza a versão indicada no `requirements.txt`. |
+| A inicialização exibe `ModuleNotFoundError` | Execute `.\venv\Scripts\python.exe -m pip check` e confirme que a instalação das dependências foi concluída. Se o módulo ausente for `database.services.firebase_keys`, crie o arquivo local conforme a etapa de configuração do Firebase. |
+| A aplicação não encontra `firebase_credentials.json` | Execute `Test-Path -LiteralPath .\database\services\firebase_credentials.json -PathType Leaf`. Se o resultado for `False`, salve o arquivo da conta de serviço no caminho indicado na etapa de configuração. |
+| O login falha no Firebase Authentication | Verifique se o `.env` está na raiz do projeto e contém `FIREBASE_API_KEY`. Confirme que a chave e a conta de usuário pertencem ao mesmo projeto Firebase e que a autenticação por e-mail e senha está habilitada. |
+| O login funciona, mas os dados não são carregados | Consulte a mensagem no terminal. Verifique se a conta de serviço pertence ao projeto de desenvolvimento, se tem acesso ao Firestore e se o banco de dados com ID `default` está disponível. |
