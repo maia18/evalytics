@@ -1,5 +1,7 @@
 # Guia de uso do Evalytics
 
+Para entender como as avaliações são armazenadas e localizar os componentes do projeto, consulte o [mapa técnico](mapa-tecnico.md).
+
 Após entrar no Evalytics, use o menu lateral para preparar o curso e os indicadores, preencher a avaliação e exportar os resultados. Se o curso e os indicadores já estiverem cadastrados e ativos, vá direto para **Nova Avaliação**.
 
 ## 1. Cadastrar o curso

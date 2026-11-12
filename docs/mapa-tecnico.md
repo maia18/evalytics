@@ -1,5 +1,7 @@
 # Mapa técnico do Evalytics
 
+Para cadastrar cursos, preencher avaliações e exportar resultados no aplicativo, consulte o [guia de uso](guia-de-uso.md).
+
 ## Onde fica cada parte
 
 | Área | Responsabilidade | Ponto de entrada |
