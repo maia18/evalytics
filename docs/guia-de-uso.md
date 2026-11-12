@@ -25,7 +25,7 @@ Consulte também o [exemplo de autoavaliação](#exemplo-de-autoavaliação), a 
 - Para retirar um indicador das próximas avaliações, clique no status **ATIVO** na linha do indicador e verifique se ele passou a **INATIVO**. Para reativá-lo, clique em **INATIVO**.
 - Para consultar os critérios utilizados em uma avaliação anterior, exporte o PDF em **Relatórios** e consulte a seção detalhada da avaliação. Quando o registro contém uma cópia das perguntas, o PDF apresenta os critérios da época. Para registros sem essa cópia, o PDF consulta o catálogo atual e identifica a origem das perguntas. No CSV, consulte a coluna `Fonte_Perguntas`.
 
-## 3. Preenchimento & Envio da avaliação
+## 3. Preenchimento e envio da avaliação
 
 1. Abra **Nova Avaliação**, selecione o curso e clique em **Abrir avaliação**.
 2. Selecione a nota de cada indicador e registre a justificativa no campo correspondente. Para incluir documentos comprobatórios, selecione **Anexar evidências** no indicador.
