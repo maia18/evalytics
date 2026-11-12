@@ -1,4 +1,4 @@
-# Evalytics
+# Evalytics - Autoavaliação institucional
 
 O Evalytics apoia a autoavaliação institucional de cursos superiores. A aplicação permite gerenciar cursos, organizar indicadores por eixo, registrar avaliações e suas evidências e gerar relatórios.
 
