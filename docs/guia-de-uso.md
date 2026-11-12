@@ -34,13 +34,13 @@ Consulte também o [exemplo de autoavaliação](#exemplo-de-autoavaliação), a 
 
 O formulário aceita até 20 arquivos por indicador, com até 10 MB cada. Entre os formatos aceitos estão PDF, PNG, JPG, DOCX, XLSX e CSV.
 
-**Abertura da avaliação**
+### Abertura da avaliação
 
 <p align="center">
   <img src="media/abrir-avaliacao.gif" alt="Seleção de um curso e abertura da primeira pergunta em Nova Avaliação.">
 </p>
 
-**Preenchimento & Envio da avaliação**
+### Preenchimento & Envio da avaliação
 
 <p align="center">
   <img src="media/preencher-enviar.gif" alt="Seleção de uma nota, conferência de um anexo e confirmação Avaliação Enviada.">
@@ -70,7 +70,7 @@ Este exemplo utiliza um curso fictício de Pedagogia e o indicador **Planos de e
 3. Na janela de exportação, selecione o curso, o semestre e o eixo desejados. Selecione **Todos** para incluir todos os valores de um campo. Confirme com **Exportar CSV** ou **Gerar PDF**, conforme o formato selecionado.
 4. Na janela de salvamento, informe o nome do arquivo e selecione a pasta de destino.
 
-**Exportação em CSV**
+### Exportação em CSV
 
 <p align="center">
   <img src="media/exportar-csv.gif" alt="Abertura da janela Exportar CSV, com os filtros de curso, semestre e eixo avaliativo.">
