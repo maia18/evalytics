@@ -1,43 +1,43 @@
 # Guia de uso do Evalytics
 
-Para entender como as avaliações são armazenadas e localizar os componentes do projeto, consulte o [mapa técnico](mapa-tecnico.md).
+Para consultar a estrutura do projeto e os fluxos de armazenamento das avaliações, acesse o [Mapa técnico](mapa-tecnico.md).
 
-Após entrar no Evalytics, use o menu lateral para preparar o curso e os indicadores, preencher a avaliação e exportar os resultados. Se o curso e os indicadores já estiverem cadastrados e ativos, vá direto para **Nova Avaliação**.
+Após a autenticação, utilize o menu lateral para acessar o cadastro de cursos e indicadores, o formulário de avaliação e a exportação de resultados. Se o curso e os indicadores já estiverem cadastrados e ativos, acesse **Nova Avaliação**.
 
-Se algum passo falhar, veja [Se algo der errado](#se-algo-der-errado).
+Para dificuldades durante esses procedimentos, consulte a seção [Solução de problemas](#solução-de-problemas).
 
-## 1. Cadastrar o curso
+## 1. Cadastro de cursos
 
 1. Abra **Cursos** e selecione **Adicionar curso**.
-2. Preencha o nome e o departamento. Você também pode informar o coordenador. O aplicativo gera o código automaticamente.
-3. Mantenha o status **Ativo** para que o curso apareça na seleção de **Nova Avaliação**. Clique em **Salvar**.
+2. Informe o nome e o departamento. O campo de coordenador é opcional. A aplicação gera o código do curso automaticamente.
+3. Mantenha o status **Ativo** para disponibilizar o curso em **Nova Avaliação**. Clique em **Salvar**.
 
-## 2. Preparar os indicadores
+## 2. Configuração de indicadores
 
-1. Abra **Configurações**, selecione a aba **Indicadores** e entre na pasta do eixo avaliativo.
+1. Em **Configurações**, selecione a aba **Indicadores** e abra a pasta do eixo avaliativo.
 2. Clique em **Novo Indicador**, informe o título e, se necessário, a descrição. Clique em **Salvar**.
-3. Para definir o que cada nota representa, clique no título do indicador para abrir **Editar Critérios**. Preencha os critérios e clique em **Salvar**. Os indicadores ativos aparecem no formulário de avaliação.
+3. Clique no título do indicador para abrir **Editar Critérios**. Defina o critério correspondente a cada nota e clique em **Salvar**. O formulário de avaliação apresenta os indicadores ativos.
 
-## 3. Preencher e enviar a avaliação
+## 3. Preenchimento e envio da avaliação
 
 1. Abra **Nova Avaliação**, selecione o curso e clique em **Abrir avaliação**.
-2. Selecione a nota de cada indicador e registre a justificativa no campo correspondente. Quando precisar comprovar a resposta, use **Anexar evidências** no próprio indicador.
-3. Use **Avançar** para passar ao próximo indicador. Você também pode selecionar um eixo para ir à primeira pergunta dele.
-4. Na última pergunta, clique em **Finalizar** e aguarde a confirmação **Avaliação Enviada!**. Se o aplicativo informar uma falha no envio, verifique a conexão e tente finalizar novamente.
+2. Selecione a nota de cada indicador e registre a justificativa no campo correspondente. Para incluir documentos comprobatórios, selecione **Anexar evidências** no indicador.
+3. Clique em **Avançar** para acessar o próximo indicador. Para acessar a primeira pergunta de outro eixo, selecione o eixo correspondente.
+4. Na última pergunta, clique em **Finalizar** e aguarde a confirmação **Avaliação Enviada!**.
 
 O formulário aceita até 20 arquivos por indicador, com até 10 MB cada. Entre os formatos aceitos estão PDF, PNG, JPG, DOCX, XLSX e CSV.
 
-## 4. Consultar e exportar os resultados
+## 4. Consulta e exportação de resultados
 
-1. Abra **Relatórios**. Na tela **Dados e Exportação**, use **Filtros** para escolher o semestre, o curso ou o eixo avaliativo e clique em **Aplicar filtros**.
+1. Abra **Relatórios**. Na tela **Dados e Exportação**, selecione o semestre, o curso ou o eixo avaliativo em **Filtros** e clique em **Aplicar filtros**.
 2. Clique em **Exportar CSV** para gerar um arquivo de dados ou em **Exportar PDF** para gerar o relatório.
-3. Na janela de exportação, selecione o curso, o semestre e o eixo que deseja incluir. Deixe **Todos** nos campos que não precisar restringir. Confirme com **Exportar CSV** ou **Gerar PDF**, conforme o formato selecionado.
-4. Na janela de salvamento, escolha o nome e o local do arquivo.
+3. Na janela de exportação, selecione o curso, o semestre e o eixo desejados. Selecione **Todos** para incluir todos os valores de um campo. Confirme com **Exportar CSV** ou **Gerar PDF**, conforme o formato selecionado.
+4. Na janela de salvamento, informe o nome do arquivo e selecione a pasta de destino.
 
-## Se algo der errado
+## Solução de problemas
 
-- **O curso não aparece em Nova Avaliação.** Em **Cursos**, confira se o curso está cadastrado e com status **Ativo**. Depois, abra **Nova Avaliação** novamente.
-- **O indicador não aparece no formulário.** Em **Configurações**, abra **Indicadores** e entre na pasta do eixo correspondente. Confira se o indicador está cadastrado e ativo.
-- **O arquivo de evidência foi recusado.** Escolha um arquivo local que possa ser aberto, em um formato aceito, como PDF, JPG ou DOCX. O limite é de 10 MB por arquivo e 20 arquivos por indicador. Se o arquivo já estiver na lista de anexos, ele não será incluído novamente.
-- **A avaliação não foi enviada.** Se houver erro ao clicar em **Finalizar**, verifique a conexão e tente novamente no mesmo formulário. Aguarde a confirmação **Avaliação Enviada!**.
-- **O relatório não mostra os resultados esperados.** Confira os filtros de curso, semestre e eixo. Use **Limpar** na tela de relatórios para voltar à consulta geral. Na janela de exportação, confira também o recorte selecionado antes de confirmar.
+- **Curso indisponível em Nova Avaliação.** Em **Cursos**, verifique se o curso está cadastrado e com status **Ativo**. Em seguida, acesse **Nova Avaliação** novamente.
+- **Indicador ausente no formulário.** Em **Configurações**, acesse **Indicadores** e abra a pasta do eixo correspondente. Verifique se o indicador está cadastrado e ativo.
+- **Arquivo de evidência recusado.** Verifique se o arquivo pode ser aberto localmente, se o formato é aceito e se o tamanho está dentro do limite de 10 MB. Cada indicador admite até 20 arquivos. Verifique também se o arquivo já consta na lista de anexos.
+- **Falha no envio da avaliação.** Se a aplicação apresentar um erro ao clicar em **Finalizar**, verifique a conexão e repita o envio no mesmo formulário. Aguarde a confirmação **Avaliação Enviada!**.
+- **Resultados diferentes dos esperados no relatório.** Verifique os filtros de curso, semestre e eixo. Selecione **Limpar** para restaurar a consulta sem filtros. Antes de confirmar a exportação, verifique também os filtros da janela de exportação.

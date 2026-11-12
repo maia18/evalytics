@@ -1,10 +1,10 @@
 # Instituições e campi
 
-Os documentos de cursos e avaliações recebem `instituicao_id`. O tenant da
-sessão vem do claim confiável do Firebase ou do campo
-`usuarios/{uid}.instituicao_id`. `EVALYTICS_INSTITUICAO_ID` é o fallback para
-instalações sem vínculo individual e, neste projeto, está configurado como
-`ufc` por padrão.
+Os documentos de cursos e avaliações contêm o campo `instituicao_id`. A
+aplicação identifica a instituição da sessão pelo atributo confiável
+(`claim`) do Firebase ou pelo campo `usuarios/{uid}.instituicao_id`. Na
+ausência de vínculo individual, a aplicação utiliza o valor de
+`EVALYTICS_INSTITUICAO_ID`, cujo padrão é `ufc`.
 
 ## Cadastro no Firestore
 
@@ -24,29 +24,32 @@ usuarios/{uid}
   instituicao_id: "instituicao_id"
 ```
 
-O seletor de localidade lê os campi ativos deste catálogo; ele não contém uma
-lista fixa de instituições no código. Para vincular outra instituição, cadastre
-seu documento e campi e atribua seu ID ao perfil dos usuários autorizados.
+O seletor de localidade consulta os campi ativos deste catálogo. Para vincular
+outra instituição, cadastre o documento da instituição e os respectivos
+campi. Em seguida, atribua o identificador da instituição ao perfil dos
+usuários autorizados.
 
-## Dados existentes
+## Cadastro inicial e migração de dados existentes
 
-`seed_ufc.py` prepara o cadastro da UFC e seus oito campi. É uma operação
-explícita e não é executada ao abrir o app:
+Para cadastrar a UFC e seus oito campi, execute o comando a seguir. A
+inicialização da aplicação não executa esse procedimento.
 
 ```powershell
 .\venv\Scripts\python.exe -m database.services.institutions.seed_ufc
 ```
 
-Antes de etiquetar dados antigos, faça a prévia:
+Para identificar os documentos que seriam alterados pela migração, execute
+o comando a seguir.
 
 ```powershell
 .\venv\Scripts\python.exe -m database.services.institutions.migrar_dados_legados
 ```
 
-Revise se todos os cursos e avaliações listados são da instituição padrão. Só
-então execute a migração com `--aplicar`. Ela não remove nem copia documentos;
-apenas adiciona `instituicao_id` aos que não têm esse campo.
+Verifique se todos os cursos e avaliações listados pertencem à instituição
+padrão antes de executar a migração com `--aplicar`. A migração adiciona
+`instituicao_id` aos documentos que ainda não contêm esse campo.
 
-Durante a transição, documentos antigos sem instituição continuam visíveis
-apenas no tenant padrão. Para outros tenants, novos registros já são gravados
-com `instituicao_id`.
+Durante a migração, a consulta da instituição padrão inclui os documentos
+legados sem vínculo institucional. As demais instituições consultam os
+documentos associados ao respectivo `instituicao_id`. Novos registros são
+gravados com esse campo.
