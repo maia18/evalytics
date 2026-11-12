@@ -4,7 +4,17 @@ Para consultar a estrutura do projeto e os fluxos de armazenamento das avaliaç�
 
 Após a autenticação, utilize o menu lateral para acessar o cadastro de cursos e indicadores, o formulário de avaliação e a exportação de resultados. Se o curso e os indicadores já estiverem cadastrados e ativos, acesse **Nova Avaliação**.
 
-Consulte também o [exemplo de autoavaliação](#exemplo-de-autoavaliação), a [interpretação dos resultados](#interpretação-dos-resultados) e a seção [Solução de problemas](#solução-de-problemas).
+## Sumário
+
+- [Cadastro de cursos](#1-cadastro-de-cursos)
+- [Configuração de indicadores](#2-configuração-de-indicadores)
+- [Preenchimento e envio da avaliação](#3-preenchimento-e-envio-da-avaliação)
+  - [Exemplo de autoavaliação](#exemplo-de-autoavaliação)
+  - [Lista de verificação antes do envio](#lista-de-verificação-antes-do-envio)
+- [Consulta e exportação de resultados](#4-consulta-e-exportação-de-resultados)
+  - [Interpretação dos resultados](#interpretação-dos-resultados)
+  - [Exemplos de exportação](#exemplos-de-exportação)
+- [Solução de problemas](#solução-de-problemas)
 
 ## 1. Cadastro de cursos
 
@@ -17,6 +27,13 @@ Consulte também o [exemplo de autoavaliação](#exemplo-de-autoavaliação), a 
 1. Em **Configurações**, selecione a aba **Indicadores** e abra a pasta do eixo avaliativo.
 2. Clique em **Novo Indicador**, informe o título e, se necessário, a descrição. Clique em **Salvar**.
 3. Clique no título do indicador para abrir **Editar Critérios**. Defina o critério correspondente a cada nota e clique em **Salvar**. O formulário de avaliação apresenta os indicadores ativos.
+
+<p align="center">
+  <img src="media/editar-criterios.png" alt="Janela Editar Critérios com o campo de critério marcado com 1 e o botão Salvar marcado com 2." width="850">
+</p>
+
+1. **Campos de critério.** Preencha a descrição correspondente a cada nota. Role a janela para acessar os campos restantes.
+2. **Salvar.** Selecione o botão para registrar as alterações.
 
 ### Manutenção do catálogo
 
@@ -82,6 +99,15 @@ Este exemplo utiliza um curso fictício de Pedagogia e o indicador **Planos de e
 - **Médias na tabela.** Para cada avaliação, a média de um eixo é a soma das notas numéricas associadas ao eixo dividida pela quantidade dessas notas. A média geral atribui o mesmo peso a cada eixo respondido. O cálculo associa os indicadores aos eixos do catálogo atual.
 - **PDF.** Apresenta um resumo e o detalhamento das avaliações selecionadas, com notas, critérios, justificativas e referências das evidências quando disponíveis. A média de cada eixo no resumo é calculada a partir das médias positivas daquele eixo nas avaliações selecionadas. Ao filtrar por eixo, o detalhamento apresenta as perguntas do eixo selecionado e o resumo pode apresentar outros eixos dessas mesmas avaliações.
 - **CSV.** Apresenta os dados por avaliação e indicador, incluindo nota, resposta selecionada, justificativa, evidências e origem das perguntas. O filtro de eixo determina quais avaliações são incluídas. O arquivo pode conter linhas de outros eixos dessas avaliações.
+
+### Exemplos de exportação
+
+Os dois arquivos apresentam a mesma avaliação fictícia de Pedagogia, com nota 4 no indicador **Planos de ensino**.
+
+- [Relatório ilustrativo em PDF](exemplos/relatorio-exemplo.pdf) com o resumo por eixo, os critérios registrados, a justificativa e a referência da evidência.
+- [Dados de exemplo em CSV](exemplos/dados-brutos-exemplo.csv) com as colunas da exportação e uma linha para o indicador avaliado. Ao importar o arquivo, selecione UTF-8 e ponto e vírgula como separador.
+
+O endereço da evidência é ilustrativo.
 
 ## Solução de problemas
 

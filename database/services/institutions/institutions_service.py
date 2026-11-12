@@ -81,6 +81,35 @@ def listar_documentos_da_instituicao(
             yield snapshot
 
 
+def obter_documentos_da_instituicao_por_ids(
+    nome_colecao: str,
+    ids: set[str] | list[str] | tuple[str, ...],
+    instituicao_id: str | None = None,
+):
+    """Busca apenas documentos selecionados, evitando varrer a coleção inteira."""
+    ids_unicos = tuple(dict.fromkeys(str(item) for item in ids if item))
+    if not ids_unicos:
+        return []
+
+    chave = instituicao_id or obter_instituicao_id_atual()
+    colecao = db.collection(nome_colecao)
+    snapshots = []
+    # get_all reduz várias leituras individuais a poucas chamadas RPC.
+    for inicio in range(0, len(ids_unicos), 100):
+        referencias = [
+            colecao.document(documento_id)
+            for documento_id in ids_unicos[inicio : inicio + 100]
+        ]
+        snapshots.extend(db.get_all(referencias))
+
+    return [
+        snapshot
+        for snapshot in snapshots
+        if snapshot.exists
+        and documento_pertence_a_instituicao(snapshot.to_dict() or {}, chave)
+    ]
+
+
 def obter_instituicao(instituicao_id: str | None = None) -> dict:
     """Retorna os metadados da instituição atual."""
     chave = instituicao_id or obter_instituicao_id_atual()

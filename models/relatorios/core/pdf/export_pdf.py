@@ -1,11 +1,13 @@
+import asyncio
 import logging
 import tempfile
 from pathlib import Path
 import flet as ft
 from typing import Optional
 from datetime import datetime
-from database.services.firebase_config import db
-from database.services.institutions.institutions_service import listar_documentos_da_instituicao
+from database.services.institutions.institutions_service import (
+    obter_documentos_da_instituicao_por_ids,
+)
 from database.services.cursos.firestore_courses import obter_cursos_db
 from models.avaliacoes.core.feedback import mostrar_feedback
 from models.relatorios.core.grafico_radar import salvar_grafico_radar
@@ -19,6 +21,37 @@ from .pdf_builder import construir_documento_pdf
 
 logger = logging.getLogger(__name__)
 COLECAO_AVALIACOES = "avaliacoes"
+
+
+def _gerar_conteudo_pdf(
+    medias_validas: dict[int, float],
+    nomes_eixos: dict[int, str],
+    semestre: str,
+    quantidade_avaliacoes: int,
+    texto_cursos: str,
+    resultados: list[dict],
+    eixo_selecionado: int | None,
+    nome_arquivo: str,
+) -> bytes:
+    """Executa consultas e renderização fora do loop da interface."""
+    avaliacoes_detalhadas = carregar_avaliacoes_detalhadas(
+        resultados, eixo_selecionado=eixo_selecionado
+    )
+    with tempfile.TemporaryDirectory(prefix="evalytics_pdf_") as diretorio_temp:
+        caminho_imagem_temp = Path(diretorio_temp) / "radar_temp.png"
+        caminho_pdf_temp = Path(diretorio_temp) / nome_arquivo
+        salvar_grafico_radar(medias_validas, nomes_eixos, str(caminho_imagem_temp))
+        construir_documento_pdf(
+            caminho_arquivo=str(caminho_pdf_temp),
+            medias_validas=medias_validas,
+            nomes_eixos=nomes_eixos,
+            semestre=semestre,
+            quantidade_avaliacoes=quantidade_avaliacoes,
+            texto_cursos=texto_cursos,
+            caminho_imagem_radar=str(caminho_imagem_temp),
+            avaliacoes_detalhadas=avaliacoes_detalhadas,
+        )
+        return caminho_pdf_temp.read_bytes()
 
 
 def carregar_avaliacoes_detalhadas(
@@ -39,10 +72,9 @@ def carregar_avaliacoes_detalhadas(
     ]
     indice_cursos = criar_indice_cursos_atuais(cursos_cadastrados)
     avaliacoes = []
-    for documento in listar_documentos_da_instituicao(COLECAO_AVALIACOES):
-        if documento.id not in ids:
-            continue
-
+    for documento in obter_documentos_da_instituicao_por_ids(
+        COLECAO_AVALIACOES, ids
+    ):
         dados = documento.to_dict() or {}
         curso_atual = resolver_curso_avaliacao(dados, indice_cursos)
         if not curso_atual:
@@ -132,35 +164,8 @@ async def gerar_pdf_completo(
 
         cursos_validos = sorted(cursos_normalizados)
         texto_cursos = ", ".join(cursos_validos) if cursos_validos else "Todos os cursos"
-
-        # ==================================================
-        # GERAÇÃO DO ARQUIVO PDF E GRÁFICO AUXILIAR
-        # ==================================================
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         nome_arquivo = f"relatorio_evalytics_{timestamp}.pdf"
-        avaliacoes_detalhadas = carregar_avaliacoes_detalhadas(
-            resultados or [], eixo_selecionado=eixo_selecionado
-        )
-
-        with tempfile.TemporaryDirectory(prefix="evalytics_pdf_") as diretorio_temp:
-            caminho_imagem_temp = Path(diretorio_temp) / "radar_temp.png"
-            caminho_pdf_temp = Path(diretorio_temp) / nome_arquivo
-            salvar_grafico_radar(
-                medias_validas,
-                nomes_eixos,
-                str(caminho_imagem_temp),
-            )
-            construir_documento_pdf(
-                caminho_arquivo=str(caminho_pdf_temp),
-                medias_validas=medias_validas,
-                nomes_eixos=nomes_eixos,
-                semestre=semestre,
-                quantidade_avaliacoes=quantidade_avaliacoes,
-                texto_cursos=texto_cursos,
-                caminho_imagem_radar=str(caminho_imagem_temp),
-                avaliacoes_detalhadas=avaliacoes_detalhadas,
-            )
-            conteudo_pdf = caminho_pdf_temp.read_bytes()
 
         seletor_arquivos = getattr(page, "file_picker_evidencias", None)
         if seletor_arquivos is None:
@@ -171,16 +176,29 @@ async def gerar_pdf_completo(
             )
             return None
 
+        # Abre o diálogo antes das consultas ao Firestore e da renderização do PDF.
         caminho_salvo = await seletor_arquivos.save_file(
             dialog_title="Salvar relatório PDF",
             file_name=nome_arquivo,
             file_type=ft.FilePickerFileType.CUSTOM,
             allowed_extensions=["pdf"],
-            src_bytes=conteudo_pdf,
         )
 
         if not caminho_salvo:
             return None
+
+        conteudo_pdf = await asyncio.to_thread(
+            _gerar_conteudo_pdf,
+            medias_validas,
+            nomes_eixos,
+            semestre,
+            quantidade_avaliacoes,
+            texto_cursos,
+            resultados or [],
+            eixo_selecionado,
+            nome_arquivo,
+        )
+        await asyncio.to_thread(Path(caminho_salvo).write_bytes, conteudo_pdf)
 
         # ==================================================
         # FEEDBACK

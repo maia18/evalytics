@@ -1,8 +1,9 @@
 import logging
 from datetime import datetime
 
-from database.services.firebase_config import db
-from database.services.institutions.institutions_service import listar_documentos_da_instituicao
+from database.services.institutions.institutions_service import (
+    obter_documentos_da_instituicao_por_ids,
+)
 from database.services.cursos.firestore_courses import obter_cursos_db
 from utils.services.indicadores.indicadores_repository import listar_indicadores
 from utils.services.cursos.curso_utils import (
@@ -88,11 +89,17 @@ def obter_mapa_indicadores() -> dict[str, dict]:
 
 
 def _obter_por_id(mapa: dict, identificador) -> dict | list | str | None:
+    valor = mapa.get(identificador)
+    if valor is not None:
+        return valor
     chave = str(identificador)
-    for chave_mapa, valor in mapa.items():
-        if str(chave_mapa) == chave:
-            return valor
-    return None
+    valor = mapa.get(chave)
+    if valor is not None:
+        return valor
+    return next(
+        (item for chave_mapa, item in mapa.items() if str(chave_mapa) == chave),
+        None,
+    )
 
 
 def _normalizar_nivel(valor) -> str:
@@ -152,10 +159,7 @@ def _linha_csv(
     indicador_id = str(indicador_id)
     indicador_catalogo = mapa_indicadores.get(indicador_id, {})
 
-    chave_resposta = next(
-        (chave for chave in respostas if str(chave) == indicador_id), None
-    )
-    nota = respostas.get(chave_resposta) if chave_resposta is not None else None
+    nota = _obter_por_id(respostas, indicador_id)
     nivel = _normalizar_nivel(nota)
 
     criterios = pergunta.get("criterios") or indicador_catalogo.get("criterios", {})
@@ -224,8 +228,9 @@ def preparar_dados_csv(resultados: list[dict]) -> list[list[str]]:
         ids_selecionados = set(ids_avaliacoes)
         documentos = {
             documento.id: (documento.to_dict() or {})
-            for documento in listar_documentos_da_instituicao(COLECAO_AVALIACOES)
-            if documento.id in ids_selecionados
+            for documento in obter_documentos_da_instituicao_por_ids(
+                COLECAO_AVALIACOES, ids_selecionados
+            )
         }
 
         for avaliacao_id in ids_avaliacoes:

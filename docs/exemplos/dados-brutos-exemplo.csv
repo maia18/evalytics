@@ -1,0 +1,6 @@
+﻿ID_Avaliacao;Data_Avaliacao;ID_Curso;Curso;Eixo;ID_Indicador;Pergunta;Descricao;Nota;Resposta_Selecionada;Status_Resposta;Justificativa;Evidencias;Alternativas;Fonte_Perguntas
+avaliacao-exemplo;12/11/2026 14:30;curso-exemplo;Pedagogia;Organização Didático-Pedagógica;indicador-exemplo;Planos de ensino;Revisão dos planos de ensino do curso.;4;Os planos de ensino foram revisados e disponibilizados para consulta.;Respondida;Os planos de ensino das disciplinas do semestre foram revisados pela coordenação e disponibilizados para consulta. O anexo identifica as disciplinas e as datas de revisão.;planos-de-ensino.pdf — https://example.invalid/planos-de-ensino.pdf;"Nível 1: Os planos de ensino não estão disponíveis.
+Nível 2: Parte dos planos de ensino está disponível.
+Nível 3: Os planos de ensino estão disponíveis para consulta.
+Nível 4: Os planos de ensino foram revisados e disponibilizados para consulta.
+Nível 5: Os planos de ensino foram revisados, disponibilizados e acompanhados ao longo do semestre.";Cópia histórica da avaliação
