@@ -2,6 +2,8 @@
 
 Os procedimentos de cadastro de cursos, preenchimento de avaliações e exportação de resultados estão descritos no [Guia de uso](guia-de-uso.md).
 
+Para validar os fluxos da aplicação após alterações, consulte o [Procedimento de verificação após atualizações](verificacao-apos-atualizacoes.md).
+
 ## Estrutura do projeto
 
 | Área | Responsabilidade | Ponto de entrada |
