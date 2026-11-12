@@ -97,6 +97,7 @@ def criar_secao_sobre(page, layout, cores, altura=None):
             ft.Icons.DOWNLOAD_OUTLINED,
         ),
     )
+    repositorio_evalytics = "https://github.com/maia18/evalytics"
 
     def cartao_etapa(numero: str, titulo: str, descricao: str) -> ft.Control:
         return ft.Container(
@@ -242,6 +243,16 @@ def criar_secao_sobre(page, layout, cores, altura=None):
                         "Consulte os resultados consolidados e exporte relatórios.",
                     ),
                 ],
+            ),
+            linha_info(
+                "Repositório do Evalytics",
+                "Acesse o código-fonte e acompanhe o desenvolvimento do projeto.",
+                ft.Icons.CODE,
+                ft.TextButton(
+                    "Abrir GitHub",
+                    icon=ft.Icons.OPEN_IN_NEW,
+                    on_click=lambda e: page.launch_url(repositorio_evalytics),
+                ),
             ),
         ]
 
