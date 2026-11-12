@@ -1,6 +1,6 @@
 # Evalytics - Autoavaliação institucional
 
-O Evalytics apoia a autoavaliação institucional de cursos superiores. A aplicação permite gerenciar cursos, organizar indicadores por eixo, registrar avaliações e suas evidências e gerar relatórios.
+O Evalytics auxilia os cursos superiores na análise de seu desempenho institucional, permitindo gerenciar cursos, organizar indicadores por eixo, registrar avaliações e evidências e gerar relatórios para apoiar a tomada de decisões.
 
 A interface utiliza Python e Flet. A aplicação utiliza o Firebase Authentication para autenticação e o Cloud Firestore para armazenamento de dados. O repositório inclui uma API desenvolvida com FastAPI para avaliações e evidências.
 
