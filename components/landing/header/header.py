@@ -6,9 +6,12 @@ from components.landing.header.mobile import criar_menu_mobile
 from components.landing.palette import (
     PAGE,
     BORDER,
-    ACCENT,
     MAX_CONTENT_WIDTH,
     ROXO,
+    ROXO_CLARO,
+    SURFACE_ALT,
+    TEXT,
+    MUTED,
 )
 
 def criar_header(
@@ -35,32 +38,75 @@ def criar_header(
         ir_para_sobre=ir_para_sobre,
     )
 
-    # Layout desktop (telas a partir de md)
-    header_desktop = ft.Row(
-        spacing=16,
-        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+    # Layout desktop (telas a partir de md). O Stack ancora as extremidades e
+    # centraliza a navegação na largura total, independentemente dos botões.
+    acoes_conta = ft.Row(
+        spacing=8,
         controls=[
-            logo,
+            ft.OutlinedButton(
+                "Login",
+                on_click=lambda e: mudar_tela("/login"),
+                height=32,
+                style=ft.ButtonStyle(
+                    color={
+                        ft.ControlState.DEFAULT: MUTED,
+                        ft.ControlState.HOVERED: ROXO_CLARO,
+                    },
+                    side=ft.BorderSide(1, BORDER),
+                    bgcolor={
+                        ft.ControlState.DEFAULT: PAGE,
+                        ft.ControlState.HOVERED: SURFACE_ALT,
+                    },
+                    shape=ft.RoundedRectangleBorder(radius=16),
+                    padding=ft.Padding.symmetric(horizontal=12, vertical=6),
+                    overlay_color=ft.Colors.TRANSPARENT,
+                    text_style=ft.TextStyle(size=11, weight=ft.FontWeight.W_500),
+                ),
+            ),
+            ft.ElevatedButton(
+                "Cadastrar-se",
+                on_click=lambda e: mudar_tela("/cadastro"),
+                height=32,
+                style=ft.ButtonStyle(
+                    color=TEXT,
+                    bgcolor={
+                        ft.ControlState.DEFAULT: ROXO,
+                        ft.ControlState.HOVERED: ROXO_CLARO,
+                    },
+                    elevation=0,
+                    animation_duration=180,
+                    shape=ft.RoundedRectangleBorder(radius=16),
+                    padding=ft.Padding.symmetric(horizontal=12, vertical=6),
+                    text_style=ft.TextStyle(size=11, weight=ft.FontWeight.W_600),
+                ),
+            ),
+        ],
+    )
+    header_desktop = ft.Stack(
+        expand=True,
+        height=40,
+        controls=[
             ft.Container(
-                expand=True,
+                left=0,
+                top=0,
+                bottom=0,
+                alignment=ft.Alignment.CENTER_LEFT,
+                content=logo,
+            ),
+            ft.Container(
+                left=0,
+                right=0,
+                top=0,
+                bottom=0,
                 alignment=ft.Alignment.CENTER,
                 content=menu_desktop,
             ),
-            ft.Row(
-                spacing=8,
-                controls=[
-                    ft.OutlinedButton(
-                        "Login",
-                        on_click=lambda e: mudar_tela("/login"),
-                        style=ft.ButtonStyle(color=ACCENT),
-                    ),
-                    ft.ElevatedButton(
-                        "Cadastrar-se",
-                        on_click=lambda e: mudar_tela("/cadastro"),
-                        bgcolor=ROXO,
-                        color=ft.Colors.WHITE,
-                    ),
-                ],
+            ft.Container(
+                right=0,
+                top=0,
+                bottom=0,
+                alignment=ft.Alignment.CENTER_RIGHT,
+                content=acoes_conta,
             ),
         ],
     )

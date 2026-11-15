@@ -104,13 +104,32 @@ def chave_departamento(nome: str | None) -> str:
     return " ".join(str(nome or "").split()).casefold()
 
 
-def filtrar_cursos_por_coordenador(cursos: list[dict]) -> list[dict]:
-    """Limita o catálogo ao curso associado ao e-mail do coordenador autenticado.
+def listar_cursos_associados_ao_coordenador(
+    cursos: list[dict], email: str | None = None
+) -> list[dict]:
+    """Lista cursos atribuídos explicitamente ao e-mail do coordenador."""
+    if email is None:
+        try:
+            from components.core.auth.auth_state import auth_state
 
-    Cursos sem associação explícita continuam visíveis para perfis institucionais.
-    A associação é feita pelo campo `coordenador_email`, com suporte a cursos
-    legados cujo campo `coordenador` já contém um e-mail.
-    """
+            email = str((auth_state.usuario or {}).get("email") or "")
+        except (AttributeError, TypeError):
+            return []
+
+    email_normalizado = str(email).strip().casefold()
+    if not email_normalizado:
+        return []
+    return [
+        curso
+        for curso in cursos
+        if str(
+            curso.get("coordenador_email") or curso.get("coordenador") or ""
+        ).strip().casefold() == email_normalizado
+    ]
+
+
+def filtrar_cursos_por_coordenador(cursos: list[dict]) -> list[dict]:
+    """Limita cursos ao vínculo autenticado e ao curso ativo selecionado."""
     try:
         from components.core.auth.auth_state import auth_state
 
@@ -127,19 +146,18 @@ def filtrar_cursos_por_coordenador(cursos: list[dict]) -> list[dict]:
         or ""
     ).strip().casefold()
     eh_coordenador = perfil in {"coordenador", "coordinator", "coordenador_curso"}
+    atribuidos = listar_cursos_associados_ao_coordenador(cursos, email)
+    if atribuidos:
+        curso_id_ativo = str(usuario.get("curso_id_ativo") or "").strip()
+        if curso_id_ativo and curso_id_ativo != "*":
+            curso_selecionado = [
+                curso for curso in atribuidos
+                if str(curso.get("id") or "") == curso_id_ativo
+            ]
+            return curso_selecionado or atribuidos
+        return atribuidos
     if not email:
         return [] if eh_coordenador else cursos
-
-    atribuidos = []
-    for curso in cursos:
-        email_coordenador = str(
-            curso.get("coordenador_email") or curso.get("coordenador") or ""
-        ).strip().casefold()
-        if email_coordenador == email:
-            atribuidos.append(curso)
-
-    if atribuidos:
-        return atribuidos
     return [] if eh_coordenador else cursos
 
 

@@ -45,13 +45,8 @@ def criar_menu_dashboard(
             or subtelas.visible
             or rota_atual.startswith(ROTA_DASHBOARD)
         )
-        # Mantém o contorno no item principal; os subtópicos usam marcador próprio.
-        botao_dashboard.bgcolor = (
-            ("#302747" if dark_mode else "#EEE9FB") if destacado else None
-        )
-        botao_dashboard.border = ft.Border(
-            left=ft.BorderSide(3, COR_PRIMARIA if destacado else "#00000000")
-        )
+        # Mantém o destaque por cor, sem aplicar caixa ou contorno.
+        botao_dashboard.bgcolor = None
         icone_dashboard.color = (
             ("#B69CFF" if dark_mode else COR_PRIMARIA) if destacado else cor_icone
         )
@@ -80,13 +75,19 @@ def criar_menu_dashboard(
         mudar_tela=None,
         expand=True,
         on_click=alternar_subtelas,
-        # O contorno pertence ao invólucro externo, sem duplicar a borda do botão.
         ativo=False,
     )
     botao_dashboard.on_hover = ao_passar_mouse
 
     def criar_subtela(texto: str, rota: str, icone: str) -> ft.Control:
         ativo = rota_atual == rota
+        texto_subtela = ft.Text(
+            texto,
+            size=11,
+            weight="w600" if ativo else "w500",
+            color=cor_texto,
+        )
+        icone_subtela = ft.Icon(icone, size=14, color=cor_icone)
         botao = criar_botao_menu_base(
             content=ft.Row(
                 spacing=8,
@@ -96,13 +97,8 @@ def criar_menu_dashboard(
                         height=16,
                         bgcolor="#A78BFA" if ativo else "#00000000",
                     ),
-                    ft.Icon(icone, size=14, color=cor_icone),
-                    ft.Text(
-                        texto,
-                        size=11,
-                        weight="w600" if ativo else "w500",
-                        color=cor_texto,
-                    ),
+                    icone_subtela,
+                    texto_subtela,
                 ],
             ),
             rota=rota,
@@ -112,12 +108,18 @@ def criar_menu_dashboard(
             expand=True,
             ativo=ativo,
         )
+        def animar_hover(e: ft.ControlEvent) -> None:
+            texto_subtela.color = (
+                "#B69CFF" if dark_mode else COR_PRIMARIA
+            ) if e.data == "true" or ativo else cor_texto
+            texto_subtela.weight = "w600" if e.data == "true" or ativo else "w500"
+            # O ícone mantém sua cor; o destaque é animado no rótulo.
+            e.page.update()
+
+        botao.content.on_hover = animar_hover
         if ativo:
-            # A seleção usa um marcador vertical, sem contorno nem caixa.
+            # Mantém o destaque apenas pela cor do texto e do ícone.
             botao.bgcolor = None
-            botao.border = ft.Border(
-                left=ft.BorderSide(3, "#00000000")
-            )
         return ft.Container(
             expand=True,
             padding=ft.Padding.only(left=16, right=2),

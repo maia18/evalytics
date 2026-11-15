@@ -15,25 +15,34 @@ def criar_item_menu(
     """Cria o botão de navegação tradicional: ícone à esquerda alinhado a um texto."""
     
     # Prepara o bloco visual: organiza ícone e texto lado a lado (Row)
+    cor_ativo = "#B69CFF" if dark_mode else COR_PRIMARIA
+    cor_icone = (
+        cor_ativo
+        if ativo
+        else ft.Colors.GREY_700 if not dark_mode else ft.Colors.GREY_300
+    )
+    cor_texto_base = cor_ativo if ativo else cor_texto
+    icone_menu = ft.Icon(
+        icone,
+        size=18,
+        color=cor_icone,
+    )
+    texto_menu = ft.Text(
+        texto,
+        size=13,
+        weight="w600" if ativo else "w500",
+        color=cor_texto_base,
+    )
     conteudo = ft.Row(
         spacing=10,
         controls=[
-            ft.Icon(
-                icone,
-                size=18, # Sutilmente menor que a versão colapsada (24) para balancear o design com o texto)
-                color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else (ft.Colors.GREY_700 if not dark_mode else ft.Colors.GREY_300),
-            ),
-            ft.Text(
-                texto,
-                size=13,
-                weight="w600" if ativo else "w500",
-                color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_texto,
-            ),
+            icone_menu,
+            texto_menu,
         ], 
     )
     
     # Retorna o componente base injetando a linha (Row) recém-criada
-    return criar_botao_menu_base(
+    botao = criar_botao_menu_base(
         content=conteudo,
         rota=rota,
         dark_mode=dark_mode,
@@ -41,3 +50,13 @@ def criar_item_menu(
         expand=True,
         ativo=ativo,
     )
+
+    def animar_hover(e: ft.ControlEvent) -> None:
+        sobre = e.data == "true"
+        icone_menu.color = cor_ativo if sobre or ativo else cor_icone
+        texto_menu.color = cor_ativo if sobre or ativo else cor_texto
+        texto_menu.weight = "w600" if sobre or ativo else "w500"
+        e.page.update()
+
+    botao.content.on_hover = animar_hover
+    return botao

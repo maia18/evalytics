@@ -55,7 +55,18 @@ def criar_componentes_notificacoes(page: ft.Page, cores: dict[str, str]):
         shadow=ft.BoxShadow(blur_radius=20, spread_radius=1, color="#33000000")
     )
 
-    botao_notificacoes = ft.IconButton(icon=ft.Icons.NOTIFICATIONS_NONE, tooltip="Notificações")
+    botao_notificacoes = ft.IconButton(
+        icon=ft.Icons.NOTIFICATIONS_NONE,
+        tooltip=None,
+        style=ft.ButtonStyle(
+            bgcolor={
+                ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+                ft.ControlState.HOVERED: ft.Colors.TRANSPARENT,
+                ft.ControlState.PRESSED: ft.Colors.TRANSPARENT,
+            },
+            overlay_color=ft.Colors.TRANSPARENT,
+        ),
+    )
 
     '''
     # =========================================================================

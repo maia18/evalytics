@@ -18,15 +18,17 @@ def criar_botao_icon(
     """
     
     # Prepara o controle visual central isoladamente
+    cor_destaque = "#B69CFF" if dark_mode else COR_PRIMARIA
+    cor_inicial = cor_destaque if ativo else cor_texto
     icone_control = ft.Icon(
         icone,
-        color=("#B69CFF" if dark_mode else COR_PRIMARIA) if ativo else cor_texto,
+        color=cor_inicial,
         size=20,
         tooltip=tooltip_text,  # tooltip crucial: menu sem tem texto, balão indica para onde a rota vai quando o usuário repousa o mouse sobre o botão
     )
     
     # Chama o componente "casca" e injeta o ícone dentro dele
-    return criar_botao_menu_base(
+    botao = criar_botao_menu_base(
         content=icone_control,
         rota=rota,
         dark_mode=dark_mode,
@@ -35,3 +37,12 @@ def criar_botao_icon(
         expand=True,  # Ocupa todo o espaço disponível no container de 45px (conforme configurado na casca)
         ativo=ativo,
     )
+
+    def animar_hover(e: ft.ControlEvent) -> None:
+        icone_control.color = (
+            cor_destaque if e.data == "true" or ativo else cor_texto
+        )
+        e.page.update()
+
+    botao.content.on_hover = animar_hover
+    return botao

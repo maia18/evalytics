@@ -5,14 +5,12 @@ from components.core.constants.constants import (
     SURFACE, 
     COR_PRIMARIA,
 )
-from utils.services.location.location_service import (
-    obter_localidade_instituicao,
-    salvar_localidade_instituicao,
-)
 from database.services.institutions.institutions_service import (
-    listar_campi_instituicao,
     obter_instituicao,
 )
+from database.services.cursos.firestore_courses import obter_cursos_db
+from components.core.auth.auth_state import auth_state
+from utils.services.cursos.curso_utils import listar_cursos_associados_ao_coordenador
 from .core.notifications.topbar_notifications import criar_componentes_notificacoes
 from .core.account_menu import criar_menu_conta
 
@@ -31,34 +29,28 @@ def criar_topbar_content(
     """Constrói a faixa de navegação superior (Cabeçalho da Página)."""
 
     instituicao = obter_instituicao()
-    instituicao_id = str(instituicao.get("id") or "")
-    sigla_instituicao = str(instituicao.get("sigla") or instituicao.get("nome") or "Instituição")
-    campi = listar_campi_instituicao()
-    catalogo_campi: dict[str, tuple[str, str, str]] = {}
-    for campus in campi:
-        campus_id = str(campus.get("id") or "").strip()
-        nome = str(campus.get("nome") or "").strip()
-        if not campus_id or not nome:
-            continue
-        municipio = str(campus.get("municipio") or "").strip()
-        uf = str(campus.get("uf") or "").strip()
-        local = " · ".join(parte for parte in (municipio, uf) if parte)
-        rotulo_opcao = f"{nome} — {local}" if local else nome
-        nome_curto = nome.removeprefix("Campus do ").removeprefix("Campus de ")
-        catalogo_campi[campus_id] = (rotulo_opcao, f"{sigla_instituicao} · {nome_curto}", nome)
-
-    localidade_salva = (
-        getattr(page, "localidade_instituicao", None)
-        or obter_localidade_instituicao(instituicao_id)
+    sigla_instituicao = str(
+        instituicao.get("sigla") or instituicao.get("nome") or "Instituição"
     )
-    local_atual = localidade_salva if localidade_salva in catalogo_campi else None
-    if local_atual is None and localidade_salva:
-        local_atual = next(
-            (campus_id for campus_id, (_, _, nome) in catalogo_campi.items()
-             if nome.casefold() == localidade_salva.casefold()),
-            None,
-        )
-    page.localidade_instituicao = local_atual
+    usuario = auth_state.usuario or {}
+    cursos_coordenados = listar_cursos_associados_ao_coordenador(
+        obter_cursos_db(), str(usuario.get("email") or "")
+    )
+    curso_id_ativo = str(usuario.get("curso_id_ativo") or "")
+    curso_ativo = next(
+        (curso for curso in cursos_coordenados if str(curso.get("id")) == curso_id_ativo),
+        None,
+    )
+    if curso_ativo:
+        rotulo_contexto = str(curso_ativo.get("nome") or "Curso coordenado")
+    elif len(cursos_coordenados) == 1:
+        rotulo_contexto = str(cursos_coordenados[0].get("nome") or "Curso coordenado")
+    elif cursos_coordenados and curso_id_ativo == "*":
+        rotulo_contexto = "Todos os cursos"
+    elif cursos_coordenados:
+        rotulo_contexto = "Meus cursos"
+    else:
+        rotulo_contexto = sigla_instituicao
     tela_muito_estreita = page.width is not None and page.width < 400
     titulo_exibido = titulo.split()[0] if tela_muito_estreita else titulo
 
@@ -85,8 +77,8 @@ def criar_topbar_content(
         visible=getattr(page, "notificacoes_ativas", True),
         content=area_notificacoes,
     )
-    texto_localidade = ft.Text(
-        catalogo_campi[local_atual][1] if local_atual else sigla_instituicao,
+    texto_contexto = ft.Text(
+        rotulo_contexto,
         size=10,
         weight="w500",
         color=cores[TEXTO_PRINCIPAL],
@@ -94,80 +86,104 @@ def criar_topbar_content(
         overflow=ft.TextOverflow.ELLIPSIS,
     )
 
-    def largura_selo_localidade(texto: str) -> int:
-        # Ajusta o chip ao rótulo, mantendo os nomes longos de campus legíveis.
-        return max(84, min(154, round(len(texto) * 5.2 + 32)))
-
-    selo_localidade = ft.Container(
-        width=largura_selo_localidade(texto_localidade.value),
-        padding=4,
-        border_radius=8,
-        bgcolor=cores[SURFACE],
-        tooltip="Alterar campus",
-        on_click=lambda e: abrir_seletor_localidade(e),
-        content=ft.Row(
-            spacing=3,
-            controls=[
-                ft.Icon(ft.Icons.LOCATION_ON_OUTLINED, size=14, color=COR_PRIMARIA),
-                texto_localidade,
-            ],
-        ),
-    )
-
-    def fechar_dialogo_localidade(dialogo: ft.AlertDialog) -> None:
-        if dialogo.open:
-            page.pop_dialog()
-
-    def salvar_localidade(valor: str, dialogo: ft.AlertDialog) -> None:
-        localidade = valor.strip()
-        if not localidade:
+    def abrir_seletor_curso(e=None) -> None:
+        if len(cursos_coordenados) < 2:
             return
-        salvar_localidade_instituicao(localidade, instituicao_id)
-        page.localidade_instituicao = localidade
-        texto_localidade.value = catalogo_campi[localidade][1]
-        selo_localidade.width = largura_selo_localidade(texto_localidade.value)
-        fechar_dialogo_localidade(dialogo)
-
-    def abrir_seletor_localidade(e=None) -> None:
-        campo_localidade = ft.Dropdown(
-            label="Campus da instituição",
-            width=360,
-            value=getattr(page, "localidade_instituicao", local_atual),
-            options=[
-                ft.dropdown.Option(key=campus_id, text=opcao[0])
-                for campus_id, opcao in catalogo_campi.items()
-            ],
-            disabled=not catalogo_campi,
+        opcoes_curso = [
+            ft.dropdown.Option(key="*", text="Todos os meus cursos")
+        ] + [
+            ft.dropdown.Option(
+                key=str(curso.get("id")),
+                text=str(curso.get("nome") or "Curso sem nome"),
+            )
+            for curso in cursos_coordenados
+            if curso.get("id")
+        ]
+        ids_cursos_coordenados = {
+            str(curso.get("id")) for curso in cursos_coordenados if curso.get("id")
+        }
+        valor_seletor = (
+            curso_id_ativo
+            if curso_id_ativo == "*" or curso_id_ativo in ids_cursos_coordenados
+            else "*"
         )
-        dialogo_localidade = ft.AlertDialog(
+        seletor_curso = ft.Dropdown(
+            label="Curso sob coordenação",
+            width=360,
+            value=valor_seletor,
+            options=opcoes_curso,
+        )
+        dialogo_curso = ft.AlertDialog(
             modal=True,
-            title=ft.Text("Campus da instituição"),
+            title=ft.Text("Escopo da coordenação"),
             content=ft.Column(
                 tight=True,
                 spacing=10,
                 controls=[
-                    campo_localidade,
-                    *([] if catalogo_campi else [ft.Text("O cadastro de campi desta instituição ainda não foi configurado.")]),
+                    ft.Text("As análises serão limitadas ao curso selecionado."),
+                    seletor_curso,
                 ],
             ),
             actions=[
                 ft.TextButton(
                     "Cancelar",
-                    on_click=lambda evento: fechar_dialogo_localidade(dialogo_localidade),
+                    on_click=lambda evento: page.pop_dialog(),
                 ),
                 ft.ElevatedButton(
-                    "Salvar",
-                    disabled=not catalogo_campi,
-                    on_click=lambda evento: salvar_localidade(
-                        campo_localidade.value or "", dialogo_localidade
-                    ),
+                    "Aplicar",
                     bgcolor=COR_PRIMARIA,
                     color=ft.Colors.WHITE,
+                    on_click=lambda evento: aplicar_escopo_curso(
+                        seletor_curso.value or "*"
+                    ),
                 ),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-        page.show_dialog(dialogo_localidade)
+        page.show_dialog(dialogo_curso)
+
+    def aplicar_escopo_curso(curso_id: str) -> None:
+        if curso_id != "*" and not any(
+            str(curso.get("id")) == curso_id for curso in cursos_coordenados
+        ):
+            return
+        usuario["curso_id_ativo"] = curso_id
+        rota_atual = getattr(page, "rota_navegacao_atual", None) or page.route
+        if mudar_tela and rota_atual:
+            mudar_tela(rota_atual)
+        else:
+            page.update()
+
+    selo_contexto = ft.Container(
+        width=max(84, min(190, round(len(rotulo_contexto) * 5.2 + 32))),
+        padding=4,
+        border_radius=8,
+        bgcolor=cores[SURFACE],
+        tooltip=(
+            "Selecionar curso sob coordenação"
+            if len(cursos_coordenados) > 1
+            else "Curso sob coordenação"
+            if cursos_coordenados
+            else "Instituição"
+        ),
+        on_click=abrir_seletor_curso if len(cursos_coordenados) > 1 else None,
+        ink=len(cursos_coordenados) > 1,
+        content=ft.Row(
+            spacing=3,
+            controls=[
+                ft.Icon(
+                    ft.Icons.SCHOOL_OUTLINED
+                    if cursos_coordenados
+                    else ft.Icons.ACCOUNT_BALANCE_OUTLINED,
+                    size=14,
+                    color=COR_PRIMARIA,
+                ),
+                texto_contexto,
+                *([ft.Icon(ft.Icons.ARROW_DROP_DOWN, size=14, color=cores[TEXTO_PRINCIPAL])]
+                  if len(cursos_coordenados) > 1 else []),
+            ],
+        ),
+    )
 
     conteudo = ft.ResponsiveRow(
         spacing=8,
@@ -214,8 +230,8 @@ def criar_topbar_content(
                     spacing=4,
                     run_spacing=4,
                     controls=[
-                    # Chip/Badge informativo do campus atual.
-                    selo_localidade,
+                    # Escopo ativo da coordenação ou instituição atual.
+                    selo_contexto,
                     
                     # Ícone do sininho de notificações
                     notificacoes_visiveis,

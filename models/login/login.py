@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import requests
 import flet as ft
 from typing import Callable
@@ -26,6 +27,8 @@ from components.landing.palette import (
     CIANO as LOGIN_CIANO,
     ROSA as LOGIN_ROSA,
 )
+
+logger = logging.getLogger(__name__)
 
 def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
     """
@@ -58,6 +61,13 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         data="signup",
         style=ft.ButtonStyle(
             color=COR_PRIMARIA,
+            bgcolor={
+                ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+                ft.ControlState.HOVERED: ft.Colors.TRANSPARENT,
+                ft.ControlState.PRESSED: ft.Colors.TRANSPARENT,
+            },
+            side=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+            overlay_color=ft.Colors.TRANSPARENT,
             padding=ft.Padding.symmetric(horizontal=4, vertical=2),
             text_style=ft.TextStyle(size=12, weight=ft.FontWeight.W_600),
         ),
@@ -83,11 +93,25 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
         # Como campo_email é uma ft.Column (Rótulo + TextField), acessamos o TextField no índice 1 e pegamos seu `.value`.
         email = campo_email.controls[1].value.strip()
         senha = campo_senha.controls[1].value.strip()
+        nome = campo_nome.controls[1].value.strip() if modo_cadastro["ativo"] else ""
         
         # Validação básica de Front-end
         if not email or not senha:
-            snack = ft.SnackBar(ft.Text("Preencha e-mail e senha!"), bgcolor=ft.Colors.RED_400)
+            snack = ft.SnackBar(
+                ft.Text("Preencha os dados requeridos!"),
+                bgcolor=ft.Colors.RED_400,
+            )
             page.overlay.append(snack) # No Flet moderno, SnackBars devem ir para o Overlay
+            snack.open = True
+            page.update()
+            return
+
+        if modo_cadastro["ativo"] and not nome:
+            snack = ft.SnackBar(
+                ft.Text("Preencha os dados requeridos!"),
+                bgcolor=ft.Colors.RED_400,
+            )
+            page.overlay.append(snack)
             snack.open = True
             page.update()
             return
@@ -114,6 +138,31 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
             data = response.json()
 
             if response.status_code == 200:
+                nome_salvo = True
+                if is_signup:
+                    url_atualizar_perfil = (
+                        "https://identitytoolkit.googleapis.com/v1/"
+                        f"accounts:update?key={FIREBASE_API_KEY}"
+                    )
+                    resposta_perfil = await asyncio.to_thread(
+                        requests.post,
+                        url_atualizar_perfil,
+                        json={
+                            "idToken": data.get("idToken"),
+                            "displayName": nome,
+                            "returnSecureToken": True,
+                        },
+                        timeout=20,
+                    )
+                    if resposta_perfil.status_code == 200:
+                        data.update(resposta_perfil.json())
+                    else:
+                        nome_salvo = False
+                        logger.warning(
+                            "Conta criada, mas o nome do perfil não foi salvo (HTTP %s).",
+                            resposta_perfil.status_code,
+                        )
+
                 lembrar_me = checkbox_lembrar.value is True # SUCESSO!
 
                 # Aciona o State Manager Global para salvar os tokens localmente
@@ -125,9 +174,18 @@ def ViewLogin(page: ft.Page, mudar_tela: Callable[[str], None]) -> ft.View:
                 mudar_tela("/inicio") # Redireciona para a tela inicial
 
                 # Exibe a confirmação de login.
+                if is_signup and not nome_salvo:
+                    mensagem_sucesso = (
+                        "Conta criada, mas não foi possível salvar o nome do perfil."
+                    )
+                elif is_signup:
+                    mensagem_sucesso = "Conta criada com sucesso!"
+                else:
+                    mensagem_sucesso = "Login realizado com sucesso!"
+
                 sucesso = ft.SnackBar(
                     content=ft.Text(
-                        "Login realizado com sucesso!",
+                        mensagem_sucesso,
                         color=ft.Colors.WHITE,
                     ),
                     bgcolor=ft.Colors.GREEN_700,

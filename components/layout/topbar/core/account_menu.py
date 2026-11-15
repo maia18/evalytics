@@ -2,7 +2,6 @@ from typing import Callable
 
 import flet as ft
 
-from components.core.constants.constants import SURFACE
 from components.core.router.rotas_cts import ROTA_CONTA
 
 from components.layout.topbar.core.account_shared import (
@@ -35,11 +34,9 @@ def criar_menu_conta(
         width=34,
         height=34,
         alignment=ft.Alignment.CENTER,
-        tooltip="Minha conta",
-        ink=True,
+        ink=False,
         border_radius=17,
-        bgcolor=cores[SURFACE],
-        border=ft.Border.all(1, "#40394A"),
+        bgcolor=ft.Colors.TRANSPARENT,
         on_click=lambda e: mudar_tela(ROTA_CONTA),
         content=ft.Icon(ft.Icons.PERSON_OUTLINE, size=18, color="#B69CFF"),
     )

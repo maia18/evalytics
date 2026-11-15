@@ -17,7 +17,23 @@ def criar_opcoes_extras(
             color=cor_texto_secundario,
             size=12,
         ),
-        fill_color=cor_primaria, # A cor de preenchimento quando marcado
+        fill_color={
+            ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+            ft.ControlState.SELECTED: cor_primaria,
+        },
+        border_side={
+            ft.ControlState.DEFAULT: ft.BorderSide(1, cor_texto_secundario),
+            ft.ControlState.SELECTED: ft.BorderSide(1, cor_primaria),
+        },
+        check_color=ft.Colors.WHITE,
+        overlay_color={
+            ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+            ft.ControlState.HOVERED: ft.Colors.TRANSPARENT,
+            ft.ControlState.FOCUSED: ft.Colors.TRANSPARENT,
+            ft.ControlState.PRESSED: ft.Colors.TRANSPARENT,
+            ft.ControlState.SELECTED: ft.Colors.TRANSPARENT,
+        },
+        splash_radius=0,
     )
 
     # 2. Agrupa o Checkbox e o Link em uma linha
@@ -35,6 +51,13 @@ def criar_opcoes_extras(
                 "Esqueceu a senha?",
                 style=ft.ButtonStyle(
                     color=cor_primaria,
+                    bgcolor={
+                        ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+                        ft.ControlState.HOVERED: ft.Colors.TRANSPARENT,
+                        ft.ControlState.PRESSED: ft.Colors.TRANSPARENT,
+                    },
+                    side=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                    overlay_color=ft.Colors.TRANSPARENT,
                     padding=0,
                     text_style=ft.TextStyle(size=12),
                 ),

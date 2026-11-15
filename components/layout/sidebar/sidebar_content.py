@@ -36,6 +36,14 @@ def criar_sidebar_content(
                     ft.IconButton(
                         icon=ft.Icons.FIRST_PAGE,
                         icon_size=18,
+                        style=ft.ButtonStyle(
+                            bgcolor={
+                                ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+                                ft.ControlState.HOVERED: ft.Colors.TRANSPARENT,
+                                ft.ControlState.PRESSED: ft.Colors.TRANSPARENT,
+                            },
+                            overlay_color=ft.Colors.TRANSPARENT,
+                        ),
                         on_click=alternar_recolhimento,
                         visible=alternar_recolhimento is not None,
                     ),

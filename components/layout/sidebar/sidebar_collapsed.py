@@ -32,6 +32,14 @@ def criar_sidebar_colapsada(
                         icon=ft.Icons.KEYBOARD_ARROW_RIGHT,
                         icon_size=18,
                         tooltip="Expandir menu lateral",
+                        style=ft.ButtonStyle(
+                            bgcolor={
+                                ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+                                ft.ControlState.HOVERED: ft.Colors.TRANSPARENT,
+                                ft.ControlState.PRESSED: ft.Colors.TRANSPARENT,
+                            },
+                            overlay_color=ft.Colors.TRANSPARENT,
+                        ),
                         on_click=alternar_recolhimento,
                         visible=alternar_recolhimento is not None,
                     ),

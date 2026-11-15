@@ -1,12 +1,9 @@
 import flet as ft
 from typing import Callable, Optional
 from components.core.constants.constants import (
-    HOVER,
     ALTURA_BOTAO_MENU,
     RAIO_BOTAO_MENU,
     PADDING_BOTAO_MENU,
-    HOVER_CLARO_BOTAO_MENU,
-    COR_PRIMARIA,
 )
 
 def criar_botao_menu_base(
@@ -37,12 +34,8 @@ def criar_botao_menu_base(
     return ft.Container(
         height=ALTURA_BOTAO_MENU,
         alignment=alignment,
-        bgcolor=("#302747" if dark_mode else "#EEE9FB") if ativo else None,
+        bgcolor=None,
         border_radius=RAIO_BOTAO_MENU,
-        border=ft.Border(
-            left=ft.BorderSide(3, COR_PRIMARIA if ativo else "#00000000")
-        ),
-
         content=ft.TextButton(
             expand=expand,
             content=content,
@@ -54,10 +47,13 @@ def criar_botao_menu_base(
                     radius=RAIO_BOTAO_MENU,
                 ),
 
-                # Hover adaptado ao tema atual
-                overlay_color=("#39334A" if dark_mode else "#E5E1EF")
-                if dark_mode or not ativo
-                else HOVER_CLARO_BOTAO_MENU,
+                bgcolor={
+                    ft.ControlState.DEFAULT: ft.Colors.TRANSPARENT,
+                    ft.ControlState.HOVERED: ft.Colors.TRANSPARENT,
+                    ft.ControlState.PRESSED: ft.Colors.TRANSPARENT,
+                },
+                overlay_color=ft.Colors.TRANSPARENT,
+                animation_duration=150,
             ),
 
             on_click=executar_click,

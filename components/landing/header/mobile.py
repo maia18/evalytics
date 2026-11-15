@@ -6,6 +6,7 @@ from components.landing.palette import (
     ROXO,
     ROXO_CLARO,
     SURFACE,
+    SURFACE_ALT,
     BORDER,
 )
 
@@ -44,6 +45,9 @@ def criar_menu_mobile(
                 await action(e)
         return _wrapper
 
+    async def ir_para_rota(rota: str, e=None):
+        mudar_tela(rota)
+
     menu_mobile_conteudo = ft.Container(
         visible=False,
         bgcolor=SURFACE,
@@ -68,7 +72,7 @@ def criar_menu_mobile(
                         color=ROXO_CLARO,
                         alignment=ft.Alignment.CENTER_LEFT,
                     ),
-                    on_click=_item_click(lambda e: mudar_tela("/indicadores")),
+                    on_click=_item_click(lambda e: ir_para_rota("/indicadores", e)),
                 ),
                 ft.TextButton(
                     "Sobre",
@@ -78,20 +82,48 @@ def criar_menu_mobile(
                     ),
                     on_click=_item_click(ir_para_sobre),
                 ),
+                ft.TextButton(
+                    "Desenvolvedores",
+                    style=ft.ButtonStyle(
+                        color=MUTED,
+                        alignment=ft.Alignment.CENTER_LEFT,
+                    ),
+                    on_click=_item_click(
+                        lambda e: ir_para_rota("/desenvolvedores", e)
+                    ),
+                ),
                 ft.Divider(height=1, color=BORDER),
                 ft.ElevatedButton(
                     "Login",
-                    bgcolor=ROXO,
-                    color=ft.Colors.WHITE,
-                    height=38,
+                    color=TEXT,
+                    height=34,
                     style=ft.ButtonStyle(
-                        shape=ft.RoundedRectangleBorder(radius=8),
+                        color=TEXT,
+                        bgcolor={
+                            ft.ControlState.DEFAULT: SURFACE_ALT,
+                            ft.ControlState.HOVERED: BORDER,
+                        },
+                        side=ft.BorderSide(1, BORDER),
+                        shape=ft.RoundedRectangleBorder(radius=16),
+                        padding=ft.Padding.symmetric(horizontal=13, vertical=7),
+                        text_style=ft.TextStyle(size=11, weight=ft.FontWeight.W_500),
                     ),
                     on_click=lambda e: mudar_tela("/login"),
                 ),
                 ft.OutlinedButton(
                     "Cadastrar-se",
-                    style=ft.ButtonStyle(color=ROXO_CLARO),
+                    height=34,
+                    style=ft.ButtonStyle(
+                        color=ft.Colors.WHITE,
+                        bgcolor={
+                            ft.ControlState.DEFAULT: ROXO,
+                            ft.ControlState.HOVERED: ROXO_CLARO,
+                        },
+                        side=ft.BorderSide(1, ROXO_CLARO),
+                        shape=ft.RoundedRectangleBorder(radius=16),
+                        padding=ft.Padding.symmetric(horizontal=13, vertical=7),
+                        text_style=ft.TextStyle(size=11, weight=ft.FontWeight.W_600),
+                    ),
                     on_click=lambda e: mudar_tela("/cadastro"),
                 ),
             ],
